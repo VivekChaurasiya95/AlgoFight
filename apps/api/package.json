@@ -1,0 +1,22 @@
+{
+  "name": "@algofight/api",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@algofight/config": "workspace:*",
+    "@algofight/database": "workspace:*",
+    "@algofight/logger": "workspace:*",
+    "@algofight/queue": "workspace:*",
+    "@algofight/state-machine": "workspace:*",
+    "@algofight/types": "workspace:*",
+    "fastify": "^5.8.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
+  }
+}

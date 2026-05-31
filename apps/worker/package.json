@@ -1,0 +1,18 @@
+{
+  "name": "@algofight/worker",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "@algofight/application": "workspace:*",
+    "@algofight/database": "workspace:*",
+    "@algofight/queue": "workspace:*",
+    "@algofight/types": "workspace:*",
+    "bullmq": "^5.58.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
+  }
+}

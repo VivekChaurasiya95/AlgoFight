@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SubmissionStatus {
+  CREATED
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  RETRYING
+  STALE
+}
+
+model Submission {
+  id String @id @default(uuid())
+
+  language String
+
+  code String
+
+  status SubmissionStatus @default(CREATED)
+
+  stdout String?
+  stderr String?
+
+  executionTime Int?
+
+  exitCode Int?
+
+  retryCount Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}

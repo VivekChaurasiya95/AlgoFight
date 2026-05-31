@@ -1,0 +1,32 @@
+{
+  "name": "AlgoFight-backend-new",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "packageManager": "pnpm@11.4.0",
+  "main": "index.js",
+  "scripts": {
+    "dev:api": "pnpm --filter @algofight/api exec tsx watch src/index.ts",
+    "dev:worker": "pnpm --filter @algofight/worker exec tsx watch src/index.ts",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@typescript-eslint/eslint-plugin": "^8.60.0",
+    "@typescript-eslint/parser": "^8.60.0",
+    "eslint": "^10.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.3",
+    "prisma": "^7.8.0",
+    "turbo": "^2.9.15",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}
