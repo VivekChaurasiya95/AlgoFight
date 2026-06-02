@@ -115,6 +115,7 @@ Transitions are atomic and idempotent to avoid double-processing.
 | apps/websocket | Real-time status updates |
 | packages/application | Core application contracts and services |
 | packages/database | Prisma schema and repositories |
+| packages/error_handling | Shared error types and response helpers |
 | packages/queue | Queue and worker utilities |
 | packages/logger | Shared logging utilities |
 

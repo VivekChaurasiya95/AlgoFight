@@ -87,6 +87,17 @@ Added centralized logger package.
 
 Implemented structured logging support across services.
 
+### Error Handling
+
+Added centralized error-handling package.
+
+Implemented:
+
+* Base AppError abstraction with layer metadata
+* ErrorCode and ErrorLayer enums
+* Domain, validation, application, and infrastructure error types
+* Error response factory and package exports
+
 ### Worker Infrastructure
 
 Added dedicated worker application.
