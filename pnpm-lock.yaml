@@ -318,6 +318,9 @@ importers:
 
   packages/database:
     dependencies:
+      '@algofight/state-machine':
+        specifier: workspace:*
+        version: link:../state-machine
       '@algofight/types':
         specifier: workspace:*
         version: link:../types

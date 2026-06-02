@@ -21,15 +21,28 @@ export class ExecutionService {
             submissionId,
             }, "Starting submission processing");
 
+            const submission =
+                await this.submissionRepository.getSubmissionById(
+                submissionId,
+                );
+            
+            if(!submission) {
+                throw new Error(
+                    `Submission ${submissionId} was not found!.`
+                )
+            }
+
             await this.submissionRepository.updateStatus(
                 submissionId,
                 SubmissionStatus.PROCESSING,
             );
 
             const result = 
-                 await this.codeExecutor.execute(
+                 await this.codeExecutor.execute({
                     submissionId,
-                );
+                    language: submission.language,
+                    code: submission.code,
+                });
 
             await this.submissionRepository.completeSubmission(
                 submissionId,
