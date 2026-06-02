@@ -262,6 +262,9 @@ importers:
       fastify:
         specifier: ^5.8.5
         version: 5.8.5
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       tsx:
         specifier: ^4.22.3
@@ -318,6 +321,9 @@ importers:
 
   packages/database:
     dependencies:
+      '@algofight/error-handling':
+        specifier: workspace:*
+        version: link:../error_handling
       '@algofight/state-machine':
         specifier: workspace:*
         version: link:../state-machine
@@ -340,6 +346,12 @@ importers:
       prisma:
         specifier: ^7.8.0
         version: 7.8.0(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
+
+  packages/error_handling:
+    dependencies:
+      '@algofight/types':
+        specifier: workspace:*
+        version: link:../types
 
   packages/logger:
     dependencies:

@@ -7,8 +7,15 @@ export type SubmissionResult = {
     exitCode: number,
     status: SubmissionStatus,
 };
+
+export type CreateSubmissionInput = {
+    language: string,
+    code: string,
+}
 export interface SubmissionRepository{
-    createSubmission(): Promise<SubmissionEntity>;
+    createSubmission(
+        input: CreateSubmissionInput,
+    ): Promise<SubmissionEntity>;
 
     getSubmissionById(
         submissionId: string,

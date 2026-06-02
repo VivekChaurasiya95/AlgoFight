@@ -5,53 +5,85 @@ import {
 } from "../contracts/submission.repository";
 import { SubmissionStatus } from "@algofight/types";
 import {canTransition} from "@algofight/state-machine";
+import {
+  InvalidTransitionError,
+  SubmissionNotFoundError
+} from "@algofight/error-handling";
+
+import { toSubmissionEntity } from "../mappers/submission.mapper";
+
+import { CreateSubmissionInput } from "../contracts/submission.repository";
 
 
 export class PrismaSubmissionRepository  implements SubmissionRepository{
   
-  async createSubmission() {
-    return prisma.submission.create({
-      data: {
-        language: "typescript",
-        
-        code: "console.log('Hello World');",
-      },
-    });
-  }
-  async updateStatus(
-    submissionId: string,
-    status: SubmissionStatus,
+  async createSubmission(
+    input: CreateSubmissionInput
   ) {
+
+    const submission =
+      await prisma.submission.create({
+        data: {
+          language: input.language,
+          
+          code: input.code,
+        },
+      });
+
+    return toSubmissionEntity(
+      submission,
+    )
+  }
+
+  private async validateTransition (
+    submissionId: string,
+    nextStatus: SubmissionStatus,
+  ){
     const submission = 
       await this.getSubmissionById(
         submissionId,
       );
     if(!submission) {
-      throw new Error (
-        `Submission ${submissionId} was not found!.`
+      throw new SubmissionNotFoundError (
+        submissionId,
       )
     }
 
     if(
       !canTransition(
-        submission.status as SubmissionStatus,
-        status,
+        submission.status,
+        nextStatus,
       )
     ){
-      throw new Error(
-        `Invalid status transition: ${submission.status} -> ${status}.`
+      throw new InvalidTransitionError(
+        submission.status,
+        nextStatus,
       )
-    }
+    };
+  }
+  async updateStatus(
+    submissionId: string,
+    status: SubmissionStatus,
+  ) {
+    await this.validateTransition(
+      submissionId,
+      status,
+    )
 
-    return prisma.submission.update({
-      where: {
-        id: submissionId,
-      },
+    const submission = 
+      await prisma.submission.update({
+        where: {
+          id: submissionId,
+        },
 
-      data: {
-        status,
-      },
-    });
+        data: {
+          status,
+        },
+      });
+
+    return toSubmissionEntity(
+      submission,
+    )
   }
 
   async completeSubmission(
@@ -59,38 +91,58 @@ export class PrismaSubmissionRepository  implements SubmissionRepository{
     result: SubmissionResult,
   ) {
 
-    await this.updateStatus(
+    await this.validateTransition(
       submissionId,
       result.status,
     )
 
-    return prisma.submission.update({
-      where: {
-        id: submissionId,
-      },
+    const submission = 
+      await prisma.submission.update({
+        where: {
+          id: submissionId,
+        },
 
-      data: {
-        status: result.status,
+        data: {
+          status: result.status,
 
-        stdout: result.stdout,
+          stdout: result.stdout,
 
-        stderr: result.stderr,
+          stderr: result.stderr,
 
-        executionTime: result.executionTime,
+          executionTime: result.executionTime,
 
-        exitCode: result.exitCode,
-      },
-    });
+          exitCode: result.exitCode,
+        },
+      });
+
+    return toSubmissionEntity(
+      submission,
+    )
   }
-  async getSubmissionById(submissionId: string){
-    return prisma.submission.findUnique({
-      where: {
-        id: submissionId,
-      },
-    });
+  async getSubmissionById(
+  submissionId: string,
+  ) {
+    const submission =
+      await prisma.submission.findUnique({
+        where: {
+          id: submissionId,
+        },
+      });
+
+    if (!submission) {
+      return null;
+    }
+
+    return toSubmissionEntity(
+      submission,
+    );
   }
 
   async getAllSubmission() {
-    return prisma.submission.findMany();
+    const submission =
+      await prisma.submission.findMany();
+    return submission.map(
+      toSubmissionEntity,
+    );
   }
 }

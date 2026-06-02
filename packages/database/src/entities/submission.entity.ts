@@ -1,13 +1,14 @@
-
+import { SubmissionStatus } from "@algofight/types";
 
 export interface SubmissionEntity {
     id: string,
     language: string,
     code: string,
-    status: string,
+    status: SubmissionStatus,
     stdout: string | null,
     stderr: string | null,
     executionTime: number | null,
+    exitCode: number | null,
     retryCount: number,
     createdAt: Date,
     updatedAt: Date,

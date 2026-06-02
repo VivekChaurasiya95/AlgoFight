@@ -1,21 +1,32 @@
 import { config } from "@algofight/config";
 import fastify from "fastify";
-import { prisma } from "@algofight/database";
+import {
+  PrismaSubmissionRepository,
+} from "@algofight/database";
 import { enqueueSubmissionJob } from "@algofight/queue";
-const app = fastify();
 
+import {
+    SubmissionInput,
+    submissionSchema,
+} from "./schema/submission.schema";
+const app = fastify();
+const submissionRepository =
+  new PrismaSubmissionRepository();
 app.get("/", async () => {
     return {
       message: "AlgoFight API running!!."
     };
 });
 
-app.post("/submit", async () => {
-    const submission = await prisma.submission.create({
-        data: {
-            language: "typescript",
-            code: "console.log('Hello World');",
-        },
+app.post("/submit", async (request) => {
+
+    const body: SubmissionInput = 
+         submissionSchema.parse(
+            request.body,
+         )
+    const submission = await submissionRepository.createSubmission({
+        language: body.language,
+        code: body.code,
     });
 
     await enqueueSubmissionJob({
@@ -25,7 +36,7 @@ app.post("/submit", async () => {
     return submission;
 });
 app.get("/submissions", async () => {
-    return prisma.submission.findMany();
+    return submissionRepository.getAllSubmission();
 })
 
 const start = async () => {
