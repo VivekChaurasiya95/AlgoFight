@@ -1,6 +1,9 @@
 import { SubmissionStatus } from "@algofight/types";
-
-export class InvalidTransitionError extends Error {
+import { DomainError } from "./domain-error";
+import { ErrorCode } from "../enums/error-code";
+export class InvalidTransitionError extends DomainError {
+    readonly code = ErrorCode.INVALID_TRANSITION;
+    readonly statusCode = 409;
     constructor (
         current: SubmissionStatus,
         next: SubmissionStatus,
@@ -8,6 +11,5 @@ export class InvalidTransitionError extends Error {
         super(
             `Invalid status transition: ${current} -> ${next}.`
         );
-        this.name = "InvalidTransitionError";
     }
 }

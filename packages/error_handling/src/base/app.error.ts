@@ -17,5 +17,10 @@ export abstract class AppError extends Error {
             this,
             new.target.prototype,
         );
+
+        Error.captureStackTrace?.(
+            this,
+            this.constructor
+        )
     }
 }
