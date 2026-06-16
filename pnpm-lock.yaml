@@ -278,6 +278,9 @@ importers:
       '@algofight/application':
         specifier: workspace:*
         version: link:../../packages/application
+      '@algofight/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@algofight/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -303,9 +306,15 @@ importers:
       '@algofight/database':
         specifier: workspace:*
         version: link:../database
+      '@algofight/error-handling':
+        specifier: workspace:*
+        version: link:../error_handling
       '@algofight/logger':
         specifier: workspace:*
         version: link:../logger
+      '@algofight/queue':
+        specifier: workspace:*
+        version: link:../queue
       '@algofight/state-machine':
         specifier: workspace:*
         version: link:../state-machine

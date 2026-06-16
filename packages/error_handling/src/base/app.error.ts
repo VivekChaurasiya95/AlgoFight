@@ -1,5 +1,5 @@
 import { ErrorCode } from "../enums/error-code";
-import {ErrorLayer} from "../enums/error-layer";
+import { ErrorLayer } from "../enums/error-layer";
 
 export abstract class AppError extends Error {
     abstract readonly code: ErrorCode;
@@ -8,7 +8,7 @@ export abstract class AppError extends Error {
 
     abstract readonly statusCode: number;
 
-    constructor(message: string){
+    constructor(message: string) {
         super(message);
 
         this.name = new.target.name;
@@ -18,9 +18,11 @@ export abstract class AppError extends Error {
             new.target.prototype,
         );
 
-        Error.captureStackTrace?.(
-            this,
-            this.constructor
-        )
+        if ("captureStackTrace" in Error) {
+            Error.captureStackTrace(
+                this,
+                new.target,
+            );
+        }
     }
 }

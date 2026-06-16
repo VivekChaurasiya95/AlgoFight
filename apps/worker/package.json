@@ -9,6 +9,7 @@
     "@algofight/database": "workspace:*",
     "@algofight/queue": "workspace:*",
     "@algofight/types": "workspace:*",
+    "@algofight/config": "workspace:*",
     "bullmq": "^5.58.0"
   },
   "devDependencies": {

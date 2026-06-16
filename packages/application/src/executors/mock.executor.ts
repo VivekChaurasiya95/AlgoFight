@@ -1,39 +1,82 @@
-import { CodeExecutor, ExecutionPayload } from "../contracts/code-executor";
-import { SubmissionResult } from "@algofight/database";
-import { logger } from "@algofight/logger";
-import { SubmissionStatus } from "@algofight/types";
-export class MockExecutor implements CodeExecutor{
+import {
+    CodeExecutor,
+    ExecutionPayload,
+} from "../contracts/code-executor";
+
+import { SubmissionResult }
+    from "@algofight/database";
+
+import { logger }
+    from "@algofight/logger";
+
+import { SubmissionStatus }
+    from "@algofight/types";
+
+const MOCK_EXECUTION_TIME = 3000;
+
+export class MockExecutor
+    implements CodeExecutor {
+
     async execute(
-
         payload: ExecutionPayload,
+    ): Promise<SubmissionResult> {
 
-    ): Promise <SubmissionResult> {
+        const start = Date.now();
+
         logger.info(
             {
-                submissionId: payload.submissionId,
-                language: payload.language,
-            }, "Mock execution started!."
+                submissionId:
+                    payload.submissionId,
+
+                language:
+                    payload.language,
+            },
+            "Mock execution started",
         );
-        await new Promise((resolve) =>
-            setTimeout(resolve, 3000), 
+
+        if (
+            payload.code.includes(
+                "MOCK_FAILURE",
+            )
+        ) {
+            throw new Error(
+                "Mock execution failed",
+            );
+        }
+
+        await new Promise(
+            (resolve) =>
+                setTimeout(
+                    resolve,
+                    MOCK_EXECUTION_TIME,
+                ),
         );
-        logger.info
-        (
+
+        const executionTime =
+            Date.now() - start;
+
+        logger.info(
             {
-                submissionId: payload.submissionId,
+                submissionId:
+                    payload.submissionId,
             },
             "Mock execution completed",
         );
+
         return {
-            stdout: "Hello AlgoFight",
+            stdout:
+                "Hello AlgoFight",
 
-            stderr: null,
+            stderr:
+                null,
 
-            executionTime: 3000,
+            executionTime,
 
-            exitCode: 0,
+            exitCode:
+                0,
 
-            status: SubmissionStatus.COMPLETED,
+            status:
+                SubmissionStatus.COMPLETED,
         };
     }
 }

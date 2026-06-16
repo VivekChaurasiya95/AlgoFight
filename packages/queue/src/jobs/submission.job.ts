@@ -7,7 +7,13 @@ export const enqueueSubmissionJob = async (
   payload: SubmissionJobPayload,
 ) => {
 
-  logger.info("Enqueueing submission job...");
+  logger.info(
+      {
+          submissionId:
+              payload.submissionId,
+      },
+      "Enqueueing submission job",
+  );
 
   return submissionQueue.add(
     JOB_NAMES.SUBMISSION,

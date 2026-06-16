@@ -1,35 +1,46 @@
 import {
     SubmissionRepository,
- } from "@algofight/database";
+} from "@algofight/database";
+
 import { logger } from "@algofight/logger";
+
 import { CodeExecutor } from "../contracts/code-executor";
+
 import { SubmissionStatus } from "@algofight/types";
+
+import {
+    SubmissionNotFoundError,
+} from "@algofight/error-handling";
 
 export class ExecutionService {
     constructor(
         private readonly submissionRepository:
             SubmissionRepository,
-             
+
         private readonly codeExecutor:
             CodeExecutor,
-    ){}
+    ) {}
+
     async processSubmission(
         submissionId: string,
-    ){
+    ) {
         try {
-            logger.info({
-            submissionId,
-            }, "Starting submission processing");
+            logger.info(
+                {
+                    submissionId,
+                },
+                "Starting submission processing",
+            );
 
             const submission =
                 await this.submissionRepository.getSubmissionById(
-                submissionId,
+                    submissionId,
                 );
-            
-            if(!submission) {
-                throw new Error(
-                    `Submission ${submissionId} was not found!.`
-                )
+
+            if (!submission) {
+                throw new SubmissionNotFoundError(
+                    submissionId,
+                );
             }
 
             await this.submissionRepository.updateStatus(
@@ -37,8 +48,8 @@ export class ExecutionService {
                 SubmissionStatus.PROCESSING,
             );
 
-            const result = 
-                 await this.codeExecutor.execute({
+            const result =
+                await this.codeExecutor.execute({
                     submissionId,
                     language: submission.language,
                     code: submission.code,
@@ -47,11 +58,14 @@ export class ExecutionService {
             await this.submissionRepository.completeSubmission(
                 submissionId,
                 result,
-            )
+            );
 
-            logger.info({
-                submissionId,
-            }, "Submission processing completed");
+            logger.info(
+                {
+                    submissionId,
+                },
+                "Submission processing completed",
+            );
         } catch (error) {
             logger.error(
                 {
@@ -61,13 +75,16 @@ export class ExecutionService {
                 "Submission processing failed",
             );
 
-            await this.submissionRepository.updateStatus(
-                submissionId,
-                SubmissionStatus.FAILED,
-            );
+            if (
+                !(error instanceof SubmissionNotFoundError)
+            ) {
+                await this.submissionRepository.updateStatus(
+                    submissionId,
+                    SubmissionStatus.FAILED,
+                );
+            }
 
             throw error;
-            
         }
     }
 }

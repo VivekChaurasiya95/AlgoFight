@@ -2,19 +2,23 @@ import { AppError } from "../base/app.error";
 import { ErrorCode } from "../enums/error-code";
 import { ErrorLayer } from "../enums/error-layer";
 
+type ApplicationErrorCode =
+    | ErrorCode.APPLICATION_ERROR
+    | ErrorCode.EXECUTION_FAILED
+    | ErrorCode.UNSUPPORTED_LANGUAGE;
+
 export class ApplicationError extends AppError {
-  readonly code: ErrorCode;
+    readonly layer =
+        ErrorLayer.APPLICATION;
 
-  readonly layer = ErrorLayer.APPLICATION;
+    readonly statusCode = 500;
 
-  readonly statusCode = 500;
-
-  constructor(
-    message: string,
-    code: ErrorCode = ErrorCode.APPLICATION_ERROR,
-  ) {
-    super(message);
-
-    this.code = code;
-  }
+    constructor(
+        message: string,
+        readonly code:
+            ApplicationErrorCode =
+                ErrorCode.APPLICATION_ERROR,
+    ) {
+        super(message);
+    }
 }
