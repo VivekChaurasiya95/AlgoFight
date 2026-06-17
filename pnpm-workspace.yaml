@@ -3,6 +3,9 @@ packages:
   - "packages/*"
 allowBuilds:
   '@prisma/engines': true
+  cpu-features: false
   esbuild: true
   msgpackr-extract: true
   prisma: false
+  protobufjs: false
+  ssh2: false

@@ -1,5 +1,5 @@
 import { config } from "@algofight/config";
-
+import { registerErrorHandler } from "./plugins/error-handler";
 import fastify from "fastify";
 
 import {
@@ -22,6 +22,10 @@ app.register(
 
 const start = async () => {
     try {
+
+        await registerErrorHandler(
+            app,
+        );
         await app.listen({
             port: config.port,
             host: "0.0.0.0",

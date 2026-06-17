@@ -9,10 +9,10 @@
   },
   "dependencies": {
     "@algofight/database": "workspace:*",
+    "@algofight/error-handling": "workspace:*",
     "@algofight/logger": "workspace:*",
     "@algofight/state-machine": "workspace:*",
     "@algofight/types": "workspace:*",
-    "@algofight/error-handling": "workspace:*"
-    
+    "dockerode": "^5.0.0"
   }
 }

@@ -72,8 +72,12 @@ export class DockerExecutor
     private async cleanupWorkspace(
         workspacePath: string,
     ): Promise<void> {
-        throw new Error(
-            "Not implemented",
-        );
+        await fs.rm(
+            workspacePath,
+            {
+                recursive: true,
+                force: true,
+            },
+        )
     }
 }

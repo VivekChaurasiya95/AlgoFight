@@ -1,22 +1,20 @@
 {
-  "name": "@algofight/api",
+  "name": "@algofight/scheduler",
   "version": "1.0.0",
+  "private": true,
   "main": "src/index.ts",
   "types": "src/index.ts",
-  "scripts": {
-    "dev": "tsx watch src/index.ts",
+  "scripts":{
     "build": "tsc"
   },
   "dependencies": {
-    "@algofight/config": "workspace:*",
+    "@algofight/application": "workspace:*",
     "@algofight/database": "workspace:*",
-    "@algofight/logger": "workspace:*",
     "@algofight/queue": "workspace:*",
-    "@algofight/state-machine": "workspace:*",
     "@algofight/types": "workspace:*",
-    "@algofight/error-handling": "workspace:*",
-    "fastify": "^5.8.5",
-    "zod": "^4.4.3"
+    "@algofight/config": "workspace:*",
+    "@algofight/logger": "workspace:*",
+    "bullmq": "^5.58.0"
   },
   "devDependencies": {
     "tsx": "^4.22.3",

@@ -1,20 +1,18 @@
 import { FastifyInstance } from "fastify";
+import { SubmissionController } from "../controllers/submission.controllers";
 
 import {
     PrismaSubmissionRepository,
 } from "@algofight/database";
 
 import {
-    enqueueSubmissionJob,
-} from "@algofight/queue";
-
-import {
     SubmissionInput,
     submissionSchema,
 } from "../schema/submission.schema";
-
-const submissionRepository =
-    new PrismaSubmissionRepository();
+const submissionRepository = new PrismaSubmissionRepository();
+const submissionController = new SubmissionController(
+    submissionRepository,
+);
 
 export async function submissionRoutes(
     app: FastifyInstance,
@@ -27,29 +25,18 @@ export async function submissionRoutes(
                     request.body,
                 );
 
-            const submission =
-                await submissionRepository
-                    .createSubmission({
-                        language:
-                            body.language,
+            return submissionController.submit(
+                body,
+            )
 
-                        code:
-                            body.code,
-                    });
-
-            await enqueueSubmissionJob({
-                submissionId:
-                    submission.id,
-            });
-
-            return submission;
+            
         },
     );
 
     app.get(
         "/submissions",
         async () => {
-            return submissionRepository
+            return submissionController
                 .getAllSubmission();
         },
     );
