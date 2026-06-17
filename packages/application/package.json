@@ -14,5 +14,8 @@
     "@algofight/state-machine": "workspace:*",
     "@algofight/types": "workspace:*",
     "dockerode": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^4.0.1"
   }
 }
