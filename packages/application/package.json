@@ -12,8 +12,7 @@
     "@algofight/logger": "workspace:*",
     "@algofight/state-machine": "workspace:*",
     "@algofight/types": "workspace:*",
-    "@algofight/error-handling": "workspace:*",
-    "@algofight/queue": "workspace:*"
-
+    "@algofight/error-handling": "workspace:*"
+    
   }
 }

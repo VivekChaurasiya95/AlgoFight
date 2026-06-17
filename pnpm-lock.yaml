@@ -312,9 +312,6 @@ importers:
       '@algofight/logger':
         specifier: workspace:*
         version: link:../logger
-      '@algofight/queue':
-        specifier: workspace:*
-        version: link:../queue
       '@algofight/state-machine':
         specifier: workspace:*
         version: link:../state-machine
