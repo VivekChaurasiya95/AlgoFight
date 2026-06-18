@@ -1,9 +1,9 @@
 import { ContainerConfig } from "../types/containerConfig";
 import { ContainerResult } from "../types/container-result";
-
+import { ContainerExecutor } from "../contracts/container-executor";
 import { docker } from "./docker-client";
 
-export class ContainerRunner {
+export class ContainerRunner implements ContainerExecutor{
 
     async run(
         config: ContainerConfig,

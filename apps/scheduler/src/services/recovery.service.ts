@@ -1,6 +1,9 @@
 import { logger } from "@algofight/logger";
-
+import { PrismaSubmissionRepository } from "@algofight/database";
+import { RECOVERY_POLICY } from "../constants/scheduler.constants";
 export class RecoveryService {
+    private readonly submissionRepository =
+         new PrismaSubmissionRepository();
 
     async detectStaleSubmissions() {
 
@@ -8,9 +11,11 @@ export class RecoveryService {
             "Detecting stale submissions",
         );
 
-        return [];
+        return this.submissionRepository.
+                getStaleSubmissions(
+                    RECOVERY_POLICY.STALE_THRESHOLD_MS,
+                );
     }
-
     async recoverSubmission(
         submissionId: string,
     ) {

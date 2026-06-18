@@ -5,3 +5,8 @@ export const SCHEDULER_INTERVALS = {
 export const RETRY_POLICY = {
     MAX_RETRIES: 3,
 } as const;
+
+export const RECOVERY_POLICY = {
+    STALE_THRESHOLD_MS:
+    5 * 60 * 1000,
+} as const;

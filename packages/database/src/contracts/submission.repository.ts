@@ -13,6 +13,9 @@ export type CreateSubmissionInput = {
     code: string,
 }
 export interface SubmissionRepository{
+    getStaleSubmissions(
+        thresholdMs: number,
+    ): Promise <string[]>
     createSubmission(
         input: CreateSubmissionInput,
     ): Promise<SubmissionEntity>;

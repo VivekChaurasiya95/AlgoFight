@@ -16,6 +16,32 @@ import { CreateSubmissionInput } from "../contracts/submission.repository";
 
 
 export class PrismaSubmissionRepository  implements SubmissionRepository{
+
+  async getStaleSubmissions(
+    thresholdMs: number,
+  ): Promise <string[]>{
+    const thresholdDate = new Date(
+      Date.now() - thresholdMs,
+    );
+
+    const submissions = await prisma.submission.findMany({
+      where: {
+        status: SubmissionStatus.PROCESSING,
+
+        updatedAt: {
+          lt: thresholdDate,
+        }
+      },
+      select: {
+        id: true,
+      }
+    });
+    return submissions.map(
+      submission => submission.id,
+    )
+  }
+    
+  
   
   async createSubmission(
     input: CreateSubmissionInput
