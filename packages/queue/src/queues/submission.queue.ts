@@ -1,7 +1,7 @@
 import {Queue} from "bullmq";
 import {redisConnection} from "../client/redis";
 import { QUEUE_NAMES } from "../constants/queue.constants";
-
+import { logger } from "@algofight/logger";
 export const submissionQueue = new Queue (
     QUEUE_NAMES.SUBMISSION,
     {
@@ -23,4 +23,12 @@ export const submissionQueue = new Queue (
             removeOnFail: 500,
         },
     },
+);
+
+logger.info(
+    {
+        queue: QUEUE_NAMES.SUBMISSION,
+        attempts: 3,
+    },
+    "Submission queue initialized",
 );

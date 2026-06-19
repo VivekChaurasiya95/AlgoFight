@@ -1,8 +1,8 @@
 import { Worker } from "bullmq";
 
-import { ExecutionService, MockExecutor } from "@algofight/application";
+import { ExecutionService, DockerExecutor } from "@algofight/application";
 
-
+import { logger } from "@algofight/logger";
 
 import { PrismaSubmissionRepository } from "@algofight/database";
 
@@ -13,7 +13,7 @@ import { QUEUE_NAMES } from "../constants/queue.constants";
 const submissionRepository = 
       new PrismaSubmissionRepository();
 
-const codeExecutor = new MockExecutor();
+const codeExecutor = new DockerExecutor();
 
 const executionService =
   new ExecutionService(
@@ -36,4 +36,28 @@ export const submissionWorker = new Worker(
 
     concurrency: 5,
   },
+);
+
+submissionWorker.on(
+  "completed",
+  (job) => {
+    logger.info(`Submission ${job.data.submissionId} completed`);
+  }
+)
+
+submissionWorker.on(
+  "failed",
+  (job, error) => {
+    logger.error({error},
+      `Submission ${job?.data?.submissionId} failed`
+    );
+  }
+)
+
+logger.info(
+  {
+    queue: QUEUE_NAMES.SUBMISSION,
+    concurrency: 5,
+  }
+  ,"Submission worker initialized",
 );

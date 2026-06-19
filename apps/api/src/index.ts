@@ -1,6 +1,9 @@
 import { config } from "@algofight/config";
-import { registerErrorHandler } from "./plugins/error-handler";
+import { logger } from "@algofight/logger";
+
 import fastify from "fastify";
+
+import { registerErrorHandler } from "./plugins/error-handler";
 
 import {
     submissionRoutes,
@@ -12,33 +15,70 @@ import {
 
 const app = fastify();
 
-app.register(
-    healthRoutes,
-);
-
-app.register(
-    submissionRoutes,
-);
-
 const start = async () => {
     try {
 
         await registerErrorHandler(
             app,
         );
+
+        app.register(
+            healthRoutes,
+        );
+
+        app.register(
+            submissionRoutes,
+        );
+
         await app.listen({
             port: config.port,
             host: "0.0.0.0",
         });
 
-        console.log(
-            "Server running on port 3000",
+        logger.info(
+            {
+                port: config.port,
+            },
+            "API server started",
         );
-    } catch (err) {
-        console.error(err);
+
+    } catch (error) {
+
+        logger.error(
+            { error },
+            "Failed to start API server",
+        );
 
         process.exit(1);
     }
 };
+
+process.on(
+    "SIGINT",
+    async () => {
+
+        logger.info(
+            "API shutting down",
+        );
+
+        await app.close();
+
+        process.exit(0);
+    },
+);
+
+process.on(
+    "SIGTERM",
+    async () => {
+
+        logger.info(
+            "API shutting down",
+        );
+
+        await app.close();
+
+        process.exit(0);
+    },
+);
 
 start();

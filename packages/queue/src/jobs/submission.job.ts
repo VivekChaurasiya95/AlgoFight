@@ -15,13 +15,38 @@ export const enqueueSubmissionJob = async (
       "Enqueueing submission job",
   );
 
-  return submissionQueue.add(
-    JOB_NAMES.SUBMISSION,
+  try {
+    const job = 
+      await submissionQueue.add(
+        JOB_NAMES.SUBMISSION,
 
-    payload,
+        payload,
 
-    {
-      priority: 1,
-    },
-  );
+        {
+          priority: 1,
+        },
+      );
+
+    logger.info(
+      {
+        submissionId:
+          payload.submissionId,
+        jobId: 
+          job.id,
+      },
+      "Submission job enqueued",
+    );
+
+    return job;
+  } catch (error) {
+    logger.error(
+      {
+        submissionId: payload.submissionId,
+        error,
+      },
+      "Failed to enqueue submission job",
+    );
+
+    throw error;
+  }
 };

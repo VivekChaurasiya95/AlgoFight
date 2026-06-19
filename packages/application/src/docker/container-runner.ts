@@ -2,6 +2,7 @@ import { ContainerConfig } from "../types/containerConfig";
 import { ContainerResult } from "../types/container-result";
 import { ContainerExecutor } from "../contracts/container-executor";
 import { docker } from "./docker-client";
+import { EXECUTION_LIMITS } from "../constants/execution.constants";
 
 export class ContainerRunner implements ContainerExecutor{
 
@@ -17,6 +18,13 @@ export class ContainerRunner implements ContainerExecutor{
 
                 HostConfig: {
                     AutoRemove: true,
+                    Memory: 
+                       EXECUTION_LIMITS.MEMORY_MB
+                        * 1024
+                        * 1024,
+                    NanoCpus:
+                       EXECUTION_LIMITS.CPU_COUNT
+                       * 1_000_000_000,
 
                     Binds: [
                         `${config.workspacePath}:/workspace`,

@@ -23,8 +23,9 @@ import {
 import * as os from "os";
 import * as path from "path";
 import { promises as fs } from "fs";
-import { start } from "repl";
 import { LanguageRuntime } from "../runtimes/language-runtime";
+
+import { logger } from "@algofight/logger";
 export class DockerExecutor
   implements CodeExecutor {
     private readonly containerExecutor:
@@ -49,7 +50,13 @@ export class DockerExecutor
             runtime,
         );
 
-        console.log("Workspace: ",workspace)
+        logger.debug(
+            {
+                workspace,
+                submissionId: payload.submissionId,
+            },
+            "Workspace prepared",
+        )
         try {
             return await this.executeContainer(
                 workspace,

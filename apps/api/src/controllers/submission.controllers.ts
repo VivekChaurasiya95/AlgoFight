@@ -2,6 +2,7 @@
 import { enqueueSubmissionJob } from "@algofight/queue";
 import { SubmissionInput } from "../schema/submission.schema";
 import { SubmissionRepository } from "@algofight/database";
+import { SubmissionStatus } from "@algofight/types";
 
 export class SubmissionController{
     constructor(
@@ -21,6 +22,10 @@ export class SubmissionController{
         await enqueueSubmissionJob({
             submissionId: submission.id,
         });
+        await this.submissionRepository.updateStatus(
+            submission.id,
+            SubmissionStatus.QUEUED
+        )
 
         return submission;
     }

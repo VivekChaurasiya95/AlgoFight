@@ -5,7 +5,7 @@ import {
     InfrastructureError,
     ErrorCode,
 } from "@algofight/error-handling";
-
+import { logger } from "@algofight/logger";
 export async function registerErrorHandler(
     app: FastifyInstance,
 ) {
@@ -23,7 +23,14 @@ export async function registerErrorHandler(
                         "Unexpected internal error",
                         ErrorCode.UNKNOWN_ERROR,
                     );
-
+            logger.error(
+                {
+                    error,
+                    method: request.method,
+                    url: request.url,
+                },
+                "Request failed",
+            );
             return reply
                 .status(
                     appError.statusCode,
