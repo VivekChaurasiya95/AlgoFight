@@ -17,6 +17,32 @@ import { CreateSubmissionInput } from "../contracts/submission.repository";
 
 export class PrismaSubmissionRepository  implements SubmissionRepository{
 
+
+
+  async incrementRetryCount(
+    submissionId: string,
+  ){
+    return prisma.submission.update({
+      where: {
+        id: submissionId,
+      },
+      data: {
+        retryCount: {
+          increment: 1,
+        },
+      },
+    });
+  }
+
+  async markAsStale(
+    submissionId: string,
+  ){
+    return this.updateStatus(
+      submissionId,
+      SubmissionStatus.STALE,
+    )
+  }
+
   async getStaleSubmissions(
     thresholdMs: number,
   ): Promise <string[]>{
@@ -39,6 +65,16 @@ export class PrismaSubmissionRepository  implements SubmissionRepository{
     return submissions.map(
       submission => submission.id,
     )
+  }
+
+  async findById(
+    submissionId: string,
+  ){
+    return prisma.submission.findUnique({
+      where: {
+        id: submissionId,
+      }
+    })
   }
     
   
@@ -94,9 +130,9 @@ export class PrismaSubmissionRepository  implements SubmissionRepository{
     await this.validateTransition(
       submissionId,
       status,
-    )
+    );
 
-    const submission = 
+    const submission =
       await prisma.submission.update({
         where: {
           id: submissionId,
@@ -109,7 +145,7 @@ export class PrismaSubmissionRepository  implements SubmissionRepository{
 
     return toSubmissionEntity(
       submission,
-    )
+    );
   }
 
   async completeSubmission(

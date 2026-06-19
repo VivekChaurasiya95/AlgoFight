@@ -9,4 +9,6 @@ export const RETRY_POLICY = {
 export const RECOVERY_POLICY = {
     STALE_THRESHOLD_MS:
     5 * 60 * 1000,
+    MAX_RETRIES: 3,
+    
 } as const;
