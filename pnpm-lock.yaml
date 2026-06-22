@@ -400,6 +400,8 @@ importers:
         specifier: workspace:*
         version: link:../types
 
+  packages/events: {}
+
   packages/logger:
     dependencies:
       pino:
