@@ -29,3 +29,5 @@ export * from "./application/application.error";
 export * from "./infrastructure/infrastructure.error";
 
 export * from "./factories/error-response.factory";
+
+export * from "./domain/problem-not-found.error";

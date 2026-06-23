@@ -6,6 +6,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
 enum SubmissionStatus {
   CREATED
   QUEUED
@@ -16,12 +22,33 @@ enum SubmissionStatus {
   STALE
 }
 
+model Problem {
+  id String @id @default(uuid())
+
+  title     String
+  statement String
+
+  difficulty Difficulty
+
+  timeLimit   Int
+  memoryLimit Int
+
+  submissions Submission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Submission {
   id String @id @default(uuid())
 
-  language String
+  userId    String?
+  problemId String
 
-  code String
+  problem Problem @relation(fields: [problemId], references: [id])
+
+  language String
+  code     String
 
   status SubmissionStatus @default(CREATED)
 
@@ -29,15 +56,14 @@ model Submission {
   stderr String?
 
   executionTime Int?
-
-  exitCode Int?
+  exitCode      Int?
 
   retryCount Int @default(0)
 
   createdAt DateTime @default(now())
-
   updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([createdAt])
+  @@index([problemId])
 }

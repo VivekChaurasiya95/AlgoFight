@@ -2,6 +2,8 @@ import { SubmissionStatus } from "@algofight/types";
 
 export interface SubmissionEntity {
     id: string,
+    userId: string,
+    problemId: string,
     language: string,
     code: string,
     status: SubmissionStatus,

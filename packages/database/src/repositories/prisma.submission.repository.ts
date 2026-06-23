@@ -86,6 +86,10 @@ export class PrismaSubmissionRepository  implements SubmissionRepository{
     const submission =
       await prisma.submission.create({
         data: {
+          userId: input.userId,
+
+          problemId: input.problemId,
+          
           language: input.language,
           
           code: input.code,

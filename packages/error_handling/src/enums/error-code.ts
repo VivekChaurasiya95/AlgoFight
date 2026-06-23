@@ -8,6 +8,9 @@ export enum ErrorCode {
 
   INVALID_TRANSITION =
     "INVALID_TRANSITION",
+  
+  RESOURCE_NOT_FOUND =
+     "RESOURCE_NOT_FOUND",
 
   // =========================
   // Validation Errors

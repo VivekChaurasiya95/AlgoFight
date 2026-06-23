@@ -9,6 +9,8 @@ export type SubmissionResult = {
 };
 
 export type CreateSubmissionInput = {
+    userId: string,
+    problemId: string,
     language: string,
     code: string,
 }
