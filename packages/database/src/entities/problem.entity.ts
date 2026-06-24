@@ -1,7 +1,11 @@
+import { TestCaseEntity } from "./testCase.entity";
+
 export interface ProblemEntity{
     id: string;
 
     title: string;
+
+    testCase: TestCaseEntity[];
 
     statement: string;
 
