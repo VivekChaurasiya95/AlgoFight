@@ -24,6 +24,9 @@ export class PrismaProblemRepository
                     timeLimit: input.timeLimit,
                     memoryLimit: input.memoryLimit,
                 },
+                include: {
+                    testCases: true,
+                }
             });
 
         return problem;
@@ -36,6 +39,9 @@ export class PrismaProblemRepository
             where: {
                 id: problemId,
             },
+            include: {
+                testCases: true,
+            }
         });
     }
 }

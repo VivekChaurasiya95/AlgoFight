@@ -5,7 +5,7 @@ export interface ProblemEntity{
 
     title: string;
 
-    testCase: TestCaseEntity[];
+    testCases: TestCaseEntity[];
 
     statement: string;
 
