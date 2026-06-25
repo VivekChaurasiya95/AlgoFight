@@ -1,39 +1,14 @@
 import { Verdict } from './verdict';
-
-export type VerdictInput = {
-  isMatch: boolean;
-
-  compilationError?: boolean;
-
-  runtimeError?: boolean;
-
-  timeLimitExceededError?: boolean;
-
-  memoryLimitExceededError?: boolean;
-};
+import { VERDICTS } from './verdict.registry';
+import {VerdictInput} from "../verdict/verdict.types"
+import { TestcaseResult } from '../models/testcase-result';
 
 export class VerdictEngine {
   determineVerdict(input: VerdictInput): Verdict {
-    if (input.compilationError) {
-      return Verdict.COMPILATION_ERROR;
-    }
+    const verdict = VERDICTS.find(v => v.matches(input));
 
-    if (input.runtimeError) {
-      return Verdict.RUNTIME_ERROR;
-    }
-
-    if (input.timeLimitExceededError) {
-      return Verdict.TIME_LIMIT_EXCEEDED;
-    }
-
-    if (input.memoryLimitExceededError) {
-      return Verdict.MEMORY_LIMIT_EXCEEDED;
-    }
-
-    if (input.isMatch) {
-      return Verdict.ACCEPTED;
-    }
-
-    return Verdict.WRONG_ANSWER;
+    return verdict?.name ?? Verdict.WRONG_ANSWER;
   }
+  
+  
 }

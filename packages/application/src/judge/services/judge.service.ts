@@ -7,10 +7,18 @@ from "../verdict/verdict";
 import { VerdictEngine }
 from "../verdict/verdict-engine";
 
+import {TestcaseResult} from "../models/testcase-result";
+
 export type JudgeInput = {
     expectedOutput: string;
 
     actualOutput: string;
+
+    testcaseId: string;
+};
+
+export type JudgeRequest = {
+    testcases: JudgeInput[];
 };
 
 export class JudgeService {
@@ -22,18 +30,27 @@ export class JudgeService {
         new VerdictEngine();
 
     judge(
-        input: JudgeInput,
-    ): Verdict {
+        request: JudgeRequest,
+    ): TestcaseResult[] {
+        const results: TestcaseResult[] = [];
 
-        const isMatch =
-            this.comparator.compare(
-                input.expectedOutput,
-                input.actualOutput,
+        for (const [index, testcase] of request.testcases.entries()){
+
+            const isMatch = this.comparator.compare(
+                testcase.expectedOutput,
+                testcase.actualOutput,
             );
 
-        return this.verdictEngine
-            .determineVerdict({
+            const verdict = this.verdictEngine.determineVerdict({
                 isMatch,
             });
+
+            results.push({
+                testcaseId: testcase.testcaseId,
+                verdict,
+            });
+            
+        }
+        return results;
     }
 }
