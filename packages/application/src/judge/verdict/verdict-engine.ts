@@ -1,5 +1,5 @@
 import { Verdict } from './verdict';
-import { VERDICTS } from './verdict.registry';
+import { VERDICT_MAP, VERDICTS } from './verdict.registry';
 import {VerdictInput} from "../verdict/verdict.types"
 import { TestcaseResult } from '../models/testcase-result';
 
@@ -10,5 +10,18 @@ export class VerdictEngine {
     return verdict?.name ?? Verdict.WRONG_ANSWER;
   }
   
-  
+  aggregate(
+    results: TestcaseResult[],
+  ): Verdict {
+    if(results.length) return Verdict.SYSTEM_ERROR;
+
+    return results.reduce((highest, current) => {
+      const currentRule = VERDICT_MAP.get(current.verdict)!;
+      const highestRule = VERDICT_MAP.get(highest.verdict)!;
+
+      return currentRule.priority > highestRule.priority
+             ? current
+             : highest;
+    }).verdict
+  }
 }

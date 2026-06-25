@@ -26,4 +26,13 @@ export const VERDICTS: readonly VerdictRule[] = [
         priority: 10,
         matches: input => input.isMatch,
     },
+    {
+    name: Verdict.SYSTEM_ERROR,
+    priority: 110,
+    matches: input => !!input.systemError,
+},
 ];
+
+export const VERDICT_MAP = new Map(
+    VERDICTS.map(rule => [rule.name, rule]),
+);

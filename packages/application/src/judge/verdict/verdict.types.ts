@@ -4,4 +4,5 @@ export type VerdictInput = {
     runtimeError?: boolean;
     timeLimitExceededError?: boolean;
     memoryLimitExceededError?: boolean;
+    systemError?: boolean;
 };

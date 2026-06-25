@@ -1,39 +1,10 @@
-import { SubmissionStatus } from "@algofight/types";
+export * from "./shared/state-machine.interface";
+export * from "./shared/transition.interface";
 
-const transitions: Record<SubmissionStatus, SubmissionStatus[]> = {
-  [SubmissionStatus.CREATED]: [
-    SubmissionStatus.QUEUED,
-  ],
+export * from "./submission/submission-state";
+export * from "./submission/submission-transition";
+export * from "./submission/transition-validator";
+export * from "./submission/transition-result";
+export * from "./submission/submission-state-machine";
+export * from "./submission/errors/invalid-transition.error";
 
-  [SubmissionStatus.QUEUED]: [
-    SubmissionStatus.PROCESSING,
-    SubmissionStatus.FAILED,
-  ],
-
-  [SubmissionStatus.PROCESSING]: [
-    SubmissionStatus.COMPLETED,
-    SubmissionStatus.FAILED,
-    SubmissionStatus.RETRYING,
-  ],
-
-  [SubmissionStatus.RETRYING]: [
-    SubmissionStatus.QUEUED,
-    SubmissionStatus.FAILED,
-  ],
-
-  [SubmissionStatus.COMPLETED]: [],
-
-  [SubmissionStatus.FAILED]: [],
-
-  [SubmissionStatus.STALE]: [
-    SubmissionStatus.RETRYING,
-    SubmissionStatus.FAILED,
-  ],
-};
-
-export const canTransition = (
-  current: SubmissionStatus,
-  next: SubmissionStatus,
-): boolean => {
-  return transitions[current].includes(next);
-};

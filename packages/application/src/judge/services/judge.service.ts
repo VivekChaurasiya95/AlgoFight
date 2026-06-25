@@ -1,56 +1,66 @@
-import { ExactComparator }
-from "../comparators/exact-comparator";
+import { ExactComparator } from "../comparators/exact-comparator";
 
-import { Verdict }
-from "../verdict/verdict";
+import { Verdict } from "../verdict/verdict";
+import { VerdictEngine } from "../verdict/verdict-engine";
 
-import { VerdictEngine }
-from "../verdict/verdict-engine";
-
-import {TestcaseResult} from "../models/testcase-result";
-
-export type JudgeInput = {
-    expectedOutput: string;
-
-    actualOutput: string;
-
-    testcaseId: string;
-};
-
-export type JudgeRequest = {
-    testcases: JudgeInput[];
-};
+import { JudgeRequest } from "../models/judge-request";
+import { JudgeInput } from "../models/judge-input";
+import { JudgeResult } from "../models/judge-result";
+import { TestcaseResult } from "../models/testcase-result";
 
 export class JudgeService {
+  private readonly comparator = new ExactComparator();
 
-    private readonly comparator =
-        new ExactComparator();
+  private readonly verdictEngine = new VerdictEngine();
 
-    private readonly verdictEngine =
-        new VerdictEngine();
+  judge(request: JudgeRequest): JudgeResult {
+    const results = request.testcases.map(testcase =>
+      this.judgeTestcase(testcase),
+    );
 
-    judge(
-        request: JudgeRequest,
-    ): TestcaseResult[] {
-        const results: TestcaseResult[] = [];
+    const finalVerdict = this.verdictEngine.aggregate(results);
 
-        for (const [index, testcase] of request.testcases.entries()){
+    const summary = this.buildSummary(results);
 
-            const isMatch = this.comparator.compare(
-                testcase.expectedOutput,
-                testcase.actualOutput,
-            );
+    return {
+      verdict: finalVerdict,
+      testcaseResults: results,
+      ...summary,
+    };
+  }
 
-            const verdict = this.verdictEngine.determineVerdict({
-                isMatch,
-            });
+  private judgeTestcase(
+    testcase: JudgeInput,
+  ): TestcaseResult {
+    const isMatch = this.comparator.compare(
+      testcase.expectedOutput,
+      testcase.actualOutput,
+    );
 
-            results.push({
-                testcaseId: testcase.testcaseId,
-                verdict,
-            });
-            
-        }
-        return results;
-    }
+    const verdict = this.verdictEngine.determineVerdict({
+      isMatch,
+      compilationError: testcase.compilationError,
+      runtimeError: testcase.runtimeError,
+      timeLimitExceededError: testcase.timeLimitExceededError,
+      memoryLimitExceededError: testcase.memoryLimitExceededError,
+    });
+
+    return {
+      testcaseId: testcase.testcaseId,
+      verdict,
+    };
+  }
+
+  private buildSummary(
+    results: TestcaseResult[],
+  ): Pick<JudgeResult, "passedCount" | "failedCount"> {
+    const passedCount = results.filter(
+      result => result.verdict === Verdict.ACCEPTED,
+    ).length;
+
+    return {
+      passedCount,
+      failedCount: results.length - passedCount,
+    };
+  }
 }

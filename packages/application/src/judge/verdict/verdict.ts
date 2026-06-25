@@ -10,4 +10,6 @@ export enum Verdict {
     RUNTIME_ERROR = "RUNTIME_ERROR",
 
     COMPILATION_ERROR = "COMPILATION_ERROR",
+    
+    SYSTEM_ERROR = "SYSTEM_ERROR"
 }
