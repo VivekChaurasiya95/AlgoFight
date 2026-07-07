@@ -1,11 +1,21 @@
 import {SubmissionStatus} from "@algofight/types";
 import { SubmissionEntity } from "../entities/submission.entity";
+
 export type SubmissionResult = {
-    stdout: string | null,
-    stderr: string | null,
+    stdout: string | null;
+
+    stderr: string | null;
+
     executionTime: number;
-    exitCode: number,
-    status: SubmissionStatus,
+
+    exitCode: number;
+
+    status: SubmissionStatus;
+
+
+    passedCount: number;
+
+    failedCount: number;
 };
 
 export type CreateSubmissionInput = {

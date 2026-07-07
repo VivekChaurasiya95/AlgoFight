@@ -30,6 +30,8 @@ import { JudgeRequestBuilder } from "../builder/judge-request-builder";
 import { logger } from "@algofight/logger";
 
 import { ExecutionTestCase } from "../contracts/code-executor";
+import { ContainerResult } from "../types/container-result";
+
 export class DockerExecutor
   implements CodeExecutor {
     private readonly containerExecutor:
@@ -62,11 +64,30 @@ export class DockerExecutor
             "Workspace prepared",
         )
         try {
-            return await this.executeContainer(
-                workspace,
-                payload.memoryLimit,
-                payload.timeLimit,
-                runtime,
+            const startTime = Date.now();
+
+                const containerResult = await this.executeContainer(
+                    workspace,
+                    payload.memoryLimit,
+                    payload.timeLimit,
+                    runtime,
+                );
+
+                const executionTime = Date.now() - startTime;
+
+                const executionResult = this.resultProcessor.process(
+                    containerResult,
+                    executionTime,
+                );
+
+                const judgeRequest = JudgeRequestBuilder.build(
+                    payload.testCases,
+                    containerResult,
+                    executionTime,
+                );
+
+                const judgeResult = this.judgeSerivce.judge(
+                    judgeRequest,
             );
         } finally {
             await this.cleanupWorkspace(
@@ -113,36 +134,15 @@ export class DockerExecutor
         memoryLimit: number,
         timeLimit: number,
         runtime: LanguageRuntime,
-        testCases: ExecutionTestCase[],
-    ): Promise<SubmissionResult> {
-        
-        const config =
-            runtime.createContainerConfig(
-                workspacePath,
-                memoryLimit,
-                timeLimit,
-            );
-        const startTime = Date.now()
-        const containerResult = 
-           await this.containerExecutor.run(
-            config,
-           );
-        const executionTime = 
-           Date.now() - startTime;
+    ): Promise<ContainerResult> {
 
-        const executionResult =  this.resultProcessor.process(
-            containerResult,
-            executionTime,
+        const config = runtime.createContainerConfig(
+            workspacePath,
+            memoryLimit,
+            timeLimit,
         );
 
-        const judgeRequest = JudgeRequestBuilder.build(
-            testCases,
-            containerResult,
-            executionTime,
-        );
-        const judgeResult = await this.judgeSerivce.judge(judgeRequest);
-
-        return executionResult;
+        return await this.containerExecutor.run(config);
     }
     
 
