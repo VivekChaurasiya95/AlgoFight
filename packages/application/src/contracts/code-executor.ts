@@ -3,11 +3,11 @@ export interface ExecutionTestCase {
     input: string;
     expectedOutput: string;
 }
-export type ExecutionPayload = {
+export interface ExecutionPayload  {
     submissionId: string,
     language: string,
     code: string,
-    testcases: ExecutionTestCase[],
+    testCases: ExecutionTestCase[],
     timeLimit: number,
     memoryLimit: number
 };

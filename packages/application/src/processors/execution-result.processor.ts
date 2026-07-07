@@ -1,10 +1,6 @@
 import {
-    SubmissionResult,
-} from "@algofight/database";
-
-import {
-    SubmissionStatus,
-} from "@algofight/types";
+    ExecutionResult,
+} from "./execution-result";
 
 import {
     ContainerResult,
@@ -15,24 +11,16 @@ export class ExecutionResultProcessor {
     process(
         result: ContainerResult,
         executionTime: number,
-    ): SubmissionResult {
+    ): ExecutionResult {
 
         return {
-            stdout:
-                result.stdout,
+            stdout: result.stdout,
 
-            stderr:
-                result.stderr,
+            stderr: result.stderr,
 
-            executionTime,
+            executionTime: executionTime,
 
-            exitCode:
-                result.exitCode,
-
-            status:
-                result.exitCode === 0
-                    ? SubmissionStatus.COMPLETED
-                    : SubmissionStatus.FAILED,
+            exitCode: result.exitCode,
         };
     }
 }

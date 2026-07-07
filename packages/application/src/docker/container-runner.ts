@@ -4,7 +4,7 @@ import { ContainerExecutor } from "../contracts/container-executor";
 import { docker } from "./docker-client";
 import { EXECUTION_LIMITS } from "../constants/execution.constants";
 
-export class ContainerRunner implements ContainerExecutor{
+export class ContainerRunner implements ContainerExecutor {
 
     async run(
         config: ContainerConfig,
@@ -18,13 +18,14 @@ export class ContainerRunner implements ContainerExecutor{
 
                 HostConfig: {
                     AutoRemove: true,
-                    Memory: 
-                       EXECUTION_LIMITS.MEMORY_MB
-                        * 1024
-                        * 1024,
+
+                    // Per-problem memory limit
+                    Memory:
+                        config.memoryLimit * 1024 * 1024,
+
+                    // Platform-wide CPU limit
                     NanoCpus:
-                       EXECUTION_LIMITS.CPU_COUNT
-                       * 1_000_000_000,
+                        EXECUTION_LIMITS.CPU_COUNT * 1_000_000_000,
 
                     Binds: [
                         `${config.workspacePath}:/workspace`,
@@ -43,16 +44,22 @@ export class ContainerRunner implements ContainerExecutor{
             const executionResult =
                 await container.wait();
 
-            const logs =
+            const stdoutLogs =
                 await container.logs({
                     stdout: true,
+                    stderr: false,
+                });
+
+            const stderrLogs =
+                await container.logs({
+                    stdout: false,
                     stderr: true,
                 });
 
             return {
-                stdout: logs.toString(),
+                stdout: stdoutLogs.toString(),
 
-                stderr: "",
+                stderr: stderrLogs.toString(),
 
                 exitCode:
                     executionResult.StatusCode ?? 1,

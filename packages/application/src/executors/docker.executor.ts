@@ -25,13 +25,17 @@ import * as path from "path";
 import { promises as fs } from "fs";
 import { LanguageRuntime } from "../runtimes/language-runtime";
 
+import { JudgeService } from "../judge/services/judge.service";
+import { JudgeRequestBuilder } from "../builder/judge-request-builder";
 import { logger } from "@algofight/logger";
+
+import { ExecutionTestCase } from "../contracts/code-executor";
 export class DockerExecutor
   implements CodeExecutor {
     private readonly containerExecutor:
     ContainerExecutor =
         new ContainerRunner();
-    
+    private readonly judgeSerivce = new JudgeService()
     private readonly resultProcessor =
       new ExecutionResultProcessor();
 
@@ -60,6 +64,8 @@ export class DockerExecutor
         try {
             return await this.executeContainer(
                 workspace,
+                payload.memoryLimit,
+                payload.timeLimit,
                 runtime,
             );
         } finally {
@@ -104,12 +110,17 @@ export class DockerExecutor
 
     private async executeContainer(
         workspacePath: string,
+        memoryLimit: number,
+        timeLimit: number,
         runtime: LanguageRuntime,
+        testCases: ExecutionTestCase[],
     ): Promise<SubmissionResult> {
         
         const config =
             runtime.createContainerConfig(
                 workspacePath,
+                memoryLimit,
+                timeLimit,
             );
         const startTime = Date.now()
         const containerResult = 
@@ -119,10 +130,19 @@ export class DockerExecutor
         const executionTime = 
            Date.now() - startTime;
 
-        return this.resultProcessor.process(
+        const executionResult =  this.resultProcessor.process(
             containerResult,
             executionTime,
         );
+
+        const judgeRequest = JudgeRequestBuilder.build(
+            testCases,
+            containerResult,
+            executionTime,
+        );
+        const judgeResult = await this.judgeSerivce.judge(judgeRequest);
+
+        return executionResult;
     }
     
 

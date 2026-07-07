@@ -12,6 +12,7 @@ import { SubmissionStatus } from "@algofight/types";
 
 import {
     SubmissionNotFoundError,
+    ProblemNotFoundError
 } from "@algofight/error-handling";
 
 export class ExecutionService {
@@ -56,14 +57,20 @@ export class ExecutionService {
                 submissionId,
                 SubmissionStatus.PROCESSING,
             );
-
-            const result =
-                await this.codeExecutor.execute({
-                    submissionId,
-                    language: submission.language,
-                    code: submission.code,
-                    testcases:
-                });
+            if (!problem) {
+            throw new ProblemNotFoundError(submission.problemId);
+}
+            const result = await this.codeExecutor.execute({
+                submissionId,
+                language: submission.language,
+                code: submission.code,
+                testCases: problem.testCases.map(tc => ({
+                    input: tc.input,
+                    expectedOutput: tc.expectedOutput,
+                })),
+                timeLimit: problem.timeLimit,
+                memoryLimit: problem.memoryLimit,
+            });
 
             await this.submissionRepository.completeSubmission(
                 submissionId,

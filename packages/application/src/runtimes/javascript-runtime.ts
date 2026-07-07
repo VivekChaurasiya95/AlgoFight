@@ -11,6 +11,8 @@ export class JavaScriptRuntime
     }
     createContainerConfig(
         workspacePath: string,
+        memoryLimit: number,
+        timeLimit: number,
     ): ContainerConfig {
 
         return {
@@ -22,6 +24,8 @@ export class JavaScriptRuntime
             ],
 
             workspacePath,
+            memoryLimit,
+            timeLimit
         };
     }
 }
