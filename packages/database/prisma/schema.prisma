@@ -58,7 +58,7 @@ model Problem {
 model Submission {
   id String @id @default(uuid())
 
-  userId    String?
+  userId    String
   problemId String
 
   problem Problem @relation(fields: [problemId], references: [id])

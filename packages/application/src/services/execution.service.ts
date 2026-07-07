@@ -1,7 +1,9 @@
 import {
     SubmissionRepository,
 } from "@algofight/database";
-
+import {
+    ProblemRepository
+} from "@algofight/database";
 import { logger } from "@algofight/logger";
 
 import { CodeExecutor } from "../contracts/code-executor";
@@ -19,6 +21,9 @@ export class ExecutionService {
 
         private readonly codeExecutor:
             CodeExecutor,
+        
+        private readonly problemRepository:
+            ProblemRepository,
     ) {}
 
     async processSubmission(
@@ -36,12 +41,16 @@ export class ExecutionService {
                 await this.submissionRepository.getSubmissionById(
                     submissionId,
                 );
-
-            if (!submission) {
-                throw new SubmissionNotFoundError(
-                    submissionId,
-                );
-            }
+                
+                if (!submission) {
+                    throw new SubmissionNotFoundError(
+                        submissionId,
+                    );
+                }
+            const problem = 
+                    await this.problemRepository.getProblemById(
+                    submission?.problemId
+            )
 
             await this.submissionRepository.updateStatus(
                 submissionId,
@@ -53,6 +62,7 @@ export class ExecutionService {
                     submissionId,
                     language: submission.language,
                     code: submission.code,
+                    testcases:
                 });
 
             await this.submissionRepository.completeSubmission(
