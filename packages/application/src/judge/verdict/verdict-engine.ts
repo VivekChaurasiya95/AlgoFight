@@ -1,6 +1,6 @@
 import { Verdict } from './verdict';
 import { VERDICT_MAP, VERDICTS } from './verdict.registry';
-import {VerdictInput} from "../verdict/verdict.types"
+import {VerdictInput} from "./verdict.types"
 import { TestcaseResult } from '../models/testcase-result';
 
 export class VerdictEngine {
@@ -13,7 +13,7 @@ export class VerdictEngine {
   aggregate(
     results: TestcaseResult[],
   ): Verdict {
-    if(results.length) return Verdict.SYSTEM_ERROR;
+    if(results.length == 0) return Verdict.SYSTEM_ERROR;
 
     return results.reduce((highest, current) => {
       const currentRule = VERDICT_MAP.get(current.verdict)!;

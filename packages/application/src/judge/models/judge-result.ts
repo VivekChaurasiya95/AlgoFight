@@ -1,4 +1,4 @@
-import { Verdict } from "../verdict/verdict";
+import { Verdict } from "@algofight/types";
 import { TestcaseResult } from "./testcase-result";
 
 export interface JudgeResult {

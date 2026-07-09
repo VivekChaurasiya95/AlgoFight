@@ -1,7 +1,6 @@
 import { ExactComparator } from "../comparators/exact-comparator";
 
-import { Verdict } from "../verdict/verdict";
-import { VerdictEngine } from "../verdict/verdict-engine";
+import { Verdict, VerdictEngine } from "@algofight/types";
 
 import { JudgeRequest } from "../models/judge-request";
 import { JudgeInput } from "../models/judge-input";

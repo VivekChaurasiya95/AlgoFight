@@ -28,6 +28,7 @@ import { LanguageRuntime } from "../runtimes/language-runtime";
 import { JudgeService } from "../judge/services/judge.service";
 import { JudgeRequestBuilder } from "../builder/judge-request-builder";
 import { logger } from "@algofight/logger";
+import { SubmissionStatus } from "@algofight/types";
 
 import { ExecutionTestCase } from "../contracts/code-executor";
 import { ContainerResult } from "../types/container-result";
@@ -89,6 +90,13 @@ export class DockerExecutor
                 const judgeResult = this.judgeSerivce.judge(
                     judgeRequest,
             );
+
+                return {
+                    ...executionResult,
+                    status: SubmissionStatus.COMPLETED,
+                    passedCount: judgeResult.passedCount,
+                    failedCount: judgeResult.failedCount,
+                };
         } finally {
             await this.cleanupWorkspace(
                 workspace,

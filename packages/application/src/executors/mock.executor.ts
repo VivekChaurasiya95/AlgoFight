@@ -77,6 +77,12 @@ export class MockExecutor
 
             status:
                 SubmissionStatus.COMPLETED,
+
+            passedCount:
+                payload.testCases.length,
+
+            failedCount:
+                0,
         };
     }
 }

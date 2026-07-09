@@ -21,3 +21,9 @@ export enum SystemEvent {
 }
 
 export type UUID = string;
+
+export * from "../../application/src/judge/verdict/verdict";
+export * from "../../application/src/judge/verdict/verdict-engine";
+export * from "../../application/src/judge/verdict/verdict.interface";
+export * from "../../application/src/judge/verdict/verdict.registry";
+export * from "../../application/src/judge/verdict/verdict.types";
