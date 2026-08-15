@@ -1,0 +1,23 @@
+{
+    "name": "@algofight/websocket",
+    "version": "1.0.0",
+    "private": true,
+    "main": "src/index.ts",
+    "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "build": "tsc"
+    },
+    "dependencies": {
+        "@algofight/application": "workspace:*",
+        "@algofight/config": "workspace:*",
+        "@algofight/database": "workspace:*",
+        "@algofight/logger": "workspace:*",
+        "@algofight/types": "workspace:*",
+        "ws": "^8.18.0"
+    },
+    "devDependencies": {
+        "@types/ws": "^8.5.14",
+        "tsx": "^4.22.3",
+        "typescript": "^6.0.3"
+    }
+}

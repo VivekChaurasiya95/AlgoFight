@@ -8,6 +8,7 @@
     "@algofight/application": "workspace:*",
     "@algofight/database": "workspace:*",
     "@algofight/queue": "workspace:*",
+    "@algofight/logger": "workspace:*",
     "@algofight/types": "workspace:*",
     "@algofight/config": "workspace:*",
     "bullmq": "^5.58.0"

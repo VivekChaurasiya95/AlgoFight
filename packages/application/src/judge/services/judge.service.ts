@@ -1,39 +1,40 @@
-import { ExactComparator } from "../comparators/exact-comparator";
-
-import { Verdict, VerdictEngine } from "@algofight/types";
-
+import { Verdict } from "@algofight/types";
+import { VerdictEngine } from "../verdict/verdict-engine";
 import { JudgeRequest } from "../models/judge-request";
-import { JudgeInput } from "../models/judge-input";
 import { JudgeResult } from "../models/judge-result";
+import { JudgeInput } from "../models/judge-input";
 import { TestcaseResult } from "../models/testcase-result";
+import { ExactComparator } from "../comparators/exact-comparator";
 
 export class JudgeService {
   private readonly comparator = new ExactComparator();
-
   private readonly verdictEngine = new VerdictEngine();
 
   judge(request: JudgeRequest): JudgeResult {
-    const results = request.testcases.map(testcase =>
-      this.judgeTestcase(testcase),
+    const results = request.testcases.map((testcase) =>
+      this.judgeTestcase(testcase)
     );
 
     const finalVerdict = this.verdictEngine.aggregate(results);
 
-    const summary = this.buildSummary(results);
+    const passedCount = results.filter(
+      (result) => result.verdict === Verdict.ACCEPTED
+    ).length;
+
+    const failedCount = results.length - passedCount;
 
     return {
       verdict: finalVerdict,
       testcaseResults: results,
-      ...summary,
+      passedCount,
+      failedCount,
     };
   }
 
-  private judgeTestcase(
-    testcase: JudgeInput,
-  ): TestcaseResult {
+  private judgeTestcase(testcase: JudgeInput): TestcaseResult {
     const isMatch = this.comparator.compare(
       testcase.expectedOutput,
-      testcase.actualOutput,
+      testcase.actualOutput
     );
 
     const verdict = this.verdictEngine.determineVerdict({
@@ -47,19 +48,6 @@ export class JudgeService {
     return {
       testcaseId: testcase.testcaseId,
       verdict,
-    };
-  }
-
-  private buildSummary(
-    results: TestcaseResult[],
-  ): Pick<JudgeResult, "passedCount" | "failedCount"> {
-    const passedCount = results.filter(
-      result => result.verdict === Verdict.ACCEPTED,
-    ).length;
-
-    return {
-      passedCount,
-      failedCount: results.length - passedCount,
     };
   }
 }

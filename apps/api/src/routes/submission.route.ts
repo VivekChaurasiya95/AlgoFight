@@ -3,6 +3,7 @@ import { SubmissionController } from "../controllers/submission.controllers";
 
 import {
     PrismaSubmissionRepository,
+    PrismaProblemRepository
 } from "@algofight/database";
 
 import {
@@ -10,8 +11,10 @@ import {
     submissionSchema,
 } from "../schema/submission.schema";
 const submissionRepository = new PrismaSubmissionRepository();
+const problemRepository = new PrismaProblemRepository();
 const submissionController = new SubmissionController(
     submissionRepository,
+    problemRepository
 );
 
 export async function submissionRoutes(
@@ -29,7 +32,7 @@ export async function submissionRoutes(
                 body,
             )
 
-            
+
         },
     );
 

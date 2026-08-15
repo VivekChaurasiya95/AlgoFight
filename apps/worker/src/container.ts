@@ -1,9 +1,14 @@
-import { ExecutionService } from "@algofight/application";
-import { PrismaSubmissionRepository } from "@algofight/database";
-import { DockerExecutor } from "@algofight/application";
+import { ExecutionService, DockerExecutor } from "@algofight/application";
+import {
+    PrismaSubmissionRepository,
+    PrismaProblemRepository,
+} from "@algofight/database";
+
 const submissionRepository = new PrismaSubmissionRepository();
+const problemRepository = new PrismaProblemRepository();
 
 export const executionService = new ExecutionService(
     submissionRepository,
-    new DockerExecutor()
+    new DockerExecutor(),
+    problemRepository
 );

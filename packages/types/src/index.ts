@@ -20,10 +20,14 @@ export enum SystemEvent {
     SYSTEM_ALERT = "system.alert",
 }
 
-export type UUID = string;
+export enum Verdict {
+    ACCEPTED = "ACCEPTED",
+    WRONG_ANSWER = "WRONG_ANSWER",
+    TIME_LIMIT_EXCEEDED = "TIME_LIMIT_EXCEEDED",
+    MEMORY_LIMIT_EXCEEDED = "MEMORY_LIMIT_EXCEEDED",
+    RUNTIME_ERROR = "RUNTIME_ERROR",
+    COMPILATION_ERROR = "COMPILATION_ERROR",
+    SYSTEM_ERROR = "SYSTEM_ERROR",
+}
 
-export * from "../../application/src/judge/verdict/verdict";
-export * from "../../application/src/judge/verdict/verdict-engine";
-export * from "../../application/src/judge/verdict/verdict.interface";
-export * from "../../application/src/judge/verdict/verdict.registry";
-export * from "../../application/src/judge/verdict/verdict.types";
+export type UUID = string;

@@ -5,6 +5,20 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  email     String   @unique
+  rating    Int      @default(1200) // Base ELO rating
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  submissions  Submission[]
+  participants BattleParticipant[]
+  hostedRooms  BattleRoom[]        @relation("HostedRooms")
+}
+
 
 enum Difficulty {
   EASY
@@ -36,50 +50,83 @@ model TestCase {
 }
 
 model Problem {
-  id String @id @default(uuid())
-
-  title     String
-  statement String
-
-  difficulty Difficulty
-
-  timeLimit   Int
-  memoryLimit Int
-
+  id          String       @id @default(uuid())
+  title       String
+  statement   String
+  difficulty  Difficulty
+  timeLimit   Int          // in milliseconds
+  memoryLimit Int          // in MB
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  testCases   TestCase[]
   submissions Submission[]
-
-
-
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  testCases TestCase[]
+  battleRooms BattleRoom[]
 }
+
 
 model Submission {
   id String @id @default(uuid())
-
   userId    String
+  user      User     @relation(fields: [userId], references: [id]) // 👈 Add this line
   problemId String
-
-  problem Problem @relation(fields: [problemId], references: [id])
-
+  problem   Problem  @relation(fields: [problemId], references: [id])
   language String
   code     String
-
   status SubmissionStatus @default(CREATED)
-
   stdout String?
   stderr String?
-
   executionTime Int?
   exitCode      Int?
-
   retryCount Int @default(0)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  @@index([userId])
   @@index([status])
   @@index([createdAt])
   @@index([problemId])
+}
+
+
+enum BattleRoomStatus {
+  WAITING     // In lobby, waiting for players
+  READY       // All players ready, countdown started
+  RUNNING     // Battle in progress
+  FINISHED    // Battle concluded
+  CANCELLED   // Room closed/abandoned
+}
+
+
+model BattleRoom {
+  id          String           @id @default(uuid())
+  roomCode    String           @unique // e.g. "BTL-8492" for joining
+  hostId      String
+  host        User             @relation("HostedRooms", fields: [hostId], references: [id])
+  maxPlayers  Int              @default(2)
+  status      BattleRoomStatus @default(WAITING)
+  problemId   String?
+  problem     Problem?         @relation(fields: [problemId], references: [id])
+  timeLimitMinutes Int         @default(15)
+  startedAt        DateTime?
+  endedAt          DateTime?
+  createdAt        DateTime    @default(now())
+  participants BattleParticipant[]
+  @@index([hostId])
+  @@index([status])
+  @@index([roomCode])
+}
+
+
+
+model BattleParticipant {
+  roomId    String
+  userId    String
+  joinedAt  DateTime @default(now())
+  isReady   Boolean  @default(false)
+  score     Int      @default(0)
+  rank      Int?     // Final placement (1st, 2nd, etc.)
+  solvedAt  DateTime? // Timestamp when accepted solution was submitted
+  room      BattleRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([roomId, userId])
+  @@index([userId])
 }

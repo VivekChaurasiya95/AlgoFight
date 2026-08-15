@@ -1,25 +1,15 @@
 import "@algofight/config";
 import "@algofight/queue/src/workers/submission.worker";
-import { logger } from "../../../packages/logger/src";
-logger.info(
-    "Worker service started,"
-)
+import { logger } from "@algofight/logger"; // 👈 Clean package import
 
-process.on(
-    "SIGINT",
-    () => {
-        logger.info(
-            "Worker shutting down",
-        );
-        process.exit(0);
-    }
-)
-process.on(
-    "SIGTERM",
-    () => {
-        logger.info(
-            "Worker shutting down",
-        );
-        process.exit(0);
-    }
-)
+logger.info("Worker service started");
+
+process.on("SIGINT", () => {
+    logger.info("Worker shutting down");
+    process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+    logger.info("Worker shutting down");
+    process.exit(0);
+});
