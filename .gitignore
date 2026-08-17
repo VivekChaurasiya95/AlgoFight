@@ -28,4 +28,5 @@ Thumbs.db
 .idea
 *.swp
 
-scripts/seed-problems.ts
+scripts/seed-problems.ts
+frontend/src/firebaseConfig.js
