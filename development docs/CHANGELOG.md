@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+# [1.1.0] - 2026-08-17
+
+### Added - Frontend Integration & Performance Milestone
+* **108 Problem Database Seeder**: Seeded 108 algorithmic challenges across 13 topics (Easy/Medium/Hard) with public and hidden test suites (`scripts/seed-problems.ts`).
+* **Performance Optimization**: Reduced initial bundle load by removing unused 2.2MB physics package and implementing `React.lazy()` route-level code splitting + Rollup manual chunking.
+* **WebSocket Matchmaking Enhancements**: Added 2.5s auto-fallback to AI Challenger (`AlgoBot (1200)`) for solo play and multi-tab local testing support.
+* **Profile & Problem Data Syncing**: Aligned Prisma PostgreSQL schema fields (`statement`, `expectedOutput`, `user.email`) across Profile and Practice views.
+
+# [1.0.0] - 2026-08-17
+
+### Added - Version 1 Core Milestone
+* **Battle State Machine**: Integrated full multiplayer room lifecycle (`WAITING` <-> `READY` -> `RUNNING` -> `FINISHED` / `CANCELLED`) with atomic transactions.
+* **Matchmaking System**: Characteristic-based (ELO) dynamic matchmaking queue with expanding rating search windows and auto-ready pairings.
+* **Battle Submissions & Scoring**: Linked submissions directly to battle rooms (`Submission.roomId`), automatically updating participant scores (`100`) and timestamp (`solvedAt`) on accepted verdicts.
+* **Ranking & ELO Resolution**: Dynamic 1st, 2nd, ... placement calculation with automated ELO updates via `RatingService`.
+* **Battle Expiration Scheduler**: Background job in `apps/scheduler` auto-finalizing battles when `timeLimitMinutes` is exceeded.
+* **Hidden-Test Protection**: Public problem queries filter out `isHidden: true` test cases to prevent client leaks.
+* **Real-time WebSockets**: Standalone WebSocket server with `ConnectionManager` and room/user event handling.
+* **API Validation & Errors**: Zod schema validation on all routes with centralized `@algofight/error-handling`.
+* **End-to-End Integration Suite**: Automated integration test `test-v1-e2e-battle.ts` testing the complete 1v1 battle lifecycle.
+
 ---
 
 # [Unreleased]

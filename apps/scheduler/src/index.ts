@@ -1,42 +1,40 @@
-import {
-    runStaleSubmissionJob,
-} from "./jobs/stale-submission.job";
-
-import {
-    SCHEDULER_INTERVALS,
-} from "./constants/scheduler.constants";
+import { runStaleSubmissionJob } from "./jobs/stale-submission.job";
+import { runBattleExpirationJob } from "./jobs/battle-expiration.job";
+import { SCHEDULER_INTERVALS } from "./constants/scheduler.constants";
 import { logger } from "@algofight/logger";
 
-logger.info({interval: SCHEDULER_INTERVALS.STALE_CHECK,},"Scheduler service has started");
-const schedulerInterval = setInterval(
-    async () => {
-        try {
-            await runStaleSubmissionJob();
-        } catch (error) {
-            logger.error(
-                { error },
-                "Stale submission job failed",
-            );
-        }
+logger.info(
+    {
+        staleInterval: SCHEDULER_INTERVALS.STALE_CHECK,
+        battleInterval: SCHEDULER_INTERVALS.BATTLE_EXPIRATION_CHECK,
     },
-    SCHEDULER_INTERVALS.STALE_CHECK,
+    "Scheduler service has started",
 );
 
-process.on(
-    "SIGINT",
-    () => {
-        logger.info("Scheduler shutting down");
+// 1. Periodic stale submission check
+const staleInterval = setInterval(async () => {
+    try {
+        await runStaleSubmissionJob();
+    } catch (error) {
+        logger.error({ error }, "Stale submission job failed");
+    }
+}, SCHEDULER_INTERVALS.STALE_CHECK);
 
-        clearInterval(
-            schedulerInterval,
-        )
-        process.exit(0);
+// 2. Periodic battle expiration check
+const expirationInterval = setInterval(async () => {
+    try {
+        await runBattleExpirationJob();
+    } catch (error) {
+        logger.error({ error }, "Battle expiration job failed");
     }
-)
-process.on(
-    "SIGTERM",
-    () => {
-        logger.info("Scheduler shutting down");
-        process.exit(0);
-    }
-)
+}, SCHEDULER_INTERVALS.BATTLE_EXPIRATION_CHECK);
+
+const shutdown = () => {
+    logger.info("Scheduler shutting down");
+    clearInterval(staleInterval);
+    clearInterval(expirationInterval);
+    process.exit(0);
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);

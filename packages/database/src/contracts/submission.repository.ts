@@ -1,4 +1,4 @@
-import {SubmissionStatus} from "@algofight/types";
+import { SubmissionStatus } from "@algofight/types";
 import { SubmissionEntity } from "../entities/submission.entity";
 
 export type SubmissionResult = {
@@ -21,29 +21,30 @@ export type SubmissionResult = {
 export type CreateSubmissionInput = {
     userId: string,
     problemId: string,
+    roomId?: string;
     language: string,
     code: string,
 }
-export interface SubmissionRepository{
+export interface SubmissionRepository {
     getStaleSubmissions(
         thresholdMs: number,
-    ): Promise <string[]>
+    ): Promise<string[]>
     createSubmission(
         input: CreateSubmissionInput,
     ): Promise<SubmissionEntity>;
 
     getSubmissionById(
         submissionId: string,
-    ): Promise <SubmissionEntity | null>;
+    ): Promise<SubmissionEntity | null>;
     updateStatus(
         submissionId: string,
         status: SubmissionStatus,
-    ): Promise <SubmissionEntity>;
+    ): Promise<SubmissionEntity>;
 
     completeSubmission(
         submissionId: string,
         result: SubmissionResult
-    ): Promise <SubmissionEntity>;
+    ): Promise<SubmissionEntity>;
 
-    getAllSubmission(): Promise <SubmissionEntity[]>;
+    getAllSubmission(): Promise<SubmissionEntity[]>;
 }

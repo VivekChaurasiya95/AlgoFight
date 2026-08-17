@@ -1,0 +1,123 @@
+/* ===== HUD MODAL STYLES ===== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 2, 8, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 120;
+  backdrop-filter: blur(5px);
+}
+
+.modal-card {
+  width: 420px;
+  background: var(--bg-card);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-dim);
+  color: var(--text-primary);
+  position: relative;
+  backdrop-filter: blur(10px);
+}
+
+/* HUD corner brackets */
+.modal-card::before,
+.modal-card::after {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-color: var(--hud-cyan);
+  border-style: solid;
+}
+
+.modal-card::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+.modal-card::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+.modal-card h3 {
+  font-family: var(--font-display);
+  margin: 0 0 var(--spacing-sm);
+  color: var(--hud-cyan);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  text-shadow: var(--glow-text);
+}
+
+.modal-info {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+.ready-row {
+  margin-bottom: var(--spacing-md);
+}
+
+.status {
+  padding: 8px 12px;
+  display: inline-block;
+  font-weight: var(--font-semibold);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.status.ok {
+  background: rgba(0, 255, 136, 0.1);
+  color: var(--hud-green);
+  border: 1px solid var(--hud-green);
+}
+
+.status.no {
+  background: rgba(255, 85, 85, 0.1);
+  color: var(--hud-red);
+  border: 1px solid var(--hud-red);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+.btn {
+  padding: 8px 16px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  transition: all var(--transition-normal);
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+}
+
+.btn.ghost:hover {
+  border-color: var(--border-bright);
+  color: var(--text-primary);
+}
+
+.btn.primary {
+  background: transparent;
+  color: var(--hud-cyan);
+  border: 1px solid var(--hud-cyan);
+}
+
+.btn.primary:hover {
+  background: rgba(0, 240, 255, 0.1);
+  box-shadow: var(--glow-cyan);
+}

@@ -40,7 +40,6 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
                 },
             });
 
-            // Automatically add host as the first participant
             await tx.battleParticipant.create({
                 data: {
                     roomId: created.id,
@@ -119,10 +118,7 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
             const wasHost = room.hostId === userId;
 
             await tx.battleParticipant.deleteMany({
-                where: {
-                    roomId,
-                    userId,
-                },
+                where: { roomId, userId },
             });
 
             const remaining = await tx.battleParticipant.findMany({
@@ -130,7 +126,6 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
             });
 
             if (remaining.length === 0 || wasHost) {
-                // If host leaves or room is empty, cancel room
                 await tx.battleRoom.update({
                     where: { id: roomId },
                     data: { status: "CANCELLED" },
@@ -147,14 +142,34 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
     async setPlayerReady(roomId: string, userId: string, isReady: boolean): Promise<BattleRoomEntity> {
         const room = await prisma.$transaction(async (tx) => {
             await tx.battleParticipant.update({
-                where: {
-                    roomId_userId: {
-                        roomId,
-                        userId,
-                    },
-                },
+                where: { roomId_userId: { roomId, userId } },
                 data: { isReady },
             });
+
+            const participants = await tx.battleParticipant.findMany({
+                where: { roomId },
+            });
+
+            const currentRoom = await tx.battleRoom.findUniqueOrThrow({
+                where: { id: roomId },
+            });
+
+            const allReady = participants.length >= 2 && participants.every((p) => p.isReady);
+
+            // Auto-transition WAITING <-> READY
+            let newStatus = currentRoom.status;
+            if (currentRoom.status === "WAITING" && allReady) {
+                newStatus = "READY";
+            } else if (currentRoom.status === "READY" && !allReady) {
+                newStatus = "WAITING";
+            }
+
+            if (newStatus !== currentRoom.status) {
+                await tx.battleRoom.update({
+                    where: { id: roomId },
+                    data: { status: newStatus },
+                });
+            }
 
             return tx.battleRoom.findUniqueOrThrow({
                 where: { id: roomId },
@@ -192,23 +207,40 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
         return this.mapToEntity(room);
     }
 
+    async updateParticipantRank(roomId: string, userId: string, rank: number): Promise<void> {
+        await prisma.battleParticipant.update({
+            where: { roomId_userId: { roomId, userId } },
+            data: { rank },
+        });
+    }
+
     async recordParticipantScore(
         roomId: string,
         userId: string,
         score: number,
-        isSolved: boolean
+        isSolved: boolean,
     ): Promise<void> {
         await prisma.battleParticipant.update({
-            where: {
-                roomId_userId: {
-                    roomId,
-                    userId,
-                },
-            },
+            where: { roomId_userId: { roomId, userId } },
             data: {
                 score,
                 solvedAt: isSolved ? new Date() : undefined,
             },
         });
+    }
+
+    async getExpiredRooms(): Promise<BattleRoomEntity[]> {
+        const runningRooms = await prisma.battleRoom.findMany({
+            where: { status: "RUNNING", startedAt: { not: null } },
+            include: { participants: true },
+        });
+
+        const now = Date.now();
+        const expired = runningRooms.filter((room) => {
+            const expiryTime = room.startedAt!.getTime() + room.timeLimitMinutes * 60 * 1000;
+            return now > expiryTime;
+        });
+
+        return expired.map((r) => this.mapToEntity(r));
     }
 }

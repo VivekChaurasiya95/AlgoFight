@@ -3,19 +3,22 @@ import { ExecutionService, DockerExecutor } from "@algofight/application";
 import { logger } from "@algofight/logger";
 import {
   PrismaSubmissionRepository,
-  PrismaProblemRepository, // 👈 1. Import PrismaProblemRepository
+  PrismaProblemRepository,
+  PrismaBattleRoomRepository,
 } from "@algofight/database";
 import { redisConnection } from "../client/redis";
 import { QUEUE_NAMES } from "../constants/queue.constants";
 
 const submissionRepository = new PrismaSubmissionRepository();
-const problemRepository = new PrismaProblemRepository(); // 👈 2. Instantiate
+const problemRepository = new PrismaProblemRepository();
+const battleRoomRepository = new PrismaBattleRoomRepository();
 const codeExecutor = new DockerExecutor();
 
 const executionService = new ExecutionService(
   submissionRepository,
   codeExecutor,
-  problemRepository // 👈 3. Pass as 3rd argument
+  problemRepository,
+  battleRoomRepository,
 );
 
 export const submissionWorker = new Worker(
@@ -26,7 +29,7 @@ export const submissionWorker = new Worker(
   {
     connection: redisConnection,
     concurrency: 5,
-  }
+  },
 );
 
 submissionWorker.on("completed", (job) => {
@@ -42,5 +45,5 @@ logger.info(
     queue: QUEUE_NAMES.SUBMISSION,
     concurrency: 5,
   },
-  "Submission worker initialized"
+  "Submission worker initialized",
 );

@@ -1,0 +1,515 @@
+/* ===== FUTURISTIC HUD INTERFACE - GLOBAL CSS ===== */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;600&family=Share+Tech+Mono&display=swap');
+
+:root {
+  /* === PRIMARY COLORS - CYBERPUNK PALETTE === */
+  --hud-cyan: #00e5ff;
+  --hud-cyan-dim: #008899;
+  --hud-blue: #0055ff;
+  --hud-purple: #8a2be2;
+  --hud-white: #ffffff;
+  
+  /* === BACKGROUNDS === */
+  --bg-void: #000000;
+  --bg-space: #030303;
+  --bg-panel: rgba(0, 0, 0, 0.85);
+  --bg-panel-solid: #050505;
+  --bg-card: rgba(0, 20, 30, 0.4);
+  --bg-card-hover: rgba(0, 30, 50, 0.7);
+  --bg-elevated: rgba(0, 229, 255, 0.05);
+  
+  /* === BORDERS === */
+  --border-dim: rgba(0, 229, 255, 0.2);
+  --border-default: rgba(0, 229, 255, 0.4);
+  --border-bright: rgba(0, 229, 255, 0.8);
+  --border-active: var(--hud-cyan);
+  
+  /* === TEXT === */
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.85);
+  --text-dim: rgba(0, 229, 255, 0.6);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  
+  /* === GLOWS & SHADOWS === */
+  --glow-cyan: 0 0 15px rgba(0, 229, 255, 0.4);
+  --glow-cyan-intense: 0 0 20px rgba(0, 229, 255, 0.6), 0 0 40px rgba(0, 229, 255, 0.2);
+  --glow-text: 0 0 8px rgba(0, 229, 255, 0.7);
+  --shadow-panel: 0 4px 30px rgba(0, 0, 0, 0.8);
+  
+  /* === SPACING === */
+  --spacing-xs: 8px;
+  --spacing-sm: 16px;
+  --spacing-md: 24px;
+  --spacing-lg: 32px;
+  --spacing-xl: 48px;
+  --spacing-2xl: 64px;
+  
+  /* === BORDERS RADIUS === */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  
+  /* === TRANSITIONS === */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.4s ease;
+  
+  /* === TYPOGRAPHY === */
+  --font-display: 'Orbitron', sans-serif;
+  --font-primary: 'Inter', sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+  
+  --font-xs: 0.7rem;
+  --font-sm: 0.85rem;
+  --font-base: 1rem;
+  --font-md: 1.125rem;
+  --font-lg: 1.25rem;
+  --font-xl: 1.5rem;
+  --font-2xl: 2rem;
+  --font-3xl: 2.75rem;
+  --font-4xl: 3.5rem;
+  
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  --letter-spacing-wide: 0.15em;
+  --letter-spacing-wider: 0.25em;
+  --letter-spacing-widest: 0.4em;
+  
+  /* === LAYOUT === */
+  --container-max: 1200px;
+  --container-narrow: 900px;
+  --card-padding: var(--spacing-md);
+  --card-border-width: 1px;
+
+  /* === Ambient Background Art === */
+  --ambient-bg-art: url('/bg-editor-overlay.svg');
+}
+
+/* ===== BASE RESET ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===== SPACE BACKGROUND WITH GRID ===== */
+html, body {
+  background-color: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+  font-size: var(--font-base);
+  font-weight: var(--font-normal);
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+  overflow-x: hidden;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-image: 
+    /* Dot grid pattern */
+    radial-gradient(circle at center, rgba(0, 229, 255, 0.15) 1px, transparent 1px),
+    /* Larger grid lines */
+    linear-gradient(rgba(0, 229, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.08) 1px, transparent 1px);
+  background-size: 
+    40px 40px,
+    80px 80px,
+    80px 80px;
+  background-position: 
+    0 0,
+    0 0,
+    0 0;
+  background-attachment: fixed;
+}
+
+/* Floating star particles effect */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 40px 70px, rgba(0, 229, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 50px 160px, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(0, 229, 255, 0.2), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 160px 120px, rgba(0, 229, 255, 0.15), transparent);
+  background-size: 200px 200px;
+  animation: glow-pulse 4s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Low-intensity art layer shown mostly around empty/edge spaces */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: var(--ambient-bg-art);
+  background-repeat: no-repeat;
+  background-position: right -6vw center;
+  background-size: min(68vw, 980px) auto;
+  opacity: 0.32;
+  filter: saturate(0.9) contrast(1.08);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+  -webkit-mask-image: radial-gradient(circle at center, transparent 0%, transparent 20%, #000 62%, #000 100%);
+  mask-image: radial-gradient(circle at center, transparent 0%, transparent 20%, #000 62%, #000 100%);
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes glow-pulse {
+  0% { opacity: 0.1; }
+  100% { opacity: 0.5; }
+}
+
+/* ===== TYPOGRAPHY - HUD STYLE ===== */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: var(--font-4xl);
+  font-weight: 900;
+  letter-spacing: var(--letter-spacing-wider);
+  text-shadow: var(--glow-cyan-intense);
+}
+
+h2 {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  letter-spacing: var(--letter-spacing-wider);
+  color: var(--hud-cyan);
+  text-shadow: var(--glow-text);
+}
+
+h3 {
+  font-size: var(--font-xl);
+}
+
+h4 {
+  font-size: var(--font-lg);
+}
+
+p {
+  font-family: var(--font-primary);
+  font-size: var(--font-base);
+  color: var(--text-secondary);
+  line-height: 1.7;
+  letter-spacing: 0.03em;
+}
+
+/* ===== HUD BUTTONS - OUTLINE STYLE ===== */
+.btn-hud {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: 12px 28px;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  color: var(--hud-cyan);
+  font-family: var(--font-display);
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  overflow: hidden;
+}
+
+/* Corner decorations for HUD buttons */
+.btn-hud::before,
+.btn-hud::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: var(--hud-cyan);
+  border-style: solid;
+  transition: all var(--transition-normal);
+}
+
+.btn-hud::before {
+  top: 0;
+  left: 0;
+  border-width: 1px 0 0 1px;
+}
+
+.btn-hud::after {
+  bottom: 0;
+  right: 0;
+  border-width: 0 1px 1px 0;
+}
+
+.btn-hud:hover {
+  background: rgba(0, 240, 255, 0.08);
+  border-color: var(--hud-cyan);
+  box-shadow: var(--glow-cyan);
+  text-shadow: var(--glow-text);
+}
+
+.btn-hud:hover::before,
+.btn-hud:hover::after {
+  width: 12px;
+  height: 12px;
+}
+
+/* Primary variant with filled background */
+.btn-hud-primary {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.15) 0%, rgba(0, 128, 255, 0.1) 100%);
+  border-color: var(--hud-cyan);
+}
+
+.btn-hud-primary:hover {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.25) 0%, rgba(0, 128, 255, 0.15) 100%);
+}
+
+/* ===== HUD CARDS ===== */
+.card-hud {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  padding: var(--card-padding);
+  backdrop-filter: blur(10px);
+  transition: all var(--transition-normal);
+}
+
+/* HUD corner brackets */
+.card-hud::before,
+.card-hud::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: var(--border-default);
+  border-style: solid;
+  transition: all var(--transition-normal);
+  pointer-events: none;
+}
+
+.card-hud::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+.card-hud::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+.card-hud:hover {
+  border-color: var(--border-bright);
+  background: var(--bg-card-hover);
+  box-shadow: var(--glow-cyan);
+}
+
+.card-hud:hover::before,
+.card-hud:hover::after {
+  border-color: var(--hud-cyan);
+  width: 30px;
+  height: 30px;
+}
+
+/* ===== HUD INPUT FIELDS ===== */
+.input-hud {
+  width: 100%;
+  padding: 14px 18px;
+  background: rgba(0, 20, 40, 0.6);
+  border: 1px solid var(--border-dim);
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+  font-size: var(--font-base);
+  letter-spacing: 0.05em;
+  transition: all var(--transition-normal);
+}
+
+.input-hud::placeholder {
+  color: var(--text-dim);
+  text-transform: uppercase;
+  font-size: var(--font-sm);
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.input-hud:focus {
+  outline: none;
+  border-color: var(--hud-cyan);
+  background: rgba(0, 30, 50, 0.8);
+  box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.05), 0 0 10px rgba(0, 240, 255, 0.1);
+}
+
+/* ===== HUD TAGS/BADGES ===== */
+.tag-hud {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--font-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  transition: all var(--transition-fast);
+}
+
+.tag-hud:hover {
+  border-color: var(--hud-cyan);
+  color: var(--hud-cyan);
+  background: rgba(0, 240, 255, 0.05);
+}
+
+/* ===== COORDINATE/TECHNICAL DECORATIONS ===== */
+.hud-coords {
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.hud-coords::before {
+  content: '[ ';
+  color: var(--border-default);
+}
+
+.hud-coords::after {
+  content: ' ]';
+  color: var(--border-default);
+}
+
+/* ===== SCANLINE EFFECT ===== */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.1) 2px,
+    rgba(0, 0, 0, 0.1) 4px
+  );
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+/* ===== GEOMETRIC LINE DECORATIONS ===== */
+.hud-line-h {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-default), transparent);
+}
+
+.hud-line-v {
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, var(--border-default), transparent);
+}
+
+/* ===== CONTAINER ===== */
+.page-container {
+  position: relative;
+  width: 100%;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: var(--spacing-xl) var(--spacing-md);
+  min-height: calc(100vh - 60px);
+  z-index: 1;
+}
+
+/* ===== GRID LAYOUTS ===== */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+}
+
+/* ===== SCROLLBAR - HUD STYLE ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-void);
+  border: 1px solid var(--border-dim);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border: 1px solid var(--hud-cyan);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--hud-cyan);
+}
+
+/* ===== SELECTION ===== */
+::selection {
+  background: rgba(0, 240, 255, 0.3);
+  color: var(--text-primary);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  :root {
+    --font-4xl: 2.5rem;
+    --font-3xl: 2rem;
+    --font-2xl: 1.5rem;
+    --spacing-xl: 32px;
+    --spacing-lg: 24px;
+  }
+  
+  .grid-2, .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  body::after {
+    opacity: 0.24;
+    background-size: min(88vw, 760px) auto;
+    background-position: center 64%;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --font-4xl: 2rem;
+    --font-3xl: 1.75rem;
+    --font-2xl: 1.25rem;
+    --card-padding: var(--spacing-sm);
+  }
+}

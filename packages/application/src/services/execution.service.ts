@@ -1,35 +1,25 @@
 import {
     SubmissionRepository,
-} from "@algofight/database";
-import {
-    ProblemRepository
+    ProblemRepository,
+    BattleRoomRepository,
 } from "@algofight/database";
 import { logger } from "@algofight/logger";
-
 import { CodeExecutor } from "../contracts/code-executor";
-
 import { SubmissionStatus } from "@algofight/types";
-
 import {
     SubmissionNotFoundError,
-    ProblemNotFoundError
+    ProblemNotFoundError,
 } from "@algofight/error-handling";
 
 export class ExecutionService {
     constructor(
-        private readonly submissionRepository:
-            SubmissionRepository,
+        private readonly submissionRepository: SubmissionRepository,
+        private readonly codeExecutor: CodeExecutor,
+        private readonly problemRepository: ProblemRepository,
+        private readonly battleRoomRepository?: BattleRoomRepository,
+    ) { }
 
-        private readonly codeExecutor:
-            CodeExecutor,
-        
-        private readonly problemRepository:
-            ProblemRepository,
-    ) {}
-
-    async processSubmission(
-        submissionId: string,
-    ) {
+    async processSubmission(submissionId: string): Promise<void> {
         try {
             logger.info(
                 {
@@ -42,29 +32,33 @@ export class ExecutionService {
                 await this.submissionRepository.getSubmissionById(
                     submissionId,
                 );
-                
-                if (!submission) {
-                    throw new SubmissionNotFoundError(
-                        submissionId,
-                    );
-                }
-            const problem = 
-                    await this.problemRepository.getProblemById(
-                    submission?.problemId
-            )
+
+            if (!submission) {
+                throw new SubmissionNotFoundError(submissionId);
+            }
+
+            const problem =
+                (await this.problemRepository.getProblemWithAllTestCases(
+                    submission.problemId,
+                )) ??
+                (await this.problemRepository.getProblemById(
+                    submission.problemId,
+                ));
+
+            if (!problem) {
+                throw new ProblemNotFoundError(submission.problemId);
+            }
 
             await this.submissionRepository.updateStatus(
                 submissionId,
                 SubmissionStatus.PROCESSING,
             );
-            if (!problem) {
-            throw new ProblemNotFoundError(submission.problemId);
-}
+
             const result = await this.codeExecutor.execute({
                 submissionId,
                 language: submission.language,
                 code: submission.code,
-                testCases: problem.testCases.map(tc => ({
+                testCases: problem.testCases.map((tc) => ({
                     input: tc.input,
                     expectedOutput: tc.expectedOutput,
                 })),
@@ -76,6 +70,29 @@ export class ExecutionService {
                 submissionId,
                 result,
             );
+
+            // If this submission belongs to a battle and passed all test cases, award score
+            if (
+                submission.roomId &&
+                result.failedCount === 0 &&
+                this.battleRoomRepository
+            ) {
+                await this.battleRoomRepository.recordParticipantScore(
+                    submission.roomId,
+                    submission.userId,
+                    100,
+                    true,
+                );
+
+                logger.info(
+                    {
+                        roomId: submission.roomId,
+                        userId: submission.userId,
+                        submissionId,
+                    },
+                    "Battle participant solved problem and score was recorded",
+                );
+            }
 
             logger.info(
                 {
@@ -92,9 +109,7 @@ export class ExecutionService {
                 "Submission processing failed",
             );
 
-            if (
-                !(error instanceof SubmissionNotFoundError)
-            ) {
+            if (!(error instanceof SubmissionNotFoundError)) {
                 await this.submissionRepository.updateStatus(
                     submissionId,
                     SubmissionStatus.FAILED,

@@ -4,7 +4,7 @@ import {
     ProblemRepository,
 } from "@algofight/database";
 import { RoomCodeGenerator } from "../utils/room-code.generator";
-import { RatingService } from "./rating.service";
+import { RatingService, EloResult } from "./rating.service";
 
 export interface CreateRoomDto {
     hostId: string;
@@ -34,7 +34,6 @@ export class BattleRoomService {
     }
 
     async getRoom(roomIdOrCode: string): Promise<BattleRoomEntity> {
-        // Support lookup by UUID or by 6-character room code
         const room = roomIdOrCode.startsWith("BTL-")
             ? await this.battleRoomRepository.getRoomByCode(roomIdOrCode)
             : await this.battleRoomRepository.getRoomById(roomIdOrCode);
@@ -64,15 +63,7 @@ export class BattleRoomService {
     }
 
     async setPlayerReady(roomId: string, userId: string, isReady: boolean): Promise<BattleRoomEntity> {
-        const updatedRoom = await this.battleRoomRepository.setPlayerReady(roomId, userId, isReady);
-
-        // Check if all participants are ready and at least 2 players exist
-        const allReady =
-            updatedRoom.participants.length >= 2 &&
-            updatedRoom.participants.every((p) => p.isReady);
-
-        // Return updated room (WebSocket layer can broadcast "READY" countdown if allReady is true)
-        return updatedRoom;
+        return this.battleRoomRepository.setPlayerReady(roomId, userId, isReady);
     }
 
     async startBattle(roomId: string, hostId: string, problemId?: string): Promise<BattleRoomEntity> {
@@ -89,6 +80,10 @@ export class BattleRoomService {
             throw new Error("Cannot start battle with fewer than 2 participants");
         }
 
+        if (room.status !== "READY" && !room.participants.every((p) => p.isReady)) {
+            throw new Error("Cannot start battle: All players must be ready");
+        }
+
         const selectedProblemId = problemId || room.problemId;
         if (!selectedProblemId) {
             throw new Error("Cannot start battle: No problem assigned");
@@ -97,7 +92,38 @@ export class BattleRoomService {
         return this.battleRoomRepository.startBattle(roomId, selectedProblemId);
     }
 
-    async finishBattle(roomId: string): Promise<BattleRoomEntity> {
-        return this.battleRoomRepository.finishBattle(roomId);
+    async finishBattle(roomId: string): Promise<{ room: BattleRoomEntity; eloResult?: EloResult }> {
+        const room = await this.battleRoomRepository.getRoomById(roomId);
+        if (!room) {
+            throw new Error("Room not found");
+        }
+
+        // Rank participants: Solved first (fastest solve), then highest score
+        const sorted = [...room.participants].sort((a, b) => {
+            if (a.solvedAt && b.solvedAt) {
+                return a.solvedAt.getTime() - b.solvedAt.getTime();
+            }
+            if (a.solvedAt) return -1;
+            if (b.solvedAt) return 1;
+            return b.score - a.score;
+        });
+
+        // Persist ranks (1st, 2nd, ...)
+        for (let i = 0; i < sorted.length; i++) {
+            await this.battleRoomRepository.updateParticipantRank(roomId, sorted[i].userId, i + 1);
+        }
+
+        let eloResult: EloResult | undefined;
+
+        // Apply ELO if 1v1 battle and ratingService is available
+        if (sorted.length === 2 && this.ratingService) {
+            const [player1, player2] = sorted;
+            if (player1.solvedAt || player1.score > player2.score) {
+                eloResult = await this.ratingService.applyBattleResult(player1.userId, player2.userId);
+            }
+        }
+
+        const finishedRoom = await this.battleRoomRepository.finishBattle(roomId);
+        return { room: finishedRoom, eloResult };
     }
 }

@@ -11,11 +11,12 @@
     "@algofight/application": "workspace:*",
     "@algofight/config": "workspace:*",
     "@algofight/database": "workspace:*",
+    "@algofight/error-handling": "workspace:*",
     "@algofight/logger": "workspace:*",
     "@algofight/queue": "workspace:*",
     "@algofight/state-machine": "workspace:*",
     "@algofight/types": "workspace:*",
-    "@algofight/error-handling": "workspace:*",
+    "@fastify/cors": "^11.3.0",
     "fastify": "^5.8.5",
     "zod": "^4.4.3"
   },

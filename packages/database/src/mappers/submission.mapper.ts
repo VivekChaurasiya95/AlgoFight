@@ -2,7 +2,7 @@ import { Submission } from "@prisma/client";
 import { SubmissionEntity } from "../entities/submission.entity";
 import { SubmissionStatus } from "@algofight/types";
 
-const prismaToDomainStatus: Record <
+const prismaToDomainStatus: Record<
     Submission["status"],
     SubmissionStatus
 > = {
@@ -19,8 +19,9 @@ export const toSubmissionEntity = (
     submission: Submission,
 ): SubmissionEntity => ({
     ...submission,
-    status: 
+    roomId: submission.roomId,
+    status:
         prismaToDomainStatus[
-            submission.status
+        submission.status
         ]
 })

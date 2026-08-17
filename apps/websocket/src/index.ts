@@ -1,3 +1,5 @@
+// apps/websocket/src/index.ts
+import "@algofight/config"; // 👈 Add this at the very top
 import { WebSocketServer, WebSocket } from "ws";
 import { ConnectionManager } from "./server/connection-manager";
 import { SocketHandler } from "./handlers/socket-handler";
@@ -18,6 +20,7 @@ wss.on("connection", (socket: WebSocket) => {
     });
 
     socket.on("close", () => {
+        socketHandler.handleDisconnect(socket);
         if (currentUserId.value) {
             connectionManager.unregisterUser(currentUserId.value, socket);
         }
