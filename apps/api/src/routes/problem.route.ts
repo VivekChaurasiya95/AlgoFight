@@ -14,23 +14,42 @@ export async function problemRoutes(app: FastifyInstance) {
         return controller.createProblem(body);
     });
 
-    // 2. List Paginated Problems
+    // 2. Categories List
+    app.get("/problems/categories", async () => {
+        return [
+            "Arrays & Hashing",
+            "Two Pointers",
+            "Sliding Window",
+            "Stack & Queues",
+            "Binary Search",
+            "Linked Lists",
+            "Trees",
+            "Dynamic Programming",
+            "Graphs",
+            "Greedy",
+            "Math"
+        ];
+    });
+
+    // 3. List Paginated Problems
     app.get("/problems", async (request) => {
         const query = request.query as any;
         return controller.getProblems({
             page: query.page ? parseInt(query.page, 10) : 1,
             limit: query.limit ? parseInt(query.limit, 10) : 20,
             difficulty: query.difficulty,
+            category: query.category || query.tags,
+            tags: query.tags,
         });
     });
 
-    // 3. Get Single Problem by ID
+    // 4. Get Single Problem by ID
     app.get("/problems/:id", async (request) => {
         const { id } = request.params as { id: string };
         return controller.getProblemById(id);
     });
 
-    // 4. Evaluate Practice Code (Test / Submit)
+    // 5. Evaluate Practice Code (Test / Submit)
     app.post("/practice/evaluate", async (request) => {
         const body = request.body as any;
         return controller.evaluatePractice({
@@ -41,7 +60,7 @@ export async function problemRoutes(app: FastifyInstance) {
         });
     });
 
-    // 5. Practice Progress Record
+    // 6. Practice Progress Record
     app.post("/users/:uid/practice-progress", async (request) => {
         const body = request.body as any;
         return {

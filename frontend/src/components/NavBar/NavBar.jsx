@@ -35,6 +35,7 @@ const Navbar = () => {
             <li><Link to="/rewards" className={isActive('/rewards')}>Rewards</Link></li>
             <li><Link to="/about" className={isActive('/about')}>About</Link></li>
             <li><Link to="/developer" className={isActive('/developer')}>Developers</Link></li>
+            <li><Link to="/admin" className={isActive('/admin')} style={{ color: '#00e5ff' }}>Control Hub 🛡️</Link></li>
           </ul>
         </div>
         
@@ -53,8 +54,8 @@ const Navbar = () => {
             </div>
           )}
         </div>
-      </div>
-    </nav>
+      </div >
+    </nav >
   );
 };
 

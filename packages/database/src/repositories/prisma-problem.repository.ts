@@ -8,15 +8,11 @@ export interface GetProblemQuery {
     page?: number,
     limit?: number,
     difficulty?: string,
+    category?: string,
+    tags?: string
 }
 
-export interface GetProblemResult {
-    problems: ProblemEntity[],
-    total: number,
-    page: number,
-    limit: number,
-    totalPages: number,
-}
+
 export class PrismaProblemRepository implements ProblemRepository {
     async createProblem(input: CreateProblemInput): Promise<ProblemEntity> {
         const problem = await prisma.problem.create({
@@ -43,6 +39,16 @@ export class PrismaProblemRepository implements ProblemRepository {
         if (query.difficulty && query.difficulty.toUpperCase() !== "ALL") {
             where.difficulty = query.difficulty.toUpperCase();
         }
+        if (query.category &&
+            query.category.toUpperCase() !== "ALL") {
+            where.category = {
+                contains: query.category, mode: "insensitive"
+            };
+        }
+        if (query.tags && query.tags.toUpperCase() !== "ALL") {
+            where.tags = { has: query.tags };
+        }
+
 
         const [problems, total] = await Promise.all([
             prisma.problem.findMany({

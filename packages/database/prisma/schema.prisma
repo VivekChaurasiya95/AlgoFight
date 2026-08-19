@@ -4,20 +4,36 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+
 }
+
+enum UserType {
+  STUDENT
+  FACULTY
+  INDIVIDUAL
+}
+
 model User {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  email     String   @unique
-  rating    Int      @default(1200) // Base ELO rating
-  wins      Int      @default(0)
-  losses    Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  submissions  Submission[]
-  participants BattleParticipant[]
-  hostedRooms  BattleRoom[]        @relation("HostedRooms")
+  id              String       @id @default(uuid())
+  username        String       @unique
+  email           String       @unique
+  userType        UserType     @default(INDIVIDUAL)
+  primaryEmail    String?
+  secondaryEmail  String?
+  institutionName String?
+  department      String?
+  batchYear       String?
+  platformCode    String?      @unique // e.g. "AF-STU-74921" or "AF-FAC-10293"
+  rating          Int          @default(1200) // Base ELO rating
+  wins            Int          @default(0)
+  losses          Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  submissions     Submission[]
+  participants    BattleParticipant[]
+  hostedRooms     BattleRoom[] @relation("HostedRooms")
 }
+
 
 
 enum Difficulty {
@@ -54,6 +70,8 @@ model Problem {
   title       String
   statement   String
   difficulty  Difficulty
+  category    String?      // e.g. "Arrays & Hashing", "Two Pointers", "Dynamic Programming"
+  tags        String[]     @default([])
   timeLimit   Int          // in milliseconds
   memoryLimit Int          // in MB
   createdAt   DateTime     @default(now())
@@ -62,6 +80,7 @@ model Problem {
   submissions Submission[]
   battleRooms BattleRoom[]
 }
+
 
 
 model Submission {

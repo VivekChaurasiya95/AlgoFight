@@ -1,6 +1,6 @@
 import { TestCaseEntity } from "./testCase.entity";
 
-export interface ProblemEntity{
+export interface ProblemEntity {
     id: string;
 
     title: string;
@@ -10,6 +10,10 @@ export interface ProblemEntity{
     statement: string;
 
     difficulty: "EASY" | "MEDIUM" | "HARD";
+
+    category?: string | null;
+
+    tags?: string[];
 
     timeLimit: number;
 

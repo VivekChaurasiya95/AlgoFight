@@ -31,7 +31,7 @@ function extractErrorMessage(parsedBody, status) {
   return `Request failed (${status})`;
 }
 
-async function requestJson(path, options = {}) {
+export async function requestJson(path, options = {}) {
   const {
     includeAuth = false,
     headers,

@@ -1,6 +1,5 @@
 /* ===== MODERN LOGIN PAGE STYLES ===== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Space+Grotesk:wght@700;900&display=swap');
 
 .login-page {
     min-height: calc(100vh - 80px);

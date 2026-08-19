@@ -2,98 +2,110 @@ import React, { useState, useEffect } from "react";
 import "./Signup.css";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { googleSignIn, githubSignIn } from '../../firebaseConfig.js';
-import { GoogleImage, GithubImage } from "../Login/Login.jsx";
+import { GoogleIcon, GithubIcon } from "../Common/Icons";
+import { emailPasswordSignUp, googleSignIn, githubSignIn } from "../../firebaseConfig.js";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext.jsx";
 
 function Signup() {
-  const [userName, setUserName] = useState("");
-  const [userPass, setUserPass] = useState("");
-  const [confirmPass, setConfirmPass] = useState("");
-  const [userNameError, setUserNameError] = useState("");
-  const [userPassError, setUserPassError] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [userType, setUserType] = useState("STUDENT"); // "STUDENT" | "FACULTY" | "INDIVIDUAL"
+  const [username, setUsername] = useState("");
+  const [collegeEmail, setCollegeEmail] = useState("");
+  const [secondaryEmail, setSecondaryEmail] = useState("");
+  const [institutionName, setInstitutionName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
   const { user } = useAuth();
   const { notify } = useNotification();
+
+  const isCollegeUser = userType === "STUDENT" || userType === "FACULTY";
 
   useEffect(() => {
     if (user) navigate("/home");
   }, [user, navigate]);
 
-  const handleSignUpSubmit = (e) => {
-    e.preventDefault();
+  const validate = () => {
+    const errs = {};
+    if (!username.trim()) errs.username = "Username is required";
 
-    setUserNameError("");
-    setUserPassError("");
-    setIsSubmitted(true);
-
-    let isValid = true;
-
-    if (userName.trim() === "") {
-      setUserNameError("Username cannot be empty");
-      isValid = false;
+    if (isCollegeUser) {
+      if (!collegeEmail.trim()) {
+        errs.collegeEmail = "College / Institutional Email is mandatory";
+      } else if (!/\S+@\S+\.\S+/.test(collegeEmail)) {
+        errs.collegeEmail = "Invalid email format";
+      }
+      if (!institutionName.trim()) {
+        errs.institutionName = "College / Institution name is mandatory";
+      }
+    } else {
+      if (!collegeEmail.trim()) {
+        errs.collegeEmail = "Email address is required";
+      } else if (!/\S+@\S+\.\S+/.test(collegeEmail)) {
+        errs.collegeEmail = "Invalid email format";
+      }
     }
-    if (userPass.trim() === "") {
-      setUserPassError("Password cannot be empty");
-      isValid = false;
+
+    if (!password) {
+      errs.password = "Password is required";
+    } else if (password.length < 6) {
+      errs.password = "Password must be at least 6 characters";
     }
-    if (userPass !== confirmPass) {
-      setUserPassError("Password doesn't match");
-      isValid = false;
+
+    if (password !== confirmPassword) {
+      errs.confirmPassword = "Passwords do not match";
     }
-    if (!isValid) return;
 
-
-    setUserName("");
-    setUserPass("");
-    setConfirmPass("");
-
-    notify({
-      type: "info",
-      title: "Use Social Sign-Up",
-      message: "Direct username and password signup is not active yet. Please continue with Google or GitHub.",
-    });
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   };
-  
-   const googleAuthHandler = async() => {
+
+  const handleSignUpSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setLoading(true);
+    try {
+      const res = await emailPasswordSignUp({
+        email: collegeEmail.trim(),
+        password,
+        username: username.trim(),
+        userType,
+        institutionName: isCollegeUser ? institutionName.trim() : null,
+        secondaryEmail: secondaryEmail.trim() || null,
+      });
+
+      if (res.notice) notify(res.notice);
+      if (res.user) {
+        navigate("/home");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
     try {
       const result = await googleSignIn();
       if (result?.notice) notify(result.notice);
-
-      const signedUser = result ? result.user : null;
-      if(signedUser) {
-        navigate("/home");
-        setIsSubmitted(true);
-      }
-    } catch (error) {
-      notify({
-        type: "error",
-        title: "Sign-Up Failed",
-        message: "Something went wrong while signing in with Google.",
-      });
+      if (result?.user) navigate("/home");
+    } catch {
+      notify({ type: "error", title: "Sign-Up Error", message: "Google sign-up failed." });
     }
-  }
+  };
 
-  const githubAuthHandler = async() => {
+  const handleGithubAuth = async () => {
     try {
       const result = await githubSignIn();
       if (result?.notice) notify(result.notice);
-
-      const signedUser = result ? result.user : null;
-      if(signedUser) {
-        navigate("/home");
-        setIsSubmitted(true);
-      }
-    } catch (error) {
-      notify({
-        type: "error",
-        title: "Sign-Up Failed",
-        message: "Something went wrong while signing in with GitHub.",
-      });
+      if (result?.user) navigate("/home");
+    } catch {
+      notify({ type: "error", title: "Sign-Up Error", message: "GitHub sign-up failed." });
     }
-  }
+  };
 
   return (
     <motion.div
@@ -104,73 +116,126 @@ function Signup() {
       className="signup-page"
     >
       <form className="Signup-Container" onSubmit={handleSignUpSubmit}>
-
         <div className="Signup-Header">
-            <h1>Create Account</h1>
+          <h1>CREATE ACCOUNT</h1>
+          <span className="auth-subtitle">SELECT YOUR IDENTITY & ENTER THE ARENA</span>
         </div>
 
+        {/* Identity Category Selector */}
+        <div className="role-selector-tabs">
+          <button
+            type="button"
+            className={`role-tab ${userType === "STUDENT" ? "active" : ""}`}
+            onClick={() => setUserType("STUDENT")}
+          >
+            🎓 Student
+          </button>
+          <button
+            type="button"
+            className={`role-tab ${userType === "FACULTY" ? "active" : ""}`}
+            onClick={() => setUserType("FACULTY")}
+          >
+            🏛️ Faculty
+          </button>
+          <button
+            type="button"
+            className={`role-tab ${userType === "INDIVIDUAL" ? "active" : ""}`}
+            onClick={() => setUserType("INDIVIDUAL")}
+          >
+            💻 Independent
+          </button>
+        </div>
 
         <div className="Signup-Form-Options">
+          {/* Username */}
           <div className="input-group">
             <input
               type="text"
-              placeholder="Username"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
+              placeholder="Username / Combat Tag"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
             />
-            <p className="error-text">{userNameError || '\u00A0'}</p>
+            <p className="error-text">{errors.username || "\u00A0"}</p>
           </div>
 
+          {/* Primary / College Email */}
+          <div className="input-group">
+            <input
+              type="email"
+              placeholder={isCollegeUser ? "College / Institution Email (Mandatory)" : "Primary Email Address"}
+              value={collegeEmail}
+              onChange={(e) => setCollegeEmail(e.target.value)}
+            />
+            <p className="error-text">{errors.collegeEmail || "\u00A0"}</p>
+          </div>
+
+          {/* Institution Name (Mandatory for College users) */}
+          {isCollegeUser && (
+            <div className="input-group">
+              <input
+                type="text"
+                placeholder="College / University Name (Mandatory)"
+                value={institutionName}
+                onChange={(e) => setInstitutionName(e.target.value)}
+              />
+              <p className="error-text">{errors.institutionName || "\u00A0"}</p>
+            </div>
+          )}
+
+          {/* Secondary Email (Optional) */}
+          <div className="input-group">
+            <input
+              type="email"
+              placeholder="Secondary / Personal Email (Optional)"
+              value={secondaryEmail}
+              onChange={(e) => setSecondaryEmail(e.target.value)}
+            />
+            <p className="error-text">{"\u00A0"}</p>
+          </div>
+
+          {/* Password & Confirm */}
           <div className="input-group">
             <input
               type="password"
-              placeholder="Password"
-              value={userPass}
-              onChange={(e) => setUserPass(e.target.value)}
+              placeholder="Password (min 6 characters)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
-            <p className="error-text">{userPassError || '\u00A0'}</p>
+            <p className="error-text">{errors.password || "\u00A0"}</p>
           </div>
 
           <div className="input-group">
             <input
               type="password"
               placeholder="Confirm Password"
-              value={confirmPass}
-              onChange={(e) => setConfirmPass(e.target.value)}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
             />
-            <p className="error-text">
-              {(isSubmitted && confirmPass === "") ? "Confirm password cannot be empty" : 
-               (isSubmitted && confirmPass !== userPass && confirmPass !== "") ? "Passwords do not match" : '\u00A0'}
-            </p>
+            <p className="error-text">{errors.confirmPassword || "\u00A0"}</p>
           </div>
 
-        <p>Already have an account?</p>
-        <Link to="/" className="Login-link">Login</Link>
+          <div className="auth-switch-text">
+            <span>Already registered?</span>
+            <Link to="/" className="Login-link">Login</Link>
+          </div>
 
-        <div className="Signup-Separator">OR</div>
+          <div className="Signup-Separator">
+            <span>OR REGISTER WITH</span>
+          </div>
 
-        <div className="Signup-Social-Options">
-          <button className="social-btn google"
-          type="button"
-            onClick={googleAuthHandler}
-          >
-            <img src={GoogleImage} alt="Google" />
-          </button>
-          <button className="social-btn github"
-          type="button"
-            onClick={githubAuthHandler}
-          >
-            <img src={GithubImage} alt="GitHub" />
-          </button>
-        </div>
+          <div className="Signup-Social-Options">
+            <button className="social-btn google" type="button" onClick={handleGoogleAuth}>
+              <GoogleIcon size={20} />
+              <span>Google</span>
+            </button>
+            <button className="social-btn github" type="button" onClick={handleGithubAuth}>
+              <GithubIcon size={20} />
+              <span>GitHub</span>
+            </button>
+          </div>
 
-        
-
-          <button
-            type="submit"
-            disabled={confirmPass !== userPass || !userPass || !userName}
-          >
-            Sign Up
+          <button type="submit" className="auth-submit-btn" disabled={loading}>
+            {loading ? "INITIALIZING COMBAT TAG..." : "REGISTER & GET INSTITUTIONAL CODE"}
           </button>
         </div>
       </form>
@@ -179,4 +244,3 @@ function Signup() {
 }
 
 export default Signup;
-

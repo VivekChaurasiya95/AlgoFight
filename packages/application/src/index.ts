@@ -3,6 +3,7 @@ export * from "./contracts/code-executor";
 export * from "./executors/mock.executor";
 export * from "./types/container-result";
 export * from "./executors/docker.executor";
+export * from "./executors/sandbox.executor";
 
 // Battle module exports
 export * from "./battle/services/battle-room.service";

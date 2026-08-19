@@ -2,21 +2,30 @@
 import { prisma } from "../client/prisma";
 import { CreateUserInput, UserRepository } from "../contracts/user.repository";
 import { UserEntity } from "../entities/user.entity";
+import { generatePlatformCode } from "../utils/platform-code";
 
 export class PrismaUserRepository implements UserRepository {
     async createUser(input: CreateUserInput): Promise<UserEntity> {
         return prisma.user.create({
             data: {
+                id: input.id,
                 username: input.username,
                 email: input.email,
+                userType: (input.userType as any) || "INDIVIDUAL",
+                primaryEmail: input.primaryEmail || input.email,
+                secondaryEmail: input.secondaryEmail || null,
+                institutionName: input.institutionName || null,
+                department: input.department || null,
+                batchYear: input.batchYear || null,
+                platformCode: input.platformCode || generatePlatformCode(input.userType),
             },
         });
     }
 
-    async upsertUser(input: { username: string; email: string }): Promise<UserEntity> {
+    async upsertUser(input: CreateUserInput): Promise<UserEntity> {
         const existing = await prisma.user.findFirst({
             where: {
-                OR: [{ email: input.email }, { username: input.username }],
+                OR: [{ email: input.email }, { username: input.username }, { id: input.id }],
             },
         });
 
@@ -26,16 +35,13 @@ export class PrismaUserRepository implements UserRepository {
                 data: {
                     username: input.username,
                     email: input.email,
+                    institutionName: input.institutionName || existing.institutionName,
+                    secondaryEmail: input.secondaryEmail || existing.secondaryEmail,
                 },
             });
         }
 
-        return prisma.user.create({
-            data: {
-                username: input.username,
-                email: input.email,
-            },
-        });
+        return this.createUser(input);
     }
 
     async getTopUsers(limit: number = 20): Promise<UserEntity[]> {
@@ -53,6 +59,7 @@ export class PrismaUserRepository implements UserRepository {
                     { id: identifier },
                     { email: identifier },
                     { username: identifier },
+                    { platformCode: identifier },
                 ],
             },
         });

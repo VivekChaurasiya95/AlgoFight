@@ -1,10 +1,10 @@
 // apps/api/src/controllers/problem.controller.ts
 import { PrismaProblemRepository } from "@algofight/database";
 import { ProblemInput } from "../schema/problem.schema";
-import { MockExecutor } from "@algofight/application";
+import { SandboxExecutor } from "@algofight/application";
 
 export class ProblemController {
-    private readonly mockExecutor = new MockExecutor();
+    private readonly executor = new SandboxExecutor();
 
     constructor(private readonly problemRepository: PrismaProblemRepository = new PrismaProblemRepository()) { }
 
@@ -12,7 +12,7 @@ export class ProblemController {
         return this.problemRepository.createProblem(input);
     }
 
-    async getProblems(query: { page?: number; limit?: number; difficulty?: string }) {
+    async getProblems(query: { page?: number; limit?: number; difficulty?: string; category?: string; tags?: string }) {
         return this.problemRepository.getProblems(query);
     }
 
@@ -22,7 +22,7 @@ export class ProblemController {
         return problem;
     }
 
-    // Evaluate code for Practice Workspace
+    // Evaluate code for Practice Workspace (Sample or Full Balanced Suite)
     async evaluatePractice(payload: {
         problemId: string;
         code: string;
@@ -36,7 +36,7 @@ export class ProblemController {
         if (!problem) throw new Error("Problem not found");
 
         const testCases = problem.testCases || [];
-        const result = await this.mockExecutor.execute({
+        const result = await this.executor.execute({
             submissionId: `practice-${Date.now()}`,
             language: payload.language,
             code: payload.code,

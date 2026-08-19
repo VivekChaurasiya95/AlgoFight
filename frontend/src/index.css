@@ -1,5 +1,4 @@
 /* ===== FUTURISTIC HUD INTERFACE - GLOBAL CSS ===== */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;600&family=Share+Tech+Mono&display=swap');
 
 :root {
   /* === PRIMARY COLORS - CYBERPUNK PALETTE === */
@@ -8,7 +7,7 @@
   --hud-blue: #0055ff;
   --hud-purple: #8a2be2;
   --hud-white: #ffffff;
-  
+
   /* === BACKGROUNDS === */
   --bg-void: #000000;
   --bg-space: #030303;
@@ -17,25 +16,25 @@
   --bg-card: rgba(0, 20, 30, 0.4);
   --bg-card-hover: rgba(0, 30, 50, 0.7);
   --bg-elevated: rgba(0, 229, 255, 0.05);
-  
+
   /* === BORDERS === */
   --border-dim: rgba(0, 229, 255, 0.2);
   --border-default: rgba(0, 229, 255, 0.4);
   --border-bright: rgba(0, 229, 255, 0.8);
   --border-active: var(--hud-cyan);
-  
+
   /* === TEXT === */
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.85);
   --text-dim: rgba(0, 229, 255, 0.6);
   --text-muted: rgba(255, 255, 255, 0.4);
-  
+
   /* === GLOWS & SHADOWS === */
   --glow-cyan: 0 0 15px rgba(0, 229, 255, 0.4);
   --glow-cyan-intense: 0 0 20px rgba(0, 229, 255, 0.6), 0 0 40px rgba(0, 229, 255, 0.2);
   --glow-text: 0 0 8px rgba(0, 229, 255, 0.7);
   --shadow-panel: 0 4px 30px rgba(0, 0, 0, 0.8);
-  
+
   /* === SPACING === */
   --spacing-xs: 8px;
   --spacing-sm: 16px;
@@ -43,22 +42,22 @@
   --spacing-lg: 32px;
   --spacing-xl: 48px;
   --spacing-2xl: 64px;
-  
+
   /* === BORDERS RADIUS === */
   --radius-sm: 0px;
   --radius-md: 0px;
   --radius-lg: 0px;
-  
+
   /* === TRANSITIONS === */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;
   --transition-slow: 0.4s ease;
-  
+
   /* === TYPOGRAPHY === */
   --font-display: 'Orbitron', sans-serif;
   --font-primary: 'Inter', sans-serif;
   --font-mono: 'Share Tech Mono', monospace;
-  
+
   --font-xs: 0.7rem;
   --font-sm: 0.85rem;
   --font-base: 1rem;
@@ -68,16 +67,16 @@
   --font-2xl: 2rem;
   --font-3xl: 2.75rem;
   --font-4xl: 3.5rem;
-  
+
   --font-normal: 400;
   --font-medium: 500;
   --font-semibold: 600;
   --font-bold: 700;
-  
+
   --letter-spacing-wide: 0.15em;
   --letter-spacing-wider: 0.25em;
   --letter-spacing-widest: 0.4em;
-  
+
   /* === LAYOUT === */
   --container-max: 1200px;
   --container-narrow: 900px;
@@ -89,14 +88,17 @@
 }
 
 /* ===== BASE RESET ===== */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
 /* ===== SPACE BACKGROUND WITH GRID ===== */
-html, body {
+html,
+body {
   background-color: var(--bg-void);
   color: var(--text-primary);
   font-family: var(--font-primary);
@@ -111,17 +113,17 @@ html, body {
 }
 
 body {
-  background-image: 
+  background-image:
     /* Dot grid pattern */
     radial-gradient(circle at center, rgba(0, 229, 255, 0.15) 1px, transparent 1px),
     /* Larger grid lines */
     linear-gradient(rgba(0, 229, 255, 0.08) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 229, 255, 0.08) 1px, transparent 1px);
-  background-size: 
+  background-size:
     40px 40px,
     80px 80px,
     80px 80px;
-  background-position: 
+  background-position:
     0 0,
     0 0,
     0 0;
@@ -133,7 +135,7 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image: 
+  background-image:
     radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.4), transparent),
     radial-gradient(1px 1px at 40px 70px, rgba(0, 229, 255, 0.3), transparent),
     radial-gradient(1px 1px at 50px 160px, rgba(255, 255, 255, 0.3), transparent),
@@ -142,6 +144,7 @@ body::before {
     radial-gradient(1px 1px at 160px 120px, rgba(0, 229, 255, 0.15), transparent);
   background-size: 200px 200px;
   animation: glow-pulse 4s ease-in-out infinite alternate;
+  will-change: opacity;
   pointer-events: none;
   z-index: 0;
 }
@@ -170,12 +173,22 @@ body::after {
 }
 
 @keyframes glow-pulse {
-  0% { opacity: 0.1; }
-  100% { opacity: 0.5; }
+  0% {
+    opacity: 0.1;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
 }
 
 /* ===== TYPOGRAPHY - HUD STYLE ===== */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-display);
   font-weight: var(--font-semibold);
   text-transform: uppercase;
@@ -404,13 +417,11 @@ p {
   content: '';
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.1) 2px,
-    rgba(0, 0, 0, 0.1) 4px
-  );
+  background: repeating-linear-gradient(0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.1) 2px,
+      rgba(0, 0, 0, 0.1) 4px);
   pointer-events: none;
   opacity: 0.3;
 }
@@ -493,8 +504,9 @@ p {
     --spacing-xl: 32px;
     --spacing-lg: 24px;
   }
-  
-  .grid-2, .grid-3 {
+
+  .grid-2,
+  .grid-3 {
     grid-template-columns: 1fr;
   }
 

@@ -1,159 +1,136 @@
-import React, {useState, useEffect} from "react";
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./Login.css";
-import { motion } from 'framer-motion';
-import GoogleImage from './Google.png';
-import GithubImage from './Github.png';
-import { googleSignIn, githubSignIn } from '../../firebaseConfig.js';
-import {useNavigate} from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext.jsx';
-import { useNotification } from '../../contexts/NotificationContext.jsx';
+import { motion } from "framer-motion";
+import { GoogleIcon, GithubIcon } from "../Common/Icons";
+import { emailPasswordSignIn, googleSignIn, githubSignIn } from "../../firebaseConfig.js";
+import { useAuth } from "../../contexts/AuthContext.jsx";
+import { useNotification } from "../../contexts/NotificationContext.jsx";
 
-function Login(){
-    const [userName, setUserName] = useState("");
-    const [userPass, setUserPass] = useState("");
-    const [userNameError, setUserNameError] = useState("");
-    const [userPassError, setUserPassError] = useState("");
-    const navigate = useNavigate();
-    const { user } = useAuth();
+function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { notify } = useNotification();
 
-    // If already logged in, redirect to home
-    useEffect(() => {
-      if (user) navigate("/home");
-    }, [user, navigate]);
-    
-    const handleSubmit = (event) =>{
-        event.preventDefault();
-        
-        setUserNameError("");  
-        setUserPassError("");  
-        
-        let isValid = true; 
+  useEffect(() => {
+    if (user) navigate("/home");
+  }, [user, navigate]);
 
-        if(userName.trim() === ""){
-            setUserNameError("Username cannot be empty");
-            isValid = false;
-        }
-        if(userPass.trim() === ""){
-            setUserPassError("Password cannot be empty");
-            isValid = false;
-        }
-        if(!isValid){
-            return;
-        }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setEmailError("");
+    setPasswordError("");
 
-
-        setUserName("");
-        setUserPass("");
-        notify({
-          type: "info",
-          title: "Use Social Sign-In",
-          message: "Username and password login is not wired yet. Please continue with Google or GitHub.",
-        });
-        // Note: username/password login is not yet wired to a backend endpoint.
-        // Use Google or GitHub sign-in for now.
+    let isValid = true;
+    if (!email.trim()) {
+      setEmailError("Email address is required");
+      isValid = false;
     }
-    const googleAuthHandler = async() => {
-        try {
-          const result = await googleSignIn();
-          if (result?.notice) notify(result.notice);
+    if (!password.trim()) {
+      setPasswordError("Password is required");
+      isValid = false;
+    }
+    if (!isValid) return;
 
-          const signedUser = result ? result.user : null;
-          if(signedUser) {
-            navigate("/home");
-          }
-        } catch (error) {
-          notify({
-            type: "error",
-            title: "Sign-In Failed",
-            message: "Something went wrong while signing in with Google.",
-          });
-        }
+    setLoading(true);
+    try {
+      const res = await emailPasswordSignIn(email.trim(), password);
+      if (res.notice) notify(res.notice);
+      if (res.user) {
+        navigate("/home");
       }
-    
-      const githubAuthHandler = async() => {
-        try {
-          const result = await githubSignIn();
-          if (result?.notice) notify(result.notice);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-          const signedUser = result ? result.user : null;
-          if(signedUser) {
-            navigate("/home");
-          }
-        } catch (error) {
-          notify({
-            type: "error",
-            title: "Sign-In Failed",
-            message: "Something went wrong while signing in with GitHub.",
-          });
-        }
-      }
+  const handleGoogleAuth = async () => {
+    try {
+      const result = await googleSignIn();
+      if (result?.notice) notify(result.notice);
+      if (result?.user) navigate("/home");
+    } catch {
+      notify({ type: "error", title: "Sign-In Error", message: "Google sign-in failed." });
+    }
+  };
 
-    return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.96, x: -40 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.92, x: 40 }}
-            transition={{ duration: 0.5, ease: 'easeInOut' }}
-        >
-            <div className="login-page">
-            <form className="Login-Container" onSubmit={handleSubmit}>
-                
-                <div className="Login-Header">
-                    <h2>Welcome to Algo Fight</h2>
-                
-                </div>
+  const handleGithubAuth = async () => {
+    try {
+      const result = await githubSignIn();
+      if (result?.notice) notify(result.notice);
+      if (result?.user) navigate("/home");
+    } catch {
+      notify({ type: "error", title: "Sign-In Error", message: "GitHub sign-in failed." });
+    }
+  };
 
-                <div className="input-group">
-                  <input 
-                  type="text"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  placeholder="Username"
-                  />
-                  <p className="error-message">{userNameError || '\u00A0'}</p>
-                </div>
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.96, x: -40 }}
+      animate={{ opacity: 1, scale: 1, x: 0 }}
+      exit={{ opacity: 0, scale: 0.92, x: 40 }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
+      className="login-page"
+    >
+      <form className="Login-Container" onSubmit={handleSubmit}>
+        <div className="Login-Header">
+          <h2>LOGIN TO ALGOFIGHT</h2>
+          <span className="auth-subtitle">ENTER THE ARENA WITH YOUR CREDENTIALS</span>
+        </div>
 
-                <div className="input-group">
-                  <input 
-                  type="password"
-                  value={userPass}
-                  onChange={(e) => setUserPass(e.target.value)}
-                  placeholder="Password"
-                  />
-                  <p className="error-message">{userPassError || '\u00A0'}</p>
-                </div>
-                <p>Don't have an account?</p>
-                <Link to="/signup" className="signup-link">Sign Up</Link>
-                <div className="Login-Separator">OR</div>
+        <div className="input-group">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Primary / College Email"
+            autoComplete="email"
+          />
+          <p className="error-message">{emailError || "\u00A0"}</p>
+        </div>
 
-                <div className="Login-Social-Options">
-                <button className="social-btn google"
-                type="button"
-                onClick={googleAuthHandler}
-                
-                >
-                    <img src={GoogleImage} alt="Google" />
-                </button>
+        <div className="input-group">
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            autoComplete="current-password"
+          />
+          <p className="error-message">{passwordError || "\u00A0"}</p>
+        </div>
 
-                <button className="social-btn github"
-                type="button"
-                onClick={githubAuthHandler}
-                >
-                    <img src={GithubImage} alt="GitHub" />
-                </button>
+        <div className="auth-switch-text">
+          <span>Don't have an account?</span>
+          <Link to="/signup" className="signup-link">Sign Up</Link>
+        </div>
 
-                
-                </div>
-                
-                 
-                <button type="submit">Login</button>
-            </form>
-            </div>
-        </motion.div>
-    );
+        <div className="Login-Separator">
+          <span>OR CONTINUE WITH</span>
+        </div>
+
+        <div className="Login-Social-Options">
+          <button className="social-btn google" type="button" onClick={handleGoogleAuth} aria-label="Google Login">
+            <GoogleIcon size={20} />
+            <span>Google</span>
+          </button>
+          <button className="social-btn github" type="button" onClick={handleGithubAuth} aria-label="GitHub Login">
+            <GithubIcon size={20} />
+            <span>GitHub</span>
+          </button>
+        </div>
+
+        <button type="submit" className="auth-submit-btn" disabled={loading}>
+          {loading ? "AUTHENTICATING..." : "ENTER ARENA"}
+        </button>
+      </form>
+    </motion.div>
+  );
 }
 
 export default Login;
-export {GoogleImage, GithubImage};

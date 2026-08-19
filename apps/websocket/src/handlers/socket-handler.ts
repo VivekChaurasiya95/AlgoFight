@@ -196,6 +196,61 @@ export class SocketHandler {
                     }
                     break;
                 }
+                case "join_room_channel": {
+                    const { roomCode, userId, username } = data;
+                    if (roomCode) {
+                        this.connectionManager.joinRoom(roomCode, socket);
+                        const session = this.socketUsers.get(socket) || {
+                            userId: userId || currentUserId.value || "guest",
+                            username: username || "Player",
+                            roomId: roomCode,
+                        };
+                        session.roomId = roomCode;
+                        this.socketUsers.set(socket, session);
+                        this.connectionManager.broadcastToRoom(roomCode, "player_joined", {
+                            userId: session.userId,
+                            username: session.username,
+                        });
+                    }
+                    break;
+                }
+
+                case "toggle_ready": {
+                    const { roomCode, userId, isReady } = data;
+                    if (roomCode) {
+                        this.connectionManager.broadcastToRoom(roomCode, "player_ready_changed", {
+                            userId,
+                            isReady,
+                        });
+                    }
+                    break;
+                }
+                case "start_room_battle": {
+                    const { roomCode, hostId } = data;
+                    if (roomCode) {
+                        // Fetch a problem for the custom room battle
+                        const problemsResult = await this.problemRepo.getProblems({ limit: 10 });
+                        const problem = problemsResult.problems[0] || (await this.problemRepo.getProblemById(roomCode));
+                        const matchPayload = {
+                            roomId: roomCode,
+                            roomCode: roomCode,
+                            problem: {
+                                id: problem?.id || roomCode,
+                                title: problem?.title || "Balanced Challenge",
+                                statement: problem?.statement || "Implement your algorithm to satisfy all edge and sample cases.",
+                                difficulty: problem?.difficulty || "MEDIUM",
+                                testCases: problem?.testCases || [],
+                                starterCode: {
+                                    javascript: "function solution(input) {\n  // Write your code here\n  return input;\n}",
+                                    cpp: "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n  // Write your code here\n  return 0;\n}",
+                                },
+                            },
+                        };
+                        this.connectionManager.broadcastToRoom(roomCode, "battle_started", matchPayload);
+                    }
+                    break;
+                }
+
 
                 default:
                     logger.debug({ action }, "Received unhandled socket action");

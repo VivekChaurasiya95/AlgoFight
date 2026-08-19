@@ -2,12 +2,12 @@ import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
+import Login from './components/Login/Login.jsx';
 import NavBar from './components/NavBar/NavBar.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
-// 🚀 Code-split route components with React.lazy
+// 🚀 Code-split secondary route components with React.lazy
 const Home = lazy(() => import('./components/Home/Home.jsx'));
-const Login = lazy(() => import('./components/Login/Login.jsx'));
 const Rewards = lazy(() => import('./components/Rewards/Rewards.jsx'));
 const Signup = lazy(() => import('./components/Signup/Signup.jsx'));
 const Profile = lazy(() => import('./components/Profile/Profile.jsx'));
@@ -21,7 +21,8 @@ const PracticeWorkspace = lazy(() => import('./components/Practice/PracticeWorks
 const Terms = lazy(() => import('./components/Legal/Terms.jsx'));
 const Privacy = lazy(() => import('./components/Legal/Privacy.jsx'));
 const Cookies = lazy(() => import('./components/Legal/Cookies.jsx'));
-
+const RoomLobby = lazy(() => import("./components/Battle/RoomLobby.jsx"));
+const ControlHub = lazy(() => import('./components/Admin/ControlHub.jsx'));
 // Fast, non-blocking loading placeholder
 function PageLoader() {
   return (
@@ -78,10 +79,12 @@ function App() {
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><ControlHub /></ProtectedRoute>} />
 
           {/* ✅ Battle Routes */}
           <Route path="/battle" element={<ProtectedRoute><BattleArena /></ProtectedRoute>} />
           <Route path="/battle/live" element={<ProtectedRoute><LiveBattle /></ProtectedRoute>} />
+          <Route path="/battle/room/:roomCode" element={<ProtectedRoute><RoomLobby /></ProtectedRoute>} />
           <Route path="/practice" element={<ProtectedRoute><Practice /></ProtectedRoute>} />
           <Route path="/practice/:problemId" element={<ProtectedRoute><PracticeWorkspace /></ProtectedRoute>} />
 

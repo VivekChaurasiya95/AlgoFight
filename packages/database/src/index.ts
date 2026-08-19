@@ -14,3 +14,4 @@ export * from "./entities/battle-room.entity";
 export * from "./entities/battle-participant.entity";
 export * from "./contracts/battle-room.repository";
 export * from "./repositories/prisma-battle-room-repository";
+export * from "./utils/platform-code";

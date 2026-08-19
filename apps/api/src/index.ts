@@ -10,6 +10,7 @@ import { problemRoutes } from "./routes/problem.route";
 import { userRoutes } from "./routes/user.route";
 import { battleRoutes } from "./routes/battle.route";
 import { matchmakingRoutes } from "./routes/matchmaking.route";
+import { adminRoutes } from "./routes/admin.route";
 const app = fastify();
 
 const start = async () => {
@@ -37,6 +38,7 @@ const start = async () => {
                 api.register(userRoutes);
                 api.register(battleRoutes);
                 api.register(matchmakingRoutes);
+                api.register(adminRoutes);
             },
             {
                 prefix: "/api"

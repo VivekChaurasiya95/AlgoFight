@@ -166,6 +166,27 @@ export default function Practice() {
       : totalProblems > 0
         ? `${totalProblems} Problems`
         : "Practice Problems";
+  useEffect(() => {
+    fetch("/api/problems/categories")
+      .then((res) => res.json())
+      .then((cats) => {
+        if (Array.isArray(cats) && cats.length > 0) {
+          setAvailableTags(["all", ...cats]);
+        }
+      })
+      .catch(() => {
+        setAvailableTags([
+          "all",
+          "Arrays & Hashing",
+          "Two Pointers",
+          "Sliding Window",
+          "Stack & Queues",
+          "Binary Search",
+          "Dynamic Programming",
+        ]);
+      });
+  }, []);
+
 
   return (
     <div className="archive-root">
