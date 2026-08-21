@@ -11,6 +11,12 @@ class BrowserSocketClient {
 
   connect() {
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+      if (this.ws.readyState === WebSocket.OPEN && (this.auth?.uid || this.auth?.userId)) {
+        this.emit("auth", {
+          userId: this.auth.uid || this.auth.userId,
+          username: this.auth.username || this.auth.displayName || "Player",
+        });
+      }
       return;
     }
 
@@ -21,8 +27,11 @@ class BrowserSocketClient {
         this.connected = true;
         this.trigger("connect");
 
-        if (this.auth?.uid || this.auth?.token) {
-          this.emit("auth", { userId: this.auth.uid });
+        if (this.auth?.uid || this.auth?.userId) {
+          this.emit("auth", {
+            userId: this.auth.uid || this.auth.userId,
+            username: this.auth.username || this.auth.displayName || "Player",
+          });
         }
       };
 
@@ -31,9 +40,9 @@ class BrowserSocketClient {
           const raw = JSON.parse(event.data);
           const eventName = raw.event || raw.action || raw.type;
           if (eventName) {
-            const data = raw.payload && typeof raw.payload === "object"
-              ? { ...raw, ...raw.payload }
-              : (raw.payload !== undefined ? raw.payload : raw);
+            const data = raw.payload !== undefined
+              ? (typeof raw.payload === "object" ? { ...raw, ...raw.payload } : raw.payload)
+              : raw;
             this.trigger(eventName, data);
           }
         } catch (e) {
@@ -91,7 +100,13 @@ class BrowserSocketClient {
   trigger(event, data) {
     const handlers = this.listeners.get(event);
     if (handlers) {
-      handlers.forEach((cb) => cb(data));
+      handlers.forEach((cb) => {
+        try {
+          cb(data);
+        } catch (err) {
+          console.error(`Error in listener for ${event}:`, err);
+        }
+      });
     }
   }
 
@@ -113,9 +128,13 @@ export function getSocket() {
   return socketInstance;
 }
 
-export function connectSocket(token, uid) {
+export function connectSocket(token, uid, username) {
   const s = getSocket();
-  s.auth = { ...(token ? { token } : {}), ...(uid ? { uid } : {}) };
+  s.auth = {
+    ...(token ? { token } : {}),
+    ...(uid ? { uid, userId: uid } : {}),
+    ...(username ? { username, displayName: username } : {}),
+  };
   s.connect();
   return s;
 }

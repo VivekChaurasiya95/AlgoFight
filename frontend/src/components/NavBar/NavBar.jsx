@@ -35,18 +35,18 @@ const Navbar = () => {
             <li><Link to="/rewards" className={isActive('/rewards')}>Rewards</Link></li>
             <li><Link to="/about" className={isActive('/about')}>About</Link></li>
             <li><Link to="/developer" className={isActive('/developer')}>Developers</Link></li>
-            <li><Link to="/admin" className={isActive('/admin')} style={{ color: '#00e5ff' }}>Control Hub 🛡️</Link></li>
+            <li><Link to="/admin" className={isActive('/admin')} style={{ color: '#00e5ff' }}>Control Hub </Link></li>
           </ul>
         </div>
-        
+
         <div className='navbar-actions'>
           {user ? (
-             <div style={{display: 'flex', gap: '16px', alignItems: 'center'}}>
-               <Link to="/profile" style={{color: '#888', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500}}>Profile</Link>
-               <button onClick={handleLogout} className="btn-nav-outline">
-                 Logout
-               </button>
-             </div>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <Link to="/profile" style={{ color: '#888', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500 }}>Profile</Link>
+              <button onClick={handleLogout} className="btn-nav-outline">
+                Logout
+              </button>
+            </div>
           ) : (
             <div className="auth-buttons">
               <Link to="/" className="nav-sign-in">Sign In</Link>

@@ -83,6 +83,7 @@ function App() {
 
           {/* ✅ Battle Routes */}
           <Route path="/battle" element={<ProtectedRoute><BattleArena /></ProtectedRoute>} />
+          <Route path="/battle/players" element={<ProtectedRoute><BattleArena defaultTab="players" /></ProtectedRoute>} />
           <Route path="/battle/live" element={<ProtectedRoute><LiveBattle /></ProtectedRoute>} />
           <Route path="/battle/room/:roomCode" element={<ProtectedRoute><RoomLobby /></ProtectedRoute>} />
           <Route path="/practice" element={<ProtectedRoute><Practice /></ProtectedRoute>} />

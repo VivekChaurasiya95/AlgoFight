@@ -158,4 +158,19 @@ export async function evaluatePracticeCode({ problemId, code, language, mode }) 
   });
 }
 
+/**
+ * Fetch available players from backend
+ */
+export async function fetchAvailablePlayers({ search = "", status = "", limit = 50, excludeUserId = "" } = {}) {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  if (status) params.set("status", status);
+  if (limit) params.set("limit", String(limit));
+  if (excludeUserId) params.set("excludeUserId", excludeUserId);
+
+  const queryString = params.toString();
+  return requestJson(`/api/players/available${queryString ? `?${queryString}` : ""}`);
+}
+
 export { API_URL };
+

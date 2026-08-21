@@ -82,9 +82,31 @@ export class PrismaUserRepository implements UserRepository {
         });
     }
 
-    async getAvailablePlayers(excludeUserId?: string, limit = 20): Promise<UserEntity[]> {
+    async getAvailablePlayers(excludeUserId?: string, limit = 50, search?: string): Promise<UserEntity[]> {
+        const whereClause: any = {};
+        const conditions: any[] = [];
+
+        if (excludeUserId) {
+            conditions.push({ id: { not: excludeUserId } });
+        }
+
+        if (search && search.trim()) {
+            const query = search.trim();
+            conditions.push({
+                OR: [
+                    { username: { contains: query, mode: "insensitive" } },
+                    { platformCode: { contains: query, mode: "insensitive" } },
+                    { institutionName: { contains: query, mode: "insensitive" } },
+                ],
+            });
+        }
+
+        if (conditions.length > 0) {
+            whereClause.AND = conditions;
+        }
+
         return prisma.user.findMany({
-            where: excludeUserId ? { id: { not: excludeUserId } } : undefined,
+            where: whereClause,
             take: limit,
             orderBy: { rating: "desc" },
         });

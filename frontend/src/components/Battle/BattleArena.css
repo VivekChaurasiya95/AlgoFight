@@ -57,6 +57,74 @@
   line-height: 1.6;
 }
 
+/* ===== ARENA TAB NAVIGATION ===== */
+.arena-nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.arena-tabs-nav {
+  display: inline-flex;
+  background: rgba(10, 15, 26, 0.75);
+  border: 1px solid rgba(0, 229, 255, 0.16);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 6px;
+  backdrop-filter: blur(10px);
+}
+
+.arena-nav-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #8da0b6;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.arena-nav-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.arena-nav-btn.active {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.22), rgba(0, 140, 255, 0.14));
+  color: #00e5ff;
+  border-color: rgba(0, 229, 255, 0.45);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.2);
+}
+
+.arena-tab-badge {
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: rgba(0, 255, 136, 0.15);
+  color: #00ff88;
+  border: 1px solid rgba(0, 255, 136, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.arena-nav-btn.active .arena-tab-badge {
+  background: #00ff88;
+  color: #000;
+  border-color: #00ff88;
+}
+
+
 /* Shared Text Gradients */
 .text-cyan-gradient {
   background: linear-gradient(90deg, #00e5ff 0%, #00a7ff 100%);

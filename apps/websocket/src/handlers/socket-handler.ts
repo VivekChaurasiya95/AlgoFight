@@ -32,7 +32,13 @@ export class SocketHandler {
     private readonly mockExecutor = new MockExecutor();
 
     // Map socket -> user session
-    private readonly socketUsers = new Map<WebSocket, { userId: string; username: string; roomId?: string }>();
+    private readonly socketUsers = new Map<WebSocket, {
+        userId: string;
+        username: string;
+        rating?: number;
+        platformCode?: string;
+        roomId?: string;
+    }>();
 
     constructor(private readonly connectionManager: ConnectionManager) { }
 
@@ -54,14 +60,208 @@ export class SocketHandler {
                     const username = data.username || "Player";
                     if (userId) {
                         currentUserId.value = userId;
-                        this.connectionManager.registerUser(userId, socket);
-                        this.socketUsers.set(socket, { userId, username });
-                        this.send(socket, "authenticated", { userId, username });
+
+                        // Query user details from DB to enrich presence
+                        let user = await this.userRepo.getUserById(userId).catch(() => null);
+                        if (!user && (data.email || data.username)) {
+                            user = await this.userRepo.upsertUser({
+                                id: userId,
+                                email: data.email || `${username.toLowerCase().replace(/\s+/g, "_")}@algofight.local`,
+                                username: username,
+                            }).catch(() => null);
+                        }
+
+                        const userRating = user?.rating || 1200;
+                        const platformCode = user?.platformCode || "";
+                        const userType = user?.userType || "INDIVIDUAL";
+                        const institutionName = user?.institutionName || undefined;
+
+                        this.connectionManager.registerUser(userId, socket, {
+                            username: user?.username || username,
+                            rating: userRating,
+                            platformCode,
+                            userType,
+                            institutionName,
+                            status: "AVAILABLE",
+                        });
+
+                        this.socketUsers.set(socket, {
+                            userId,
+                            username: user?.username || username,
+                            rating: userRating,
+                            platformCode,
+                        });
+
+                        this.send(socket, "authenticated", {
+                            userId,
+                            username: user?.username || username,
+                            rating: userRating,
+                            platformCode,
+                        });
+
+                        // Broadcast real-time presence change to all users
+                        const presence = this.connectionManager.getPresence(userId);
+                        if (presence) {
+                            this.connectionManager.broadcastToAll("player_presence_update", presence);
+                        }
+
+                        // Send current online presences snapshot to this user
+                        const onlineList = this.connectionManager.getAllOnlinePresences();
+                        this.send(socket, "presence_sync", { onlinePlayers: onlineList });
                     }
                     break;
                 }
 
-                // 2. Find Match (1v1 Queue + Auto-Bot Fallback)
+                // 2. Fetch / Subscribe Available Players
+                case "get_available_players":
+                case "subscribe_presence": {
+                    const onlineList = this.connectionManager.getAllOnlinePresences();
+                    this.send(socket, "presence_sync", { onlinePlayers: onlineList });
+                    break;
+                }
+
+                // 3. Send Direct 1v1 Challenge
+                case "send_challenge": {
+                    const session = this.socketUsers.get(socket);
+                    const fromUserId = session?.userId || currentUserId.value;
+                    const fromUsername = session?.username || data.fromUsername || "Challenger";
+                    const fromRating = session?.rating || 1200;
+                    const { targetUserId, targetUsername } = data;
+
+                    if (!fromUserId) {
+                        this.send(socket, "error", "You must be logged in to send a challenge.");
+                        break;
+                    }
+
+                    if (!targetUserId || targetUserId === fromUserId) {
+                        this.send(socket, "error", "Invalid target player for duel challenge.");
+                        break;
+                    }
+
+                    if (!this.connectionManager.isUserOnline(targetUserId)) {
+                        this.send(socket, "error", `${targetUsername || "Player"} is currently offline.`);
+                        break;
+                    }
+
+                    const challenge = this.connectionManager.createChallenge({
+                        fromUserId,
+                        fromUsername,
+                        fromRating,
+                        targetUserId,
+                        targetUsername: targetUsername || "Opponent",
+                    });
+
+                    if (!challenge) {
+                        this.send(socket, "error", "Could not dispatch challenge. Player might be offline.");
+                        break;
+                    }
+
+                    // Send incoming challenge prompt to target user
+                    this.connectionManager.sendToUser(targetUserId, "challenge_received", challenge);
+
+                    // Confirm challenge sent to the challenger
+                    this.send(socket, "challenge_sent", challenge);
+                    break;
+                }
+
+                // 4. Accept Direct Challenge
+                case "accept_challenge": {
+                    const { challengeId } = data;
+                    const challenge = this.connectionManager.getChallenge(challengeId);
+
+                    if (!challenge || challenge.status !== "PENDING") {
+                        this.send(socket, "error", "Challenge expired or no longer available.");
+                        break;
+                    }
+
+                    challenge.status = "ACCEPTED";
+                    this.connectionManager.removeChallenge(challengeId);
+
+                    // Create a 1v1 battle room
+                    const room = await this.battleRoomService.createRoom({
+                        hostId: challenge.fromUserId,
+                        maxPlayers: 2,
+                        timeLimitMinutes: 15,
+                    });
+
+                    // Update both players' presence status
+                    this.connectionManager.updatePresenceStatus(challenge.fromUserId, "IN_BATTLE", room.id);
+                    this.connectionManager.updatePresenceStatus(challenge.targetUserId, "IN_BATTLE", room.id);
+
+                    // Fetch challenge problem
+                    const problemsResult = await this.problemRepo.getProblems({ limit: 10 });
+                    const problem = problemsResult.problems[0] || (await this.problemRepo.getProblemById(room.id));
+
+                    const matchPayload = {
+                        roomId: room.id,
+                        roomCode: room.roomCode,
+                        problem: {
+                            id: problem?.id || room.id,
+                            title: problem?.title || "Balanced Challenge",
+                            statement: problem?.statement || "Implement your algorithm to solve the challenge.",
+                            difficulty: problem?.difficulty || "EASY",
+                            testCases: problem?.testCases || [
+                                { input: "2 7", expectedOutput: "9" },
+                                { input: "3 2", expectedOutput: "5" },
+                            ],
+                            starterCode: {
+                                javascript: "function solution(a, b) {\n  // Write your code here\n  return a + b;\n}",
+                                cpp: "#include <iostream>\nusing namespace std;\n\nint main() {\n  int a, b;\n  if (cin >> a >> b) cout << (a + b) << endl;\n  return 0;\n}",
+                            },
+                        },
+                        players: [challenge.fromUsername, challenge.targetUsername],
+                    };
+
+                    // Join both sockets to room and dispatch match
+                    const challengerSocket = this.connectionManager.userSockets.get(challenge.fromUserId);
+                    const targetSocket = this.connectionManager.userSockets.get(challenge.targetUserId);
+
+                    if (challengerSocket) {
+                        this.connectionManager.joinRoom(room.id, challengerSocket);
+                        const s = this.socketUsers.get(challengerSocket);
+                        if (s) s.roomId = room.id;
+                    }
+                    if (targetSocket) {
+                        this.connectionManager.joinRoom(room.id, targetSocket);
+                        const s = this.socketUsers.get(targetSocket);
+                        if (s) s.roomId = room.id;
+                    }
+
+                    this.connectionManager.sendToUser(challenge.fromUserId, "match_found", matchPayload);
+                    this.connectionManager.sendToUser(challenge.targetUserId, "match_found", matchPayload);
+                    break;
+                }
+
+                // 5. Decline Direct Challenge
+                case "decline_challenge": {
+                    const { challengeId } = data;
+                    const challenge = this.connectionManager.getChallenge(challengeId);
+                    if (challenge) {
+                        challenge.status = "DECLINED";
+                        this.connectionManager.removeChallenge(challengeId);
+                        this.connectionManager.sendToUser(challenge.fromUserId, "challenge_declined", {
+                            challengeId,
+                            targetUsername: challenge.targetUsername,
+                        });
+                    }
+                    break;
+                }
+
+                // 6. Cancel Direct Challenge (By Challenger)
+                case "cancel_challenge": {
+                    const { challengeId } = data;
+                    const challenge = this.connectionManager.getChallenge(challengeId);
+                    if (challenge) {
+                        challenge.status = "CANCELLED";
+                        this.connectionManager.removeChallenge(challengeId);
+                        this.connectionManager.sendToUser(challenge.targetUserId, "challenge_cancelled", {
+                            challengeId,
+                        });
+                    }
+                    break;
+                }
+
+                // 7. Find Match (1v1 Queue + Auto-Bot Fallback)
                 case "find_match": {
                     const session = this.socketUsers.get(socket);
                     const identifier = session?.userId || currentUserId.value || data.username || "Player";
@@ -76,7 +276,6 @@ export class SocketHandler {
                         });
                     }
 
-                    // If this specific user is ALREADY in the queue from another tab, create a second test player
                     let activeUserId = user.id;
                     let activeUsername = user.username;
                     if (this.matchmakingService.isQueued(user.id)) {
@@ -90,12 +289,23 @@ export class SocketHandler {
                     }
 
                     currentUserId.value = activeUserId;
-                    this.connectionManager.registerUser(activeUserId, socket);
-                    this.socketUsers.set(socket, { userId: activeUserId, username: activeUsername });
+                    this.connectionManager.registerUser(activeUserId, socket, {
+                        username: activeUsername,
+                        rating: user.rating,
+                        platformCode: user.platformCode || undefined,
+                        status: "IN_BATTLE",
+                    });
+                    this.socketUsers.set(socket, {
+                        userId: activeUserId,
+                        username: activeUsername,
+                        rating: user.rating,
+                        platformCode: user.platformCode || undefined,
+                    });
 
                     const match = await this.matchmakingService.joinQueue(activeUserId);
 
                     if (match) {
+                        this.connectionManager.updatePresenceStatus(activeUserId, "IN_BATTLE", match.roomId);
                         await this.dispatchMatch(match, activeUsername, socket);
                     } else {
                         this.send(socket, "waiting_for_opponent", { status: "queued" });
@@ -118,6 +328,7 @@ export class SocketHandler {
                                     player2Id: "bot",
                                 };
 
+                                this.connectionManager.updatePresenceStatus(activeUserId, "IN_BATTLE", botRoom.id);
                                 await this.dispatchMatch(botMatch, activeUsername, socket, "AlgoBot (1200)");
                             }
                         }, 2000);
@@ -125,7 +336,7 @@ export class SocketHandler {
                     break;
                 }
 
-                // 3. Test Code (Runs Sample Tests)
+                // 8. Test Code (Runs Sample Tests)
                 case "test_code": {
                     const { code, language } = data;
 
@@ -153,7 +364,7 @@ export class SocketHandler {
                     break;
                 }
 
-                // 4. Submit Code (Evaluates & Concludes Match)
+                // 9. Submit Code (Evaluates & Concludes Match)
                 case "submit_code": {
                     const { code, language, roomId } = data;
                     const session = this.socketUsers.get(socket);
@@ -187,6 +398,7 @@ export class SocketHandler {
                     if (isAccepted && roomId) {
                         if (session?.userId) {
                             await this.battleRoomRepo.recordParticipantScore(roomId, session.userId, 100, true).catch(() => { });
+                            this.connectionManager.updatePresenceStatus(session.userId, "AVAILABLE");
                         }
                         await this.battleRoomService.finishBattle(roomId).catch(() => { });
 
@@ -196,6 +408,8 @@ export class SocketHandler {
                     }
                     break;
                 }
+
+                // 10. Custom Room Lobby Channels
                 case "join_room_channel": {
                     const { roomCode, userId, username } = data;
                     if (roomCode) {
@@ -207,6 +421,11 @@ export class SocketHandler {
                         };
                         session.roomId = roomCode;
                         this.socketUsers.set(socket, session);
+
+                        if (session.userId) {
+                            this.connectionManager.updatePresenceStatus(session.userId, "IN_LOBBY", roomCode);
+                        }
+
                         this.connectionManager.broadcastToRoom(roomCode, "player_joined", {
                             userId: session.userId,
                             username: session.username,
@@ -225,10 +444,10 @@ export class SocketHandler {
                     }
                     break;
                 }
+
                 case "start_room_battle": {
-                    const { roomCode, hostId } = data;
+                    const { roomCode } = data;
                     if (roomCode) {
-                        // Fetch a problem for the custom room battle
                         const problemsResult = await this.problemRepo.getProblems({ limit: 10 });
                         const problem = problemsResult.problems[0] || (await this.problemRepo.getProblemById(roomCode));
                         const matchPayload = {
@@ -251,7 +470,6 @@ export class SocketHandler {
                     break;
                 }
 
-
                 default:
                     logger.debug({ action }, "Received unhandled socket action");
             }
@@ -271,7 +489,7 @@ export class SocketHandler {
         const problem = problemsResult.problems[0] || (await this.problemRepo.getProblemById(match.roomId));
 
         this.connectionManager.joinRoom(match.roomId, currentSocket);
-        const player1Socket = (this.connectionManager as any).userSockets?.get(match.player1Id);
+        const player1Socket = this.connectionManager.userSockets.get(match.player1Id);
         if (player1Socket && player1Socket !== currentSocket) {
             this.connectionManager.joinRoom(match.roomId, player1Socket);
         }
@@ -312,6 +530,9 @@ export class SocketHandler {
             this.connectionManager.broadcastToRoom(session.roomId, "opponent_disconnected", {
                 username: session.username,
             });
+        }
+        if (session?.userId) {
+            this.connectionManager.unregisterUser(session.userId, socket);
         }
         this.socketUsers.delete(socket);
     }

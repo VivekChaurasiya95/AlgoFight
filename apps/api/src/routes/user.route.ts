@@ -25,7 +25,7 @@ export async function userRoutes(app: FastifyInstance) {
     // 3. Available Players
     app.get("/players/available", async (req) => {
         const query = AvailablePlayersQuerySchema.parse(req.query);
-        return userController.getAvailablePlayers(query.excludeUserId, query.limit);
+        return userController.getAvailablePlayers(query.excludeUserId, query.limit, query.search);
     });
 
     // 4. Global Leaderboard

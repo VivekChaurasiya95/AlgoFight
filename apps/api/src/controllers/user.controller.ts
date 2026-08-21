@@ -37,8 +37,29 @@ export class UserController {
         };
     }
 
-    async getAvailablePlayers(excludeUserId?: string, limit?: number) {
-        return this.userRepository.getAvailablePlayers(excludeUserId, limit);
+    async getAvailablePlayers(excludeUserId?: string, limit?: number, search?: string) {
+        const users = await this.userRepository.getAvailablePlayers(excludeUserId, limit, search);
+        return users.map((u) => {
+            const matchesPlayed = u.wins + u.losses;
+            const winRate = matchesPlayed > 0 ? Math.round((u.wins / matchesPlayed) * 100) : 0;
+            return {
+                id: u.id,
+                username: u.username,
+                email: u.email,
+                platformCode: u.platformCode,
+                userType: u.userType,
+                institutionName: u.institutionName,
+                department: u.department,
+                rating: u.rating,
+                wins: u.wins,
+                losses: u.losses,
+                matchesWon: u.wins,
+                matchesPlayed,
+                winRate,
+                status: "OFFLINE",
+                createdAt: u.createdAt,
+            };
+        });
     }
 
     async getLeaderboard() {

@@ -6,6 +6,8 @@ export const CreateUserSchema = z.object({
 });
 
 export const AvailablePlayersQuerySchema = z.object({
-    excludeUserId: z.string().uuid().optional(),
-    limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+    excludeUserId: z.string().optional(),
+    search: z.string().optional(),
+    status: z.string().optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional().default(50),
 });
