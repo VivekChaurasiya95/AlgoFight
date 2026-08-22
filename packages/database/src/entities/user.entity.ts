@@ -9,6 +9,8 @@ export interface UserEntity {
     department?: string | null;
     batchYear?: string | null;
     platformCode?: string | null;
+    githubUrl?: string | null;
+    linkedinUrl?: string | null;
     rating: number;
     wins: number;
     losses: number;

@@ -31,7 +31,8 @@ model User {
   submissions     Submission[]
   participants    BattleParticipant[]
   hostedRooms     BattleRoom[] @relation("HostedRooms")
-  
+  githubUrl       String?
+  linkedinUrl     String?
   // Track high-level counts
   totalSubmissions Int @default(0)
   totalExecutions  Int @default(0)

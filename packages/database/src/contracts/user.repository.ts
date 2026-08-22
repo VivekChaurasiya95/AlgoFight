@@ -11,6 +11,8 @@ export interface CreateUserInput {
     department?: string | null;
     batchYear?: string | null;
     platformCode?: string;
+    githubUrl?: string | null;
+    linkedinUrl?: string | null;
 }
 
 export interface UserRepository {

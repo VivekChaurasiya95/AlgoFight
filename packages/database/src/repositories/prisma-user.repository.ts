@@ -18,6 +18,8 @@ export class PrismaUserRepository implements UserRepository {
                 department: input.department || null,
                 batchYear: input.batchYear || null,
                 platformCode: input.platformCode || generatePlatformCode(input.userType),
+                githubUrl: input.githubUrl || null,
+                linkedinUrl: input.linkedinUrl || null,
             },
         });
     }
@@ -37,6 +39,8 @@ export class PrismaUserRepository implements UserRepository {
                     email: input.email,
                     institutionName: input.institutionName || existing.institutionName,
                     secondaryEmail: input.secondaryEmail || existing.secondaryEmail,
+                    githubUrl: input.githubUrl || existing.githubUrl,
+                    linkedinUrl: input.linkedinUrl || existing.linkedinUrl,
                 },
             });
         }
