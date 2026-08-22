@@ -13,6 +13,8 @@ export async function userRoutes(app: FastifyInstance) {
             email: body.email,
             username: body.username,
             displayName: body.displayName,
+            githubUrl: body.githubUrl,
+            linkedinUrl: body.linkedinUrl,
         });
     });
 

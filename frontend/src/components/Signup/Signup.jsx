@@ -15,6 +15,8 @@ function Signup() {
   const [institutionName, setInstitutionName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -76,6 +78,8 @@ function Signup() {
         userType,
         institutionName: isCollegeUser ? institutionName.trim() : null,
         secondaryEmail: secondaryEmail.trim() || null,
+        githubUrl: githubUrl.trim() || null,
+        linkedinUrl: linkedinUrl.trim() || null,
       });
 
       if (res.notice) notify(res.notice);
@@ -192,7 +196,26 @@ function Signup() {
             />
             <p className="error-text">{"\u00A0"}</p>
           </div>
-
+          {/* GitHub URL (Optional) */}
+          <div className="input-group">
+            <input
+              type="url"
+              placeholder="GitHub URL (Optional)"
+              value={githubUrl}
+              onChange={(e) => setGithubUrl(e.target.value)}
+            />
+            <p className="error-text">{"\u00A0"}</p>
+          </div>
+          {/* LinkedIn URL (Optional) */}
+          <div className="input-group">
+            <input
+              type="url"
+              placeholder="LinkedIn URL (Optional)"
+              value={linkedinUrl}
+              onChange={(e) => setLinkedinUrl(e.target.value)}
+            />
+            <p className="error-text">{"\u00A0"}</p>
+          </div>
           {/* Password & Confirm */}
           <div className="input-group">
             <input
