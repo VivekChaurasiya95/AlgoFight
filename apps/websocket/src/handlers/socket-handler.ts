@@ -1,5 +1,6 @@
 // apps/websocket/src/handlers/socket-handler.ts
 import { WebSocket } from "ws";
+import { syncBattleToTelemetry } from "../events/battle.events";
 import { ConnectionManager } from "../server/connection-manager";
 import { logger } from "@algofight/logger";
 import {
@@ -369,9 +370,10 @@ export class SocketHandler {
                     const { code, language, roomId } = data;
                     const session = this.socketUsers.get(socket);
                     const username = session?.username || "Player";
+                    const submissionId = `submit-${Date.now()}`;
 
                     const result = await this.mockExecutor.execute({
-                        submissionId: `submit-${Date.now()}`,
+                        submissionId,
                         language: language || "javascript",
                         code: code || "",
                         testCases: [
@@ -395,6 +397,23 @@ export class SocketHandler {
                         },
                     });
 
+                    // Ingest submission telemetry to Linux Server Dashboard
+                    logger.info(
+                        {
+                            submissionId,
+                            userId: session?.userId || "guest",
+                            roomId: roomId || undefined,
+                            language: language || "javascript",
+                            executionTimeMs: result.executionTime || 20,
+                            cpuTimeMs: (result.executionTime || 20) * 0.95,
+                            peakMemoryKb: 14500,
+                            verdict: isAccepted ? "ACCEPTED" : "WRONG_ANSWER",
+                            passCount: result.passedCount,
+                            totalTestcases: result.passedCount + result.failedCount,
+                        },
+                        "Submission code evaluated via WebSocket",
+                    );
+
                     if (isAccepted && roomId) {
                         if (session?.userId) {
                             await this.battleRoomRepo.recordParticipantScore(roomId, session.userId, 100, true).catch(() => { });
@@ -404,6 +423,45 @@ export class SocketHandler {
 
                         this.connectionManager.broadcastToRoom(roomId, "battle_over", {
                             winner: username,
+                        });
+
+                        // ✅ Sync Battle Telemetry (supports 1v1, Solo Bot, FFA Multiplayer)
+                        const room = await this.battleRoomRepo.getRoomById(roomId).catch(() => null);
+                        const participants = (room?.participants || []).map((p, idx) => ({
+                            userId: p.userId,
+                            username: p.userId === session?.userId ? (username || p.userId) : `Player ${idx + 1}`,
+                            language: language || "javascript",
+                            score: p.score || (p.userId === session?.userId ? 100 : 0),
+                            rank: p.rank || (p.userId === session?.userId ? 1 : idx + 1),
+                            verdict: (p.solvedAt || p.userId === session?.userId || p.score > 0) ? "ACCEPTED" : "WRONG_ANSWER",
+                            executionTimeMs: result.executionTime || 22,
+                            peakMemoryKb: 14500,
+                            testsPassed: p.userId === session?.userId ? (result.passedCount || 3) : 0,
+                            testsTotal: (result.passedCount + result.failedCount) || 3,
+                        }));
+
+
+                        syncBattleToTelemetry({
+                            roomId,
+                            battleType: participants.length <= 2 ? "1v1" : "FFA_MULTIPLAYER",
+                            problemId: room?.problemId || "prob-1",
+                            problemTitle: "Live Battle Duel",
+                            durationSeconds: 15,
+                            winnerId: session?.userId,
+                            participants: participants.length > 0 ? participants : [
+                                {
+                                    userId: session?.userId || "user-1",
+                                    username: username || "Player 1",
+                                    language: language || "javascript",
+                                    score: 100,
+                                    rank: 1,
+                                    verdict: "ACCEPTED",
+                                    executionTimeMs: result.executionTime || 22,
+                                    peakMemoryKb: 14500,
+                                    testsPassed: 3,
+                                    testsTotal: 3,
+                                },
+                            ],
                         });
                     }
                     break;

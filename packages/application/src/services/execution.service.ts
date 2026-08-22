@@ -86,9 +86,16 @@ export class ExecutionService {
 
                 logger.info(
                     {
-                        roomId: submission.roomId,
-                        userId: submission.userId,
                         submissionId,
+                        userId: submission.userId,
+                        problemId: submission.problemId,
+                        language: submission.language,
+                        executionTimeMs: result.executionTime || 0,
+                        cpuTimeMs: result.cpuUsage || ((result.executionTime || 0) * 0.95),
+                        peakMemoryKb: result.memoryUsage || 0,
+                        verdict: result.failedCount === 0 ? "ACCEPTED" : "WRONG_ANSWER",
+                        passCount: result.passedCount || (result.failedCount === 0 ? problem.testCases.length : 0),
+                        totalTestcases: problem.testCases.length,
                     },
                     "Battle participant solved problem and score was recorded",
                 );

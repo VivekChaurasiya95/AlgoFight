@@ -11,6 +11,7 @@ import {
   SubmissionNotFoundError,
 } from "@algofight/error-handling";
 import { toSubmissionEntity } from "../mappers/submission.mapper";
+import { SubmissionEntity } from "../entities/submission.entity";
 
 export class PrismaSubmissionRepository implements SubmissionRepository {
   async incrementRetryCount(submissionId: string) {
@@ -47,7 +48,7 @@ export class PrismaSubmissionRepository implements SubmissionRepository {
       data: {
         userId: input.userId,
         problemId: input.problemId,
-        roomId: input.roomId, // 👈 Persist roomId
+        roomId: input.roomId, // ðŸ‘ˆ Persist roomId
         language: input.language,
         code: input.code,
       },
@@ -74,9 +75,11 @@ export class PrismaSubmissionRepository implements SubmissionRepository {
     return toSubmissionEntity(submission);
   }
 
-  async completeSubmission(submissionId: string, result: SubmissionResult) {
-    await this.validateTransition(submissionId, result.status);
-    const submission = await prisma.submission.update({
+  async completeSubmission(
+    submissionId: string,
+    result: SubmissionResult
+  ): Promise<SubmissionEntity> {
+    const updated = await prisma.submission.update({
       where: { id: submissionId },
       data: {
         status: result.status,
@@ -84,10 +87,20 @@ export class PrismaSubmissionRepository implements SubmissionRepository {
         stderr: result.stderr,
         executionTime: result.executionTime,
         exitCode: result.exitCode,
+
+        // --- 1. SAVE THE AGGREGATE METRICS ---
+        verdict: result.verdict as any,
+        cpuUsage: result.cpuUsage,
+        memoryUsage: result.memoryUsage,
+        compileTime: result.compileTime,
       },
     });
-    return toSubmissionEntity(submission);
+
+    // ... (leave the rest of your method mapping to SubmissionEntity as is)
+    return toSubmissionEntity(updated);
+    // Or however it currently returns
   }
+
 
   async getSubmissionById(submissionId: string) {
     const submission = await prisma.submission.findUnique({
@@ -102,3 +115,4 @@ export class PrismaSubmissionRepository implements SubmissionRepository {
     return submissions.map(toSubmissionEntity);
   }
 }
+

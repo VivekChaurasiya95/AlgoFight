@@ -1,34 +1,48 @@
 import pino from "pino";
+import { Writable } from "node:stream";
 
-const isDevelopment =
-    process.env.NODE_ENV !== "production";
+const TELEMETRY_URL =
+    process.env.TELEMETRY_URL || "http://localhost:8000";
 
-export const logger = pino({
-    level:
-        process.env.LOG_LEVEL || "info",
-
-    transport: isDevelopment
-        ? {
-              target: "pino-pretty",
-              options: {
-                  colorize: true,
-              },
-          }
-        : undefined,
-
-    base: {
-        service: "algofight",
+// Standard Node.js Writable Stream that dispatches logs to the Linux server
+const telemetryStream = new Writable({
+    write(chunk, _encoding, callback) {
+        try {
+            const logJsonString = chunk.toString();
+            fetch(`${TELEMETRY_URL}/api/v1/telemetry/logs`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: logJsonString,
+            }).catch(() => {
+                // Silently ignore if telemetry server is restarting
+            });
+        } catch {
+            // Ignore parse/fetch errors
+        }
+        callback();
     },
-
-    redact: [
-        "password",
-        "token",
-        "authorization",
-    ],
-
-    timestamp:
-        pino.stdTimeFunctions.isoTime,
 });
+
+export const logger = pino(
+    {
+        level: process.env.LOG_LEVEL || "info",
+        base: {
+            service: "algofight",
+        },
+        redact: [
+            "password",
+            "token",
+            "authorization",
+        ],
+        timestamp: pino.stdTimeFunctions.isoTime,
+    },
+    pino.multistream([
+        { stream: process.stdout },
+        { stream: telemetryStream },
+    ])
+);
 
 export * from "./logger-factory";
 export * from "./constants/logger.constants";

@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-
 }
 
 enum UserType {
@@ -32,9 +31,22 @@ model User {
   submissions     Submission[]
   participants    BattleParticipant[]
   hostedRooms     BattleRoom[] @relation("HostedRooms")
+  
+  // Track high-level counts
+  totalSubmissions Int @default(0)
+  totalExecutions  Int @default(0)
 }
 
-
+enum Verdict {
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  MEMORY_LIMIT_EXCEEDED
+  COMPILATION_ERROR
+  RUNTIME_ERROR
+  INTERNAL_ERROR
+  SYSTEM_ERROR     
+}
 
 enum Difficulty {
   EASY
@@ -81,35 +93,41 @@ model Problem {
   battleRooms BattleRoom[]
 }
 
-
-
 model Submission {
   id String @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id]) // 👈 Add this line
+  user      User     @relation(fields: [userId], references: [id])
   problemId String
   problem   Problem  @relation(fields: [problemId], references: [id])
+  roomId    String?
+  room      BattleRoom?  @relation(fields: [roomId], references: [id])
+  language  String
+  code      String
+  status    SubmissionStatus @default(CREATED)
+  
+  // --- AGGREGATE METRIC FIELDS ---
+  // We keep these here for quick caching, but the granular 
+  // history is handled by your external Linux server!
+  verdict       Verdict?
+  cpuUsage      Float?     // Peak or average CPU
+  memoryUsage   Float?     // Peak memory across all test cases
+  compileTime   Int?       // Total compilation time
+  // -----------------------------------
 
-  roomId String?
-  room BattleRoom?  @relation(fields: [roomId], references: [id])
-
-  language String
-  code     String
-  status SubmissionStatus @default(CREATED)
-  stdout String?
-  stderr String?
+  stdout        String?
+  stderr        String?
   executionTime Int?
   exitCode      Int?
-  retryCount Int @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  retryCount    Int @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
   @@index([userId])
   @@index([status])
   @@index([roomId])
   @@index([createdAt])
   @@index([problemId])
 }
-
 
 enum BattleRoomStatus {
   WAITING     // In lobby, waiting for players
@@ -118,7 +136,6 @@ enum BattleRoomStatus {
   FINISHED    // Battle concluded
   CANCELLED   // Room closed/abandoned
 }
-
 
 model BattleRoom {
   id          String           @id @default(uuid())
@@ -135,12 +152,11 @@ model BattleRoom {
   createdAt        DateTime    @default(now())
   participants BattleParticipant[]
   submissions Submission[] 
+  
   @@index([hostId])
   @@index([status])
   @@index([roomCode])
 }
-
-
 
 model BattleParticipant {
   roomId    String
@@ -152,6 +168,7 @@ model BattleParticipant {
   solvedAt  DateTime? // Timestamp when accepted solution was submitted
   room      BattleRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
   @@id([roomId, userId])
   @@index([userId])
 }

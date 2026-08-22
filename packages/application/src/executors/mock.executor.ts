@@ -12,6 +12,8 @@ import { logger }
 import { SubmissionStatus }
     from "@algofight/types";
 
+import { Verdict } from "@algofight/types";
+
 const MOCK_EXECUTION_TIME = 3000;
 
 export class MockExecutor
@@ -64,25 +66,30 @@ export class MockExecutor
         );
 
         return {
-            stdout:
-                "Hello AlgoFight",
-
-            stderr:
-                null,
-
+            stdout: "Hello AlgoFight",
+            stderr: null,
             executionTime,
+            exitCode: 0,
+            status: SubmissionStatus.COMPLETED as any,
+            passedCount: payload.testCases.length,
+            failedCount: 0,
 
-            exitCode:
-                0,
+            // --- NEW AGGREGATE METRICS ---
+            verdict: Verdict.ACCEPTED as any,
+            cpuUsage: 45.2,
+            memoryUsage: 12.5,
+            compileTime: 300,
 
-            status:
-                SubmissionStatus.COMPLETED,
-
-            passedCount:
-                payload.testCases.length,
-
-            failedCount:
-                0,
+            // --- NEW INDIVIDUAL TEST CASE METRICS ---
+            individualExecutions: payload.testCases.map((tc, index) => ({
+                testCaseId: "mock-tc-" + index,
+                verdict: Verdict.ACCEPTED as any,
+                executionTime: 40 + (Math.random() * 10),
+                compileTime: 0,
+                cpuUsage: 45.0 + Math.random(),
+                memoryUsage: 12.0 + Math.random(),
+            }))
         };
+
     }
 }

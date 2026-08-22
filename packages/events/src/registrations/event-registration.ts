@@ -9,14 +9,14 @@ import { AuditHandler } from "../handlers/audit.handler";
 export const registerEvent = (
     eventBus: EventBus,
 ) => {
-    const loggingHandler = 
-       new LoggingHandler();
+    const loggingHandler =
+        new LoggingHandler();
 
-    const metricsHandler = 
-       new MetricsHandler();
+    const metricsHandler =
+        new MetricsHandler();
 
-    const auditHandler = 
-       new AuditHandler();
+    const auditHandler =
+        new AuditHandler();
 
     eventBus.subscribe(
         "submission.created",
@@ -31,7 +31,7 @@ export const registerEvent = (
             metricsHandler,
         ),
     );
-    
+
     eventBus.subscribe(
         "submission.created",
         metricsHandler.handle.bind(
@@ -45,4 +45,11 @@ export const registerEvent = (
             auditHandler,
         ),
     );
+
+    eventBus.subscribe(
+        "ExecutionCompletedEvent",
+        metricsHandler.handle.bind(
+            metricsHandler,
+        )
+    )
 };

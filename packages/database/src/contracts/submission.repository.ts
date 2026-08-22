@@ -1,5 +1,15 @@
 import { SubmissionStatus } from "@algofight/types";
 import { SubmissionEntity } from "../entities/submission.entity";
+import { Verdict } from "@algofight/types";
+
+export type IndividualExecutionMetric = {
+    testCaseId?: string;
+    verdict: Verdict;
+    executionTime?: number;
+    compileTime?: number;
+    cpuUsage?: number;
+    memoryUsage?: number;
+}
 
 export type SubmissionResult = {
     stdout: string | null;
@@ -16,6 +26,12 @@ export type SubmissionResult = {
     passedCount: number;
 
     failedCount: number;
+
+    verdict?: Verdict; // Use your actual Verdict type here
+    cpuUsage?: number;
+    memoryUsage?: number;
+    compileTime?: number;
+    individualExecutions?: IndividualExecutionMetric[];
 };
 
 export type CreateSubmissionInput = {
