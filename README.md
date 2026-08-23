@@ -1,124 +1,72 @@
-# AlgoFight Backend
+# AlgoFight
 
-A scalable, event-driven backend for code submission execution with resilient queueing, sandboxed workers, and end-to-end observability. This repository is a pnpm and Turborepo monorepo that separates API, workers, and shared packages.
+AlgoFight is a highly scalable, real-time platform for competitive algorithmic battles. Compete in live coding duels, challenge online players, host private multiplayer rooms, and execute code in a secure, sandboxed environment.
 
-## Table of contents
+## 🚀 Features
 
-- [Architecture overview](#architecture-overview)
-- [High-level system architecture](#high-level-system-architecture)
-- [Submission lifecycle and state machine](#submission-lifecycle-and-state-machine)
-- [Worker internal architecture](#worker-internal-architecture)
-- [Design patterns used](#design-patterns-used)
-- [Reliability and recovery](#reliability-and-recovery)
-- [Observability and monitoring](#observability-and-monitoring)
-- [Scalability and coordination](#scalability-and-coordination)
-- [Security and sandbox](#security-and-sandbox)
-- [Event-driven architecture](#event-driven-architecture)
-- [Cross-cutting concerns](#cross-cutting-concerns)
-- [Monorepo layout](#monorepo-layout)
-- [Changelog](#changelog)
+- **Live Code Battles:** Real-time multiplayer rooms using WebSockets for instantaneous gameplay.
+- **3D Interactive Interface:** Immersive UI built with React Three Fiber, Three.js, and Framer Motion.
+- **Secure Execution Engine:** Sandboxed workers to safely compile and run user-submitted code with strict resource constraints.
+- **Resilient Architecture:** Event-driven backend with robust queueing, auto-retries, and dead-letter queues.
+- **Comprehensive Observability:** End-to-end monitoring across API, workers, and queues.
 
-## Architecture overview
+---
 
-![System architecture overview](development%20docs/Architectural%20diagram.png)
+## 🏗 System Architecture
 
-The diagram summarizes the execution flow from API intake to worker execution, including queueing, state transitions, reliability strategies, and observability.
+The platform operates as a modern monorepo containing both the frontend client and the distributed backend services.
 
-## High-level system architecture
+### Frontend
+- **Frameworks:** React 19, Vite, Tailwind CSS v4.
+- **3D & Animations:** Three.js, `@react-three/fiber`, Framer Motion, Rapier for physics.
+- **State & Real-time:** Zustand, Socket.io client.
+- **Auth:** Firebase Authentication.
 
-- Gateway layer handles auth, rate limiting, routing, and request validation.
-- API layer controls submissions, result retrieval, and user profile APIs.
-- Redis cluster provides queues, coordination, locks, and pub/sub.
-- Database stores execution metadata, submission state, and recovery data.
-- Execution sandbox enforces strict resource limits and isolation.
+### Backend & Execution
+- **Gateway & API:** Handles authentication, rate limiting, request validation, and user profiles.
+- **Real-time Server (Websocket):** Manages multiplayer rooms, state synchronization, and live battle events.
+- **Execution Workers:** A robust worker pool running sandboxed environments with hard limits on CPU, Memory, Time, and File System access.
+- **State & Queueing:** Redis cluster powers job queues, distributed locks, pub/sub, and coordination.
+- **Database:** Prisma ORM for storing execution metadata, user records, and match history.
 
-## Submission lifecycle and state machine
+---
 
-States and outcomes are modeled as an explicit state machine:
+## 🔄 Submission Lifecycle & State Machine
 
-- Created: submission accepted and persisted.
-- Queued: job is enqueued for execution.
-- Processing: worker is executing the job.
-- Completed: successful execution and result stored.
-- Failed: execution failed with error recorded.
-- Retrying: recovery or retry after failure or stale detection.
-- Stale: heartbeat expired, job reclaimed for retry.
+Every code submission flows through a deterministic state machine:
+1. **Created:** Submission accepted and persisted.
+2. **Queued:** Job enqueued for execution.
+3. **Processing:** Sandboxed worker evaluates the job.
+4. **Completed / Failed:** Outcome recorded and broadcasted back to the players.
+5. **Retrying / Stale:** Fault-tolerance loops recover stuck or failed jobs automatically.
 
-Transitions are atomic and idempotent to avoid double-processing.
+---
 
-## Worker internal architecture
-
-- Job classifier separates light and heavy queues.
-- Scheduler and heartbeat service track execution health.
-- Executor runs sandboxed workloads with resource limiters.
-- Result publisher sends completion events.
-- Adaptive concurrency considers CPU, queue depth, and latency.
-
-## Design patterns used
-
-- State pattern for submission lifecycle.
-- Strategy pattern for execution policy selection.
-- Factory pattern for sandbox and executor creation.
-- Observer pattern for event emission and monitoring.
-- Command pattern for standardized job execution.
-- Circuit breaker and retry patterns for resilience.
-- Repository pattern for persistence access.
-
-## Reliability and recovery
-
-- Idempotent workers and atomic state transitions.
-- Heartbeats and stale job detection.
-- Retry with exponential backoff and max retry limits.
-- Dead letter queue for exhausted retries.
-- Recovery scheduler re-queues stalled jobs.
-
-## Observability and monitoring
-
-- Metrics collection across queues, workers, DB, Redis, sandbox, and network.
-- Aggregation via metrics store, tracing, and log pipelines.
-- Visualization with dashboards and alerting rules.
-- Notifications to on-call and audit reports.
-
-## Scalability and coordination
-
-- Queue-based scaling for independent worker pools.
-- Distributed coordination using locks, pub/sub, and counters.
-- Adaptive scheduling and dynamic worker scaling.
-
-## Security and sandbox
-
-- Sandbox factory creates isolated execution environments.
-- CPU, memory, time, and filesystem limits enforced.
-- Network isolation and policy-driven access control.
-- Strategy-based execution for compiled, interpreted, or custom runtimes.
-
-## Event-driven architecture
-
-- Event sources: submissions, workers, queues, recovery services.
-- Event bus for dispatch and fan-out.
-- Consumers for metrics, alerts, notifications, and analytics.
-
-## Cross-cutting concerns
-
-- Centralized config and feature flags.
-- Data retention, archival, and backup policies.
-- CI/CD, automated tests, and quality gates.
-- Governance, audit logging, and access control.
-
-## Monorepo layout
+## 📂 Monorepo Layout
 
 | Area | Description |
 | --- | --- |
-| apps/api | API service for submission lifecycle and results |
-| apps/worker | Execution worker and sandbox coordination |
-| apps/scheduler | Recovery and scheduling services |
-| apps/websocket | Real-time status updates |
-| packages/application | Core application contracts and services |
-| packages/database | Prisma schema and repositories |
-| packages/error_handling | Shared error types and response helpers |
-| packages/queue | Queue and worker utilities |
-| packages/logger | Shared logging utilities |
+| `frontend/` | The React web application and interactive 3D arena |
+| `apps/api/` | Main API service for submission lifecycle and results |
+| `apps/worker/` | Execution worker and sandbox coordination |
+| `apps/scheduler/` | Recovery and scheduling services |
+| `apps/websocket/` | Real-time state synchronization and rooms |
+| `packages/application/` | Core application contracts and services |
+| `packages/database/` | Prisma schema and repositories |
+| `packages/error_handling/`| Shared error types and response helpers |
+| `packages/queue/` | Queue and worker utilities |
+| `packages/logger/` | Shared logging utilities |
 
-## Changelog
+---
 
-See [development docs/CHANGELOG.md](development%20docs/CHANGELOG.md) for the full history.
+## 🛡 Security & Reliability
+
+- **Isolation:** Execution Sandbox runs via secure factory implementations preventing host system access.
+- **Idempotency:** Atomic state transitions prevent double execution of code submissions.
+- **Resilience:** Circuit breakers, exponential backoff retries, and dead-letter queues ensure no job is silently dropped.
+
+---
+
+## 📜 Changelog
+
+See [`development docs/CHANGELOG.md`](development%20docs/CHANGELOG.md) for the full history of the backend evolution.
