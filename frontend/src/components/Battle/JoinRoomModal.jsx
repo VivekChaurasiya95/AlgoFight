@@ -19,7 +19,7 @@ export default function JoinRoomModal({ isOpen, onClose }) {
 
     const handleJoin = async (e) => {
         e.preventDefault();
-        const cleanCode = roomCode.trim().toUpperCase();
+        const cleanCode = roomCode.trim();
 
         if (!cleanCode) {
             notify({ type: "warning", title: "Code Required", message: "Please enter a valid room code (e.g. BTL-1234)." });
@@ -79,7 +79,7 @@ export default function JoinRoomModal({ isOpen, onClose }) {
                                 className="input-hud code-input"
                                 placeholder="e.g. BTL-8492"
                                 value={roomCode}
-                                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                                onChange={(e) => setRoomCode(e.target.value)}
                                 autoFocus
                                 maxLength={12}
                             />

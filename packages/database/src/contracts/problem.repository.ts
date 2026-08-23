@@ -12,4 +12,5 @@ export interface ProblemRepository {
     createProblem(input: CreateProblemInput): Promise<ProblemEntity>;
     getProblemById(problemId: string): Promise<ProblemEntity | null>;
     getProblemWithAllTestCases(problemId: string): Promise<ProblemEntity | null>;
+    getProblems(query?: any): Promise<{ problems: ProblemEntity[], pagination: any }>;
 }

@@ -182,7 +182,7 @@ export default function BattleArena({ defaultTab }) {
                   <div className="mode-icon-accent custom"><FontAwesomeIcon icon={faPlus} /></div>
                 </div>
                 <h3>Create Private Room</h3>
-                <p>Host a private room for 2 to 8 players. Custom time limits, curated difficulty, and private room codes.</p>
+                <p>Host a private group battle room for 2 to 8 players. Customize the number of questions, dynamic difficulty mixing (MIX), and time limits.</p>
                 <button className="btn-mode-action btn-secondary" onClick={() => setShowCreateModal(true)}>
                   <FontAwesomeIcon icon={faPlus} /> Host Custom Room
                 </button>
@@ -199,7 +199,7 @@ export default function BattleArena({ defaultTab }) {
                   <div className="mode-icon-accent direct"><FontAwesomeIcon icon={faKey} /></div>
                 </div>
                 <h3>Join with Code</h3>
-                <p>Have a room passcode from a friend or classmate? Enter your code to enter their lobby instantly.</p>
+                <p>Have a room passcode from a friend or classmate? Enter your code to enter their lobby instantly and join the group battle.</p>
                 <button className="btn-mode-action btn-secondary" onClick={() => setShowJoinModal(true)}>
                   <FontAwesomeIcon icon={faKey} /> Enter Room Code
                 </button>

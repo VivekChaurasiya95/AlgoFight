@@ -10,7 +10,9 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
             hostId: room.hostId,
             maxPlayers: room.maxPlayers,
             status: room.status,
-            problemId: room.problemId,
+            difficulty: room.difficulty,
+            questionCount: room.questionCount,
+            problems: room.problems,
             timeLimitMinutes: room.timeLimitMinutes,
             startedAt: room.startedAt,
             endedAt: room.endedAt,
@@ -23,6 +25,7 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
                 score: p.score,
                 rank: p.rank,
                 solvedAt: p.solvedAt,
+                solvedProblemIds: p.solvedProblemIds,
             })),
         };
     }
@@ -35,7 +38,12 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
                     hostId: input.hostId,
                     maxPlayers: input.maxPlayers ?? 2,
                     timeLimitMinutes: input.timeLimitMinutes ?? 15,
-                    problemId: input.problemId,
+                    difficulty: input.difficulty,
+                    questionCount: input.questionCount,
+                    problems: {
+                        connect: input.problemIds.map(id => ({ id }))
+                    },
+
                     status: "WAITING",
                 },
             });
@@ -180,19 +188,18 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
         return this.mapToEntity(room);
     }
 
-    async startBattle(roomId: string, problemId: string): Promise<BattleRoomEntity> {
+    async startBattle(roomId: string): Promise<BattleRoomEntity> {
         const room = await prisma.battleRoom.update({
             where: { id: roomId },
             data: {
                 status: "RUNNING",
-                problemId,
                 startedAt: new Date(),
             },
-            include: { participants: true },
+            include: { participants: true, problems: true },
         });
-
         return this.mapToEntity(room);
     }
+
 
     async finishBattle(roomId: string): Promise<BattleRoomEntity> {
         const room = await prisma.battleRoom.update({

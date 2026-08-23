@@ -6,4 +6,5 @@ export interface BattleParticipantEntity {
     score: number;
     rank: number | null;
     solvedAt: Date | null;
+    solvedProblemIds: string[];
 }

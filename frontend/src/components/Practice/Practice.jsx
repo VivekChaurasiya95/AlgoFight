@@ -193,7 +193,7 @@ export default function Practice() {
       <div className="archive-header">
         <div className="pre-heading">PROBLEM ARCHIVE</div>
         <h1>{headingLabel}</h1>
-        <p>Pick a challenge, test your logic, and track solved progress one page at a time.</p>
+        <p>Pick a challenge, test your logic, and track your solved progress. Hone your coding skills in this offline practice workspace before joining the Live Competitive Arena.</p>
       </div>
 
       <div className="archive-controls archive-panel">
@@ -288,9 +288,15 @@ export default function Practice() {
                   <div className="col-title">{problem.title}</div>
 
                   <div className="col-tags">
-                    {(problem.tags && problem.tags.length > 0 ? problem.tags : ["Algorithms"]).slice(0, 2).map((tag, tagIndex) => (
+                    {(() => {
+                      const tags = [];
+                      if (problem.category) tags.push(problem.category);
+                      if (Array.isArray(problem.tags)) tags.push(...problem.tags);
+                      if (tags.length === 0) tags.push("Algorithms");
+                      return Array.from(new Set(tags)).slice(0, 2);
+                    })().map((tag, tagIndex) => (
                       <span key={`${problemId}-tag-${tagIndex}`} className="tag-pill">
-                        {tag}
+                        {typeof tag === 'string' ? tag.toUpperCase() : tag}
                       </span>
                     ))}
                   </div>

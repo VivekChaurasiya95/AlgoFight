@@ -8,12 +8,14 @@ import {
 export class BattleController {
     private readonly battleRoomService: BattleRoomService;
     private readonly ratingService: RatingService;
+    private readonly userRepository: PrismaUserRepository;
 
     constructor() {
         const battleRoomRepository = new PrismaBattleRoomRepository();
         const problemRepository = new PrismaProblemRepository();
         const userRepository = new PrismaUserRepository();
 
+        this.userRepository = userRepository;
         this.ratingService = new RatingService(userRepository);
         this.battleRoomService = new BattleRoomService(
             battleRoomRepository,
@@ -22,9 +24,16 @@ export class BattleController {
         );
     }
 
+    private async resolveUserId(identifier: string): Promise<string> {
+        const user = await this.userRepository.getUserById(identifier);
+        if (!user) throw new Error(`User not found: ${identifier}`);
+        return user.id;
+    }
+
     async createRoom(hostId: string, maxPlayers = 2, timeLimitMinutes = 15, problemId?: string) {
+        const resolvedHostId = await this.resolveUserId(hostId);
         return this.battleRoomService.createRoom({
-            hostId,
+            hostId: resolvedHostId,
             maxPlayers,
             timeLimitMinutes,
             problemId,
@@ -36,19 +45,23 @@ export class BattleController {
     }
 
     async joinRoom(idOrCode: string, userId: string) {
-        return this.battleRoomService.joinRoom(idOrCode, userId);
+        const resolvedUserId = await this.resolveUserId(userId);
+        return this.battleRoomService.joinRoom(idOrCode, resolvedUserId);
     }
 
     async leaveRoom(roomId: string, userId: string) {
-        return this.battleRoomService.leaveRoom(roomId, userId);
+        const resolvedUserId = await this.resolveUserId(userId);
+        return this.battleRoomService.leaveRoom(roomId, resolvedUserId);
     }
 
     async setPlayerReady(roomId: string, userId: string, isReady: boolean) {
-        return this.battleRoomService.setPlayerReady(roomId, userId, isReady);
+        const resolvedUserId = await this.resolveUserId(userId);
+        return this.battleRoomService.setPlayerReady(roomId, resolvedUserId, isReady);
     }
 
     async startBattle(roomId: string, hostId: string, problemId?: string) {
-        return this.battleRoomService.startBattle(roomId, hostId, problemId);
+        const resolvedHostId = await this.resolveUserId(hostId);
+        return this.battleRoomService.startBattle(roomId, resolvedHostId, problemId);
     }
 
     async finishBattle(roomId: string) {

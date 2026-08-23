@@ -1,26 +1,27 @@
 import { z } from "zod";
 
 export const CreateBattleRoomSchema = z.object({
-    hostId: z.string().uuid(),
+    hostId: z.string(),
     maxPlayers: z.number().int().min(2).max(8).optional().default(2),
     timeLimitMinutes: z.number().int().min(1).max(60).optional().default(15),
-    problemId: z.string().uuid().optional(),
+    difficulty: z.string().optional().default("Mix"),
+    questionCount: z.number().int().min(1).max(10).optional().default(3),
 });
 
 export const JoinRoomSchema = z.object({
-    userId: z.string().uuid(),
+    userId: z.string(),
 });
 
 export const LeaveRoomSchema = z.object({
-    userId: z.string().uuid(),
+    userId: z.string(),
 });
 
 export const ReadyRoomSchema = z.object({
-    userId: z.string().uuid(),
+    userId: z.string(),
     isReady: z.boolean(),
 });
 
 export const StartBattleSchema = z.object({
-    hostId: z.string().uuid(),
+    hostId: z.string(),
     problemId: z.string().uuid().optional(),
 });

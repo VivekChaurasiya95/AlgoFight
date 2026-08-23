@@ -6,7 +6,9 @@ export type CreateBattleRoomInput = {
     maxPlayers: number;
     timeLimitMinutes?: number;
     status: BattleRoomStatusType;
-    problemId?: string | null;
+    difficulty: string;
+    questionCount: number;
+    problemIds: string[];
 };
 
 export interface BattleRoomRepository {
@@ -16,7 +18,7 @@ export interface BattleRoomRepository {
     joinRoom(roomId: string, userId: string): Promise<BattleRoomEntity>;
     leaveRoom(roomId: string, userId: string): Promise<{ wasHost: boolean; remainingCount: number }>;
     setPlayerReady(roomId: string, userId: string, isReady: boolean): Promise<BattleRoomEntity>;
-    startBattle(roomId: string, problemId: string): Promise<BattleRoomEntity>;
+    startBattle(roomId: string): Promise<BattleRoomEntity>;
     finishBattle(roomId: string): Promise<BattleRoomEntity>;
     updateParticipantRank(roomId: string, userId: string, rank: number): Promise<void>;
     recordParticipantScore(roomId: string, userId: string, score: number, isSolved: boolean): Promise<void>;

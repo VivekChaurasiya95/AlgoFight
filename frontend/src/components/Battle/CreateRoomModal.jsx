@@ -15,6 +15,7 @@ export default function CreateRoomModal({ isOpen, onClose }) {
     const [maxPlayers, setMaxPlayers] = useState(2);
     const [timeLimit, setTimeLimit] = useState(15);
     const [difficulty, setDifficulty] = useState("MEDIUM");
+    const [questionCount, setQuestionCount] = useState(3);
     const [creating, setCreating] = useState(false);
 
     if (!isOpen) return null;
@@ -35,6 +36,8 @@ export default function CreateRoomModal({ isOpen, onClose }) {
                     hostId: user.uid || user.email,
                     maxPlayers: Number(maxPlayers),
                     timeLimitMinutes: Number(timeLimit),
+                    difficulty,
+                    questionCount: Number(questionCount),
                 }),
                 includeAuth: true,
             });
@@ -104,9 +107,26 @@ export default function CreateRoomModal({ isOpen, onClose }) {
                         </div>
 
                         <div className="form-group-hud">
+                            <label><FontAwesomeIcon icon={faPlus} /> Number of Questions</label>
+                            <div className="pill-selector">
+                                {[1, 3, 5].map((num) => (
+                                    <button
+                                        key={num}
+                                        type="button"
+                                        className={`pill-btn ${questionCount === num ? "active" : ""}`}
+                                        onClick={() => setQuestionCount(num)}
+                                    >
+                                        {num} {num === 1 ? 'Question' : 'Questions'}
+                                    </button>
+                                ))}
+                            </div>
+                            <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginTop: '8px' }}>The battle ends strictly when the time expires or a participant completes all questions.</p>
+                        </div>
+
+                        <div className="form-group-hud">
                             <label><FontAwesomeIcon icon={faFire} /> Problem Difficulty</label>
                             <div className="pill-selector">
-                                {["EASY", "MEDIUM", "HARD"].map((diff) => (
+                                {["EASY", "MEDIUM", "HARD", "MIX"].map((diff) => (
                                     <button
                                         key={diff}
                                         type="button"
@@ -117,6 +137,7 @@ export default function CreateRoomModal({ isOpen, onClose }) {
                                     </button>
                                 ))}
                             </div>
+                            <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginTop: '8px' }}>MIX will dynamically balance questions: ~30% Hard, 50% Medium, 20% Easy.</p>
                         </div>
 
                         <div className="modal-actions">

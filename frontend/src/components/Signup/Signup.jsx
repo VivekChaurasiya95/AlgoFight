@@ -159,7 +159,7 @@ function Signup() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
-            <p className="error-text">{errors.username || "\u00A0"}</p>
+            <p className="error-message">{errors.username || "\u00A0"}</p>
           </div>
 
           {/* Primary / College Email */}
@@ -170,7 +170,7 @@ function Signup() {
               value={collegeEmail}
               onChange={(e) => setCollegeEmail(e.target.value)}
             />
-            <p className="error-text">{errors.collegeEmail || "\u00A0"}</p>
+            <p className="error-message">{errors.collegeEmail || "\u00A0"}</p>
           </div>
 
           {/* Institution Name (Mandatory for College users) */}
@@ -182,7 +182,7 @@ function Signup() {
                 value={institutionName}
                 onChange={(e) => setInstitutionName(e.target.value)}
               />
-              <p className="error-text">{errors.institutionName || "\u00A0"}</p>
+              <p className="error-message">{errors.institutionName || "\u00A0"}</p>
             </div>
           )}
 
@@ -194,7 +194,7 @@ function Signup() {
               value={secondaryEmail}
               onChange={(e) => setSecondaryEmail(e.target.value)}
             />
-            <p className="error-text">{"\u00A0"}</p>
+            <p className="error-message">{"\u00A0"}</p>
           </div>
           {/* GitHub URL (Optional) */}
           <div className="input-group">
@@ -204,7 +204,7 @@ function Signup() {
               value={githubUrl}
               onChange={(e) => setGithubUrl(e.target.value)}
             />
-            <p className="error-text">{"\u00A0"}</p>
+            <p className="error-message">{"\u00A0"}</p>
           </div>
           {/* LinkedIn URL (Optional) */}
           <div className="input-group">
@@ -214,7 +214,7 @@ function Signup() {
               value={linkedinUrl}
               onChange={(e) => setLinkedinUrl(e.target.value)}
             />
-            <p className="error-text">{"\u00A0"}</p>
+            <p className="error-message">{"\u00A0"}</p>
           </div>
           {/* Password & Confirm */}
           <div className="input-group">
@@ -224,7 +224,7 @@ function Signup() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <p className="error-text">{errors.password || "\u00A0"}</p>
+            <p className="error-message">{errors.password || "\u00A0"}</p>
           </div>
 
           <div className="input-group">
@@ -234,7 +234,7 @@ function Signup() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
-            <p className="error-text">{errors.confirmPassword || "\u00A0"}</p>
+            <p className="error-message">{errors.confirmPassword || "\u00A0"}</p>
           </div>
 
           <div className="auth-switch-text">

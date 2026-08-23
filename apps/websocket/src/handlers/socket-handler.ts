@@ -3,6 +3,7 @@ import { WebSocket } from "ws";
 import { syncBattleToTelemetry } from "../events/battle.events";
 import { ConnectionManager } from "../server/connection-manager";
 import { logger } from "@algofight/logger";
+import Redis from "ioredis";
 import {
     PrismaUserRepository,
     PrismaProblemRepository,
@@ -31,6 +32,7 @@ export class SocketHandler {
         this.problemRepo,
     );
     private readonly mockExecutor = new MockExecutor();
+    private readonly redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
 
     // Map socket -> user session
     private readonly socketUsers = new Map<WebSocket, {
@@ -43,6 +45,12 @@ export class SocketHandler {
 
     constructor(private readonly connectionManager: ConnectionManager) { }
 
+    private formatTime(seconds: number) {
+        const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+        const s = (seconds % 60).toString().padStart(2, "0");
+        return `${m}:${s}`;
+    }
+
     async handleMessage(
         socket: WebSocket,
         rawMessage: string,
@@ -54,7 +62,6 @@ export class SocketHandler {
             const data = parsed.data || parsed.payload || parsed;
 
             switch (action) {
-                // 1. Auth & Identification
                 case "auth":
                 case "identify": {
                     const userId = data.userId || data.uid;
@@ -62,7 +69,6 @@ export class SocketHandler {
                     if (userId) {
                         currentUserId.value = userId;
 
-                        // Query user details from DB to enrich presence
                         let user = await this.userRepo.getUserById(userId).catch(() => null);
                         if (!user && (data.email || data.username)) {
                             user = await this.userRepo.upsertUser({
@@ -100,20 +106,17 @@ export class SocketHandler {
                             platformCode,
                         });
 
-                        // Broadcast real-time presence change to all users
                         const presence = this.connectionManager.getPresence(userId);
                         if (presence) {
                             this.connectionManager.broadcastToAll("player_presence_update", presence);
                         }
 
-                        // Send current online presences snapshot to this user
                         const onlineList = this.connectionManager.getAllOnlinePresences();
                         this.send(socket, "presence_sync", { onlinePlayers: onlineList });
                     }
                     break;
                 }
 
-                // 2. Fetch / Subscribe Available Players
                 case "get_available_players":
                 case "subscribe_presence": {
                     const onlineList = this.connectionManager.getAllOnlinePresences();
@@ -121,7 +124,6 @@ export class SocketHandler {
                     break;
                 }
 
-                // 3. Send Direct 1v1 Challenge
                 case "send_challenge": {
                     const session = this.socketUsers.get(socket);
                     const fromUserId = session?.userId || currentUserId.value;
@@ -133,12 +135,10 @@ export class SocketHandler {
                         this.send(socket, "error", "You must be logged in to send a challenge.");
                         break;
                     }
-
                     if (!targetUserId || targetUserId === fromUserId) {
                         this.send(socket, "error", "Invalid target player for duel challenge.");
                         break;
                     }
-
                     if (!this.connectionManager.isUserOnline(targetUserId)) {
                         this.send(socket, "error", `${targetUsername || "Player"} is currently offline.`);
                         break;
@@ -157,15 +157,11 @@ export class SocketHandler {
                         break;
                     }
 
-                    // Send incoming challenge prompt to target user
                     this.connectionManager.sendToUser(targetUserId, "challenge_received", challenge);
-
-                    // Confirm challenge sent to the challenger
                     this.send(socket, "challenge_sent", challenge);
                     break;
                 }
 
-                // 4. Accept Direct Challenge
                 case "accept_challenge": {
                     const { challengeId } = data;
                     const challenge = this.connectionManager.getChallenge(challengeId);
@@ -178,42 +174,42 @@ export class SocketHandler {
                     challenge.status = "ACCEPTED";
                     this.connectionManager.removeChallenge(challengeId);
 
-                    // Create a 1v1 battle room
                     const room = await this.battleRoomService.createRoom({
                         hostId: challenge.fromUserId,
                         maxPlayers: 2,
                         timeLimitMinutes: 15,
+                        difficulty: "MIX",
+                        questionCount: 3
                     });
 
-                    // Update both players' presence status
+                    await this.battleRoomService.startBattle(room.id, challenge.fromUserId);
+                    const roomWithProblems = await this.battleRoomRepo.getRoomById(room.id);
+                    const problems = roomWithProblems?.problems || [];
+
                     this.connectionManager.updatePresenceStatus(challenge.fromUserId, "IN_BATTLE", room.id);
                     this.connectionManager.updatePresenceStatus(challenge.targetUserId, "IN_BATTLE", room.id);
-
-                    // Fetch challenge problem
-                    const problemsResult = await this.problemRepo.getProblems({ limit: 10 });
-                    const problem = problemsResult.problems[0] || (await this.problemRepo.getProblemById(room.id));
 
                     const matchPayload = {
                         roomId: room.id,
                         roomCode: room.roomCode,
-                        problem: {
-                            id: problem?.id || room.id,
-                            title: problem?.title || "Balanced Challenge",
-                            statement: problem?.statement || "Implement your algorithm to solve the challenge.",
-                            difficulty: problem?.difficulty || "EASY",
-                            testCases: problem?.testCases || [
-                                { input: "2 7", expectedOutput: "9" },
-                                { input: "3 2", expectedOutput: "5" },
-                            ],
-                            starterCode: {
-                                javascript: "function solution(a, b) {\n  // Write your code here\n  return a + b;\n}",
-                                cpp: "#include <iostream>\nusing namespace std;\n\nint main() {\n  int a, b;\n  if (cin >> a >> b) cout << (a + b) << endl;\n  return 0;\n}",
-                            },
-                        },
+                        problems: problems,
+                        timeLimitSeconds: room.timeLimitMinutes * 60,
                         players: [challenge.fromUsername, challenge.targetUsername],
                     };
 
-                    // Join both sockets to room and dispatch match
+                    const battleState = {
+                        roomId: room.id,
+                        status: "RUNNING",
+                        timeLimitSeconds: room.timeLimitMinutes * 60,
+                        startTime: Date.now(),
+                        totalQuestions: problems.length,
+                        players: [
+                            { userId: challenge.fromUserId, username: challenge.fromUsername, points: 0, solvedProblems: [], solvedCount: 0 },
+                            { userId: challenge.targetUserId, username: challenge.targetUsername, points: 0, solvedProblems: [], solvedCount: 0 }
+                        ]
+                    };
+                    await this.redis.set(`battle_state:${room.id}`, JSON.stringify(battleState), "EX", (room.timeLimitMinutes * 60) + 300);
+
                     const challengerSocket = this.connectionManager.userSockets.get(challenge.fromUserId);
                     const targetSocket = this.connectionManager.userSockets.get(challenge.targetUserId);
 
@@ -230,10 +226,10 @@ export class SocketHandler {
 
                     this.connectionManager.sendToUser(challenge.fromUserId, "match_found", matchPayload);
                     this.connectionManager.sendToUser(challenge.targetUserId, "match_found", matchPayload);
+                    this.connectionManager.broadcastToRoom(room.id, "battle_state_sync", battleState);
                     break;
                 }
 
-                // 5. Decline Direct Challenge
                 case "decline_challenge": {
                     const { challengeId } = data;
                     const challenge = this.connectionManager.getChallenge(challengeId);
@@ -248,7 +244,6 @@ export class SocketHandler {
                     break;
                 }
 
-                // 6. Cancel Direct Challenge (By Challenger)
                 case "cancel_challenge": {
                     const { challengeId } = data;
                     const challenge = this.connectionManager.getChallenge(challengeId);
@@ -262,7 +257,6 @@ export class SocketHandler {
                     break;
                 }
 
-                // 7. Find Match (1v1 Queue + Auto-Bot Fallback)
                 case "find_match": {
                     const session = this.socketUsers.get(socket);
                     const identifier = session?.userId || currentUserId.value || data.username || "Player";
@@ -311,7 +305,6 @@ export class SocketHandler {
                     } else {
                         this.send(socket, "waiting_for_opponent", { status: "queued" });
 
-                        // If solo testing, auto-match with a bot in 2 seconds
                         setTimeout(async () => {
                             if (this.matchmakingService.isQueued(activeUserId)) {
                                 this.matchmakingService.cancelQueue(activeUserId);
@@ -320,6 +313,8 @@ export class SocketHandler {
                                     hostId: activeUserId,
                                     maxPlayers: 2,
                                     timeLimitMinutes: 15,
+                                    difficulty: "MIX",
+                                    questionCount: 3
                                 });
 
                                 const botMatch = {
@@ -337,10 +332,8 @@ export class SocketHandler {
                     break;
                 }
 
-                // 8. Test Code (Runs Sample Tests)
                 case "test_code": {
                     const { code, language } = data;
-
                     const result = await this.mockExecutor.execute({
                         submissionId: `test-${Date.now()}`,
                         language: language || "javascript",
@@ -365,9 +358,8 @@ export class SocketHandler {
                     break;
                 }
 
-                // 9. Submit Code (Evaluates & Concludes Match)
                 case "submit_code": {
-                    const { code, language, roomId } = data;
+                    const { code, language, roomId, problemId } = data;
                     const session = this.socketUsers.get(socket);
                     const username = session?.username || "Player";
                     const submissionId = `submit-${Date.now()}`;
@@ -386,7 +378,6 @@ export class SocketHandler {
                     });
 
                     const isAccepted = result.failedCount === 0;
-
                     this.send(socket, "code_result", {
                         result: {
                             passed: isAccepted,
@@ -397,77 +388,41 @@ export class SocketHandler {
                         },
                     });
 
-                    // Ingest submission telemetry to Linux Server Dashboard
-                    logger.info(
-                        {
-                            submissionId,
-                            userId: session?.userId || "guest",
-                            roomId: roomId || undefined,
-                            language: language || "javascript",
-                            executionTimeMs: result.executionTime || 20,
-                            cpuTimeMs: (result.executionTime || 20) * 0.95,
-                            peakMemoryKb: 14500,
-                            verdict: isAccepted ? "ACCEPTED" : "WRONG_ANSWER",
-                            passCount: result.passedCount,
-                            totalTestcases: result.passedCount + result.failedCount,
-                        },
-                        "Submission code evaluated via WebSocket",
-                    );
+                    if (isAccepted && roomId && session?.userId) {
+                        const rawState = await this.redis.get(`battle_state:${roomId}`);
+                        if (rawState) {
+                            const state = JSON.parse(rawState);
+                            const player = state.players.find((p: any) => p.userId === session.userId);
+                            
+                            if (player && !player.solvedProblems.find((sp: any) => sp.problemId === problemId)) {
+                                const elapsedSeconds = Math.floor((Date.now() - state.startTime) / 1000);
+                                player.points += 100;
+                                player.solvedCount += 1;
+                                player.solvedProblems.push({
+                                    problemId,
+                                    timeSeconds: elapsedSeconds,
+                                    timeString: this.formatTime(elapsedSeconds)
+                                });
+                                
+                                await this.redis.set(`battle_state:${roomId}`, JSON.stringify(state), "EX", state.timeLimitSeconds + 300);
+                                this.connectionManager.broadcastToRoom(roomId, "battle_state_sync", state);
 
-                    if (isAccepted && roomId) {
-                        if (session?.userId) {
-                            await this.battleRoomRepo.recordParticipantScore(roomId, session.userId, 100, true).catch(() => { });
-                            this.connectionManager.updatePresenceStatus(session.userId, "AVAILABLE");
+                                // Check if battle should end (player solved all)
+                                if (player.solvedCount >= state.totalQuestions) {
+                                    this.connectionManager.broadcastToRoom(roomId, "battle_over", {
+                                        winner: player.username,
+                                        reason: "ALL_SOLVED",
+                                        finalState: state
+                                    });
+                                    // Cleanup & sync DB
+                                    this.endBattle(roomId, state);
+                                }
+                            }
                         }
-                        await this.battleRoomService.finishBattle(roomId).catch(() => { });
-
-                        this.connectionManager.broadcastToRoom(roomId, "battle_over", {
-                            winner: username,
-                        });
-
-                        // ✅ Sync Battle Telemetry (supports 1v1, Solo Bot, FFA Multiplayer)
-                        const room = await this.battleRoomRepo.getRoomById(roomId).catch(() => null);
-                        const participants = (room?.participants || []).map((p, idx) => ({
-                            userId: p.userId,
-                            username: p.userId === session?.userId ? (username || p.userId) : `Player ${idx + 1}`,
-                            language: language || "javascript",
-                            score: p.score || (p.userId === session?.userId ? 100 : 0),
-                            rank: p.rank || (p.userId === session?.userId ? 1 : idx + 1),
-                            verdict: (p.solvedAt || p.userId === session?.userId || p.score > 0) ? "ACCEPTED" : "WRONG_ANSWER",
-                            executionTimeMs: result.executionTime || 22,
-                            peakMemoryKb: 14500,
-                            testsPassed: p.userId === session?.userId ? (result.passedCount || 3) : 0,
-                            testsTotal: (result.passedCount + result.failedCount) || 3,
-                        }));
-
-
-                        syncBattleToTelemetry({
-                            roomId,
-                            battleType: participants.length <= 2 ? "1v1" : "FFA_MULTIPLAYER",
-                            problemId: room?.problemId || "prob-1",
-                            problemTitle: "Live Battle Duel",
-                            durationSeconds: 15,
-                            winnerId: session?.userId,
-                            participants: participants.length > 0 ? participants : [
-                                {
-                                    userId: session?.userId || "user-1",
-                                    username: username || "Player 1",
-                                    language: language || "javascript",
-                                    score: 100,
-                                    rank: 1,
-                                    verdict: "ACCEPTED",
-                                    executionTimeMs: result.executionTime || 22,
-                                    peakMemoryKb: 14500,
-                                    testsPassed: 3,
-                                    testsTotal: 3,
-                                },
-                            ],
-                        });
                     }
                     break;
                 }
 
-                // 10. Custom Room Lobby Channels
                 case "join_room_channel": {
                     const { roomCode, userId, username } = data;
                     if (roomCode) {
@@ -506,24 +461,38 @@ export class SocketHandler {
                 case "start_room_battle": {
                     const { roomCode } = data;
                     if (roomCode) {
-                        const problemsResult = await this.problemRepo.getProblems({ limit: 10 });
-                        const problem = problemsResult.problems[0] || (await this.problemRepo.getProblemById(roomCode));
-                        const matchPayload = {
-                            roomId: roomCode,
-                            roomCode: roomCode,
-                            problem: {
-                                id: problem?.id || roomCode,
-                                title: problem?.title || "Balanced Challenge",
-                                statement: problem?.statement || "Implement your algorithm to satisfy all edge and sample cases.",
-                                difficulty: problem?.difficulty || "MEDIUM",
-                                testCases: problem?.testCases || [],
-                                starterCode: {
-                                    javascript: "function solution(input) {\n  // Write your code here\n  return input;\n}",
-                                    cpp: "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n  // Write your code here\n  return 0;\n}",
-                                },
-                            },
-                        };
-                        this.connectionManager.broadcastToRoom(roomCode, "battle_started", matchPayload);
+                        const room = await this.battleRoomRepo.getRoomByCode(roomCode);
+                        if (room) {
+                            await this.battleRoomService.startBattle(room.id, room.hostId);
+                            const roomWithProblems = await this.battleRoomRepo.getRoomById(room.id);
+                            const problems = roomWithProblems?.problems || [];
+
+                            const matchPayload = {
+                                roomId: room.id,
+                                roomCode: room.roomCode,
+                                problems: problems,
+                                timeLimitSeconds: room.timeLimitMinutes * 60,
+                            };
+
+                            const battleState = {
+                                roomId: room.id,
+                                status: "RUNNING",
+                                timeLimitSeconds: room.timeLimitMinutes * 60,
+                                startTime: Date.now(),
+                                totalQuestions: problems.length,
+                                players: room.participants.map(p => ({
+                                    userId: p.userId,
+                                    username: p.userId,
+                                    points: 0,
+                                    solvedProblems: [],
+                                    solvedCount: 0
+                                }))
+                            };
+
+                            await this.redis.set(`battle_state:${room.id}`, JSON.stringify(battleState), "EX", (room.timeLimitMinutes * 60) + 300);
+                            this.connectionManager.broadcastToRoom(roomCode, "battle_started", matchPayload);
+                            this.connectionManager.broadcastToRoom(roomCode, "battle_state_sync", battleState);
+                        }
                     }
                     break;
                 }
@@ -543,8 +512,9 @@ export class SocketHandler {
         currentSocket: WebSocket,
         opponentName?: string,
     ): Promise<void> {
-        const problemsResult = await this.problemRepo.getProblems({ limit: 10 });
-        const problem = problemsResult.problems[0] || (await this.problemRepo.getProblemById(match.roomId));
+        await this.battleRoomService.startBattle(match.roomId, match.player1Id);
+        const roomWithProblems = await this.battleRoomRepo.getRoomById(match.roomId);
+        const problems = roomWithProblems?.problems || [];
 
         this.connectionManager.joinRoom(match.roomId, currentSocket);
         const player1Socket = this.connectionManager.userSockets.get(match.player1Id);
@@ -558,28 +528,43 @@ export class SocketHandler {
         }
 
         const opp = opponentName || "Opponent";
+        const timeLimitSeconds = (roomWithProblems?.timeLimitMinutes || 15) * 60;
 
         const matchPayload = {
             roomId: match.roomId,
             roomCode: match.roomCode,
-            problem: {
-                id: problem?.id || match.roomId,
-                title: problem?.title || "Two Sum",
-                statement: problem?.statement || "Given two space-separated integers, output their sum.",
-                difficulty: problem?.difficulty || "EASY",
-                testCases: problem?.testCases || [
-                    { input: "2 7", expectedOutput: "9" },
-                    { input: "3 2", expectedOutput: "5" },
-                ],
-                starterCode: {
-                    javascript: "function solution(a, b) {\n  // Write your code here\n  return a + b;\n}",
-                    cpp: "#include <iostream>\nusing namespace std;\n\nint main() {\n  int a, b;\n  if (cin >> a >> b) cout << (a + b) << endl;\n  return 0;\n}",
-                },
-            },
+            problems: problems,
+            timeLimitSeconds,
             players: [currentUsername, opp],
         };
 
+        const battleState = {
+            roomId: match.roomId,
+            status: "RUNNING",
+            timeLimitSeconds,
+            startTime: Date.now(),
+            totalQuestions: problems.length,
+            players: [
+                { userId: match.player1Id, username: currentUsername, points: 0, solvedProblems: [], solvedCount: 0 },
+                { userId: match.player2Id, username: opp, points: 0, solvedProblems: [], solvedCount: 0 }
+            ]
+        };
+        await this.redis.set(`battle_state:${match.roomId}`, JSON.stringify(battleState), "EX", timeLimitSeconds + 300);
+
         this.connectionManager.broadcastToRoom(match.roomId, "match_found", matchPayload);
+        this.connectionManager.broadcastToRoom(match.roomId, "battle_state_sync", battleState);
+    }
+
+    private async endBattle(roomId: string, finalState: any) {
+        // Persist final state to postgres
+        for (const player of finalState.players) {
+            if (player.userId !== "bot") {
+                await this.battleRoomRepo.recordParticipantScore(roomId, player.userId, player.points, player.solvedCount > 0).catch(() => {});
+                this.connectionManager.updatePresenceStatus(player.userId, "AVAILABLE");
+            }
+        }
+        await this.battleRoomService.finishBattle(roomId).catch(() => {});
+        await this.redis.del(`battle_state:${roomId}`);
     }
 
     handleDisconnect(socket: WebSocket): void {

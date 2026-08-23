@@ -15,7 +15,9 @@ export interface BattleRoomEntity {
     maxPlayers: number;
     participants: BattleParticipantEntity[];
     status: BattleRoomStatusType;
-    problemId: string | null;
+    difficulty: string | null;
+    questionCount: number;
+    problems?: any[],
     timeLimitMinutes: number;
     startedAt: Date | null;
     endedAt: Date | null;

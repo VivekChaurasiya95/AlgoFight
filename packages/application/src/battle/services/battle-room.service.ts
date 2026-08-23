@@ -10,8 +10,10 @@ export interface CreateRoomDto {
     hostId: string;
     maxPlayers?: number;
     timeLimitMinutes?: number;
-    problemId?: string;
+    difficulty?: string;
+    questionCount?: number;
 }
+
 
 export class BattleRoomService {
     constructor(
@@ -23,15 +25,43 @@ export class BattleRoomService {
     async createRoom(dto: CreateRoomDto): Promise<BattleRoomEntity> {
         const roomCode = RoomCodeGenerator.generate();
 
+        let selectedProblems: any[] = [];
+        if (this.problemRepository) {
+            const allResult = await this.problemRepository.getProblems({ limit: 100 });
+            const problems = allResult.problems;
+
+            const qCount = dto.questionCount ?? 3;
+            const diff = (dto.difficulty || "MIX").toUpperCase();
+
+            if (diff === "MIX") {
+                const hardCount = Math.max(1, Math.floor(qCount * 0.3));
+                const easyCount = Math.max(1, Math.floor(qCount * 0.2));
+                const medCount = Math.max(0, qCount - hardCount - easyCount);
+
+                selectedProblems = [
+                    ...problems.filter((p: any) => p.difficulty === "HARD").slice(0, hardCount),
+                    ...problems.filter((p: any) => p.difficulty === "MEDIUM").slice(0, medCount),
+                    ...problems.filter((p: any) => p.difficulty === "EASY").slice(0, easyCount)
+                ];
+            } else {
+                selectedProblems = problems.filter((p: any) => p.difficulty === diff).slice(0, qCount);
+            }
+
+            if (selectedProblems.length === 0) selectedProblems = problems.slice(0, qCount);
+        }
+
         return this.battleRoomRepository.createRoom({
             hostId: dto.hostId,
             roomCode,
             maxPlayers: dto.maxPlayers ?? 2,
             timeLimitMinutes: dto.timeLimitMinutes ?? 15,
-            problemId: dto.problemId,
+            difficulty: dto.difficulty || "MIX",
+            questionCount: dto.questionCount ?? 3,
+            problemIds: selectedProblems.map(p => p.id),
             status: "WAITING",
         });
     }
+
 
     async getRoom(roomIdOrCode: string): Promise<BattleRoomEntity> {
         const room = roomIdOrCode.startsWith("BTL-")
@@ -84,12 +114,7 @@ export class BattleRoomService {
             throw new Error("Cannot start battle: All players must be ready");
         }
 
-        const selectedProblemId = problemId || room.problemId;
-        if (!selectedProblemId) {
-            throw new Error("Cannot start battle: No problem assigned");
-        }
-
-        return this.battleRoomRepository.startBattle(roomId, selectedProblemId);
+        return this.battleRoomRepository.startBattle(roomId);
     }
 
     async finishBattle(roomId: string): Promise<{ room: BattleRoomEntity; eloResult?: EloResult }> {

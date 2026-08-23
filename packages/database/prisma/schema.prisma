@@ -139,37 +139,48 @@ enum BattleRoomStatus {
 }
 
 model BattleRoom {
-  id          String           @id @default(uuid())
-  roomCode    String           @unique // e.g. "BTL-8492" for joining
-  hostId      String
-  host        User             @relation("HostedRooms", fields: [hostId], references: [id])
-  maxPlayers  Int              @default(2)
-  status      BattleRoomStatus @default(WAITING)
-  problemId   String?
-  problem     Problem?         @relation(fields: [problemId], references: [id])
-  timeLimitMinutes Int         @default(15)
+  id               String           @id @default(uuid())
+  roomCode         String           @unique
+  hostId           String
+  host             User             @relation("HostedRooms", fields: [hostId], references: [id])
+  maxPlayers       Int              @default(2)
+  status           BattleRoomStatus @default(WAITING)
+  
+  // ▼ REPLACE problemId and problem WITH THESE 3 LINES ▼
+  problems         Problem[]
+  difficulty       String           @default("Mix")
+  questionCount    Int              @default(3)
+  // ▲ ----------------------------------------------- ▲
+  
+  timeLimitMinutes Int              @default(15)
   startedAt        DateTime?
   endedAt          DateTime?
-  createdAt        DateTime    @default(now())
-  participants BattleParticipant[]
-  submissions Submission[] 
+  createdAt        DateTime         @default(now())
+  participants     BattleParticipant[]
+  submissions      Submission[] 
   
   @@index([hostId])
   @@index([status])
   @@index([roomCode])
 }
 
+
 model BattleParticipant {
-  roomId    String
-  userId    String
-  joinedAt  DateTime @default(now())
-  isReady   Boolean  @default(false)
-  score     Int      @default(0)
-  rank      Int?     // Final placement (1st, 2nd, etc.)
-  solvedAt  DateTime? // Timestamp when accepted solution was submitted
-  room      BattleRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roomId           String
+  userId           String
+  joinedAt         DateTime   @default(now())
+  isReady          Boolean    @default(false)
+  score            Int        @default(0)
+  rank             Int?     
+  solvedAt         DateTime?  
+  
+  // ▼ ADD THIS LINE ▼
+  solvedProblemIds String[]   @default([])
+  
+  room             BattleRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@id([roomId, userId])
   @@index([userId])
 }
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { connectSocket, disconnectSocket } from "../../services/socket";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext.jsx";
@@ -12,8 +12,100 @@ import {
   faForward,
   faShieldHalved,
   faUsers,
+  faTimes,
+  faCheckCircle,
+  faTrophy,
+  faBolt
 } from "@fortawesome/free-solid-svg-icons";
 import "./LiveBattle.css";
+
+const PostBattleSummaryModal = ({ battleResult, liveState, problems, onClose }) => {
+  if (!battleResult) return null;
+  const isWin = battleResult.winner === "You";
+
+  return (
+    <div className="modal-overlay">
+      <motion.div
+        className="modal-content-hud"
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+      >
+        <div className="modal-header">
+          <div className="modal-title-group">
+            <span className={`modal-tag ${isWin ? "win" : "loss"}`}>
+              {isWin ? "VICTORY" : "DEFEAT"}
+            </span>
+            <h2>Battle Summary</h2>
+          </div>
+          <button className="modal-close-btn" onClick={onClose}>
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+        </div>
+
+        <div className="modal-body summary-body">
+          <p className="summary-reason">{battleResult.message}</p>
+          
+          <div className="summary-leaderboard">
+            <h3>Final Leaderboard</h3>
+            <div className="leaderboard-grid">
+              <div className="lb-header">Player</div>
+              <div className="lb-header">Points</div>
+              <div className="lb-header">Status</div>
+              {liveState?.players?.map((p, i) => (
+                <React.Fragment key={p.userId}>
+                  <div className="lb-cell">
+                    {i === 0 && <FontAwesomeIcon icon={faTrophy} style={{ color: "gold", marginRight: "8px" }} />}
+                    {p.username}
+                  </div>
+                  <div className="lb-cell">{p.points}</div>
+                  <div className="lb-cell">{p.solvedCount === problems.length ? "Completed" : "Incomplete"}</div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+
+          <div className="summary-matrix" style={{ marginTop: '20px' }}>
+            <h3>Per-Question Breakdown</h3>
+            <div className="matrix-grid" style={{ 
+               display: 'grid', 
+               gridTemplateColumns: `1.5fr repeat(${problems.length}, 1fr)`,
+               gap: '10px',
+               marginTop: '10px'
+            }}>
+              <div className="mx-header" style={{ fontWeight: 'bold' }}>Player</div>
+              {problems.map((_, i) => (
+                <div key={i} className="mx-header" style={{ fontWeight: 'bold', textAlign: 'center' }}>Q{i + 1}</div>
+              ))}
+              {liveState?.players?.map((p) => (
+                <React.Fragment key={p.userId}>
+                  <div className="mx-cell">{p.username}</div>
+                  {problems.map((prob) => {
+                     const solvedData = p.solvedProblems?.find(sp => sp.problemId === prob.id);
+                     return (
+                        <div key={prob.id} className="mx-cell" style={{ 
+                           textAlign: 'center',
+                           color: solvedData ? '#4ade80' : '#ef4444',
+                           background: 'rgba(255,255,255,0.05)',
+                           borderRadius: '4px',
+                           padding: '4px'
+                        }}>
+                          {solvedData ? `✓ ${solvedData.timeString}` : "✗ --"}
+                        </div>
+                     );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="modal-actions" style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="livebattle-leave-btn" onClick={onClose}>Return to Arena</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 export default function LiveBattle() {
   const navigate = useNavigate();
@@ -21,10 +113,16 @@ export default function LiveBattle() {
   const { notify } = useNotification();
 
   const [status, setStatus] = useState("connecting"); // connecting | waiting | matched | finished
-  const [problem, setProblem] = useState(null);
+  const [problems, setProblems] = useState([]);
+  const [activeProblemIndex, setActiveProblemIndex] = useState(0);
   const [opponentName, setOpponentName] = useState("");
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("javascript");
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [liveState, setLiveState] = useState(null);
+  const [showSummary, setShowSummary] = useState(false);
+
+  const problem = problems[activeProblemIndex] || null;
 
   useEffect(() => {
     if (problem && problem.starterCode && typeof problem.starterCode === "object") {
@@ -35,18 +133,33 @@ export default function LiveBattle() {
     } else if (problem && typeof problem.starterCode === "string") {
        if (!code || code === "// write your solution here") setCode(problem.starterCode);
     }
-  }, [language, problem]);
+  }, [language, problem, activeProblemIndex]);
+
   const [output, setOutput] = useState("");
   const [lastResult, setLastResult] = useState(null);
   const [submissionMeta, setSubmissionMeta] = useState(null);
   const [running, setRunning] = useState(false);
-  const [runMode, setRunMode] = useState("idle"); // idle | test | submit
+  const [runMode, setRunMode] = useState("idle");
   const [roomId, setRoomId] = useState(null);
   const [battleResult, setBattleResult] = useState(null);
   const socketRef = useRef(null);
   const username = user?.displayName || user?.email || "Player";
 
   const sampleCases = Array.isArray(problem?.testCases) ? problem.testCases.slice(0, 2) : [];
+
+  useEffect(() => {
+    let timer;
+    if (status === "matched" && timeLeft > 0) {
+      timer = setInterval(() => setTimeLeft(prev => prev > 0 ? prev - 1 : 0), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [status, timeLeft]);
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -61,12 +174,7 @@ export default function LiveBattle() {
 
       socket.on("connect", () => {
         setStatus("waiting");
-        notify({
-          type: "info",
-          title: "Connected",
-          message: "Connected to battle server. Looking for an opponent...",
-          duration: 2600,
-        });
+        notify({ type: "info", title: "Connected", message: "Connected to battle server. Looking for an opponent...", duration: 2600 });
         socket.emit("find_match", { username });
       });
 
@@ -76,38 +184,16 @@ export default function LiveBattle() {
 
       socket.on("match_found", (data) => {
         const rid = data?.roomId || data?.payload?.roomId;
-        const prob = data?.problem || data?.payload?.problem || {
-          title: "Two Sum",
-          statement: "Given two space-separated integers, calculate their sum.",
-          description: "Given two space-separated integers, calculate their sum.",
-          difficulty: "EASY",
-          testCases: [
-            { input: "2 7", output: "9", expectedOutput: "9" },
-            { input: "3 2", output: "5", expectedOutput: "5" },
-          ],
-          starterCode: {
-            javascript: "function solution(a, b) {\n  // Write your code here\n  return a + b;\n}",
-            cpp: "#include <iostream>\nusing namespace std;\n\nint main() {\n  int a, b;\n  if (cin >> a >> b) cout << (a + b) << endl;\n  return 0;\n}",
-          },
-        };
-        const players = Array.isArray(data?.players)
-          ? data.players
-          : Array.isArray(data?.payload?.players)
-          ? data.payload.players
-          : [username, "Opponent"];
-
+        const probs = data?.problems || (data?.problem ? [data.problem] : []);
+        const players = Array.isArray(data?.players) ? data.players : [username, "Opponent"];
+        
         setRoomId(rid);
-        setProblem(prob);
+        setProblems(probs);
+        setActiveProblemIndex(0);
         setLanguage("javascript");
-
-        if (prob && typeof prob.starterCode === "object") {
-          setCode(prob.starterCode["javascript"] || "// write your solution here");
-        } else if (prob && typeof prob.starterCode === "string") {
-          setCode(prob.starterCode);
-        } else {
-          setCode("// write your solution here");
-        }
-
+        if (data.timeLimitSeconds) setTimeLeft(data.timeLimitSeconds);
+        
+        setCode("// write your solution here");
         setOutput("");
         setLastResult(null);
         setSubmissionMeta(null);
@@ -116,12 +202,29 @@ export default function LiveBattle() {
         setOpponentName(opp);
         setStatus("matched");
 
-        notify({
-          type: "success",
-          title: "Match Found",
-          message: `You are now battling ${opp}.`,
-          duration: 3000,
-        });
+        notify({ type: "success", title: "Match Found", message: `You are now battling ${opp}.`, duration: 3000 });
+      });
+
+      socket.on("battle_started", (data) => {
+        const rid = data?.roomId || data?.payload?.roomId;
+        const probs = data?.problems || (data?.problem ? [data.problem] : []);
+        
+        setRoomId(rid);
+        setProblems(probs);
+        setActiveProblemIndex(0);
+        setLanguage("javascript");
+        if (data.timeLimitSeconds) setTimeLeft(data.timeLimitSeconds);
+        
+        setCode("// write your solution here");
+        setOutput("");
+        setLastResult(null);
+        setStatus("matched");
+
+        notify({ type: "success", title: "Battle Started", message: `The group battle has begun!`, duration: 3000 });
+      });
+
+      socket.on("battle_state_sync", (state) => {
+        setLiveState(state);
       });
 
       socket.on("code_result", (data) => {
@@ -132,96 +235,47 @@ export default function LiveBattle() {
         setOutput(result?.output || "No output returned.");
 
         if (result?.passed) {
-          notify({
-            type: "success",
-            title: "Execution Passed",
-            message: `Passed ${result.passedTestCases ?? 0}/${result.totalTestCases ?? 0} test cases.`,
-            duration: 2200,
-          });
+          notify({ type: "success", title: "Execution Passed", message: `Passed ${result.passedTestCases ?? 0}/${result.totalTestCases ?? 0} test cases.`, duration: 2200 });
         }
       });
 
-      socket.on("submission_result", (result) => {
-        setSubmissionMeta(result || null);
-      });
-
       socket.on("battle_over", (data) => {
-        const winner = data?.winner || data?.payload?.winner || "Opponent";
+        const winner = data?.winner || "Opponent";
         const youWin = winner === username;
         setBattleResult({
           winner: youWin ? "You" : winner,
-          message: youWin ? "Victory! Battle won." : `Defeat — ${winner} solved it first.`,
+          message: data.reason === "ALL_SOLVED" 
+            ? `${winner} completed all questions first!` 
+            : `Time is up! ${winner} wins.`,
         });
+        if (data.finalState) {
+           setLiveState(data.finalState);
+        }
         setStatus("finished");
-
-        notify({
-          type: youWin ? "success" : "warning",
-          title: youWin ? "Victory" : "Battle Finished",
-          message: youWin ? "You won the live battle." : `${winner} solved it first.`,
-          duration: 3600,
-        });
+        setShowSummary(true);
       });
 
       socket.on("opponent_disconnected", () => {
-      setBattleResult({
-        winner: "You",
-        message: "Your opponent disconnected. You win!",
+        setBattleResult({ winner: "You", message: "Your opponent disconnected. You win!" });
+        setStatus("finished");
+        setShowSummary(true);
       });
-      setStatus("finished");
-
-      notify({
-        type: "warning",
-        title: "Opponent Disconnected",
-        message: "The opponent left the battle. You are awarded the win.",
-        duration: 3600,
-      });
-    });
-
-      socket.on("error", (msg) => {
-      setOutput(`Error: ${msg}`);
-      setRunning(false);
-      setRunMode("idle");
-      notify({
-        type: "error",
-        title: "Battle Error",
-        message: String(msg || "Unexpected battle error occurred."),
-      });
-    });
-
-      socket.on("connect_error", (err) => {
-        const message = String(err?.message || "Unable to connect to battle server.");
-        setStatus("connecting");
-        setRunning(false);
-        setRunMode("idle");
-        setOutput(`Connection error: ${message}`);
-        notify({
-          type: "error",
-          title: "Connection Failed",
-          message,
-        });
-      });
-
     };
 
     setupSocket();
 
     return () => {
       cancelled = true;
-      if (!socketRef.current) {
-        return;
+      if (socketRef.current) {
+        socketRef.current.off("connect");
+        socketRef.current.off("waiting_for_opponent");
+        socketRef.current.off("match_found");
+        socketRef.current.off("battle_started");
+        socketRef.current.off("battle_state_sync");
+        socketRef.current.off("code_result");
+        socketRef.current.off("battle_over");
+        disconnectSocket();
       }
-
-      const activeSocket = socketRef.current;
-      activeSocket.off("connect");
-      activeSocket.off("waiting_for_opponent");
-      activeSocket.off("match_found");
-      activeSocket.off("code_result");
-      activeSocket.off("submission_result");
-      activeSocket.off("battle_over");
-      activeSocket.off("opponent_disconnected");
-      activeSocket.off("error");
-      activeSocket.off("connect_error");
-      disconnectSocket();
     };
   }, [notify, user?.uid, username]);
 
@@ -234,22 +288,17 @@ export default function LiveBattle() {
   };
 
   const onSubmitCode = () => {
-    if (!roomId || !socketRef.current) return;
+    if (!roomId || !socketRef.current || !problem) return;
     setRunning(true);
     setRunMode("submit");
     setOutput("Testing against hidden and edge cases...");
-    socketRef.current.emit("submit_code", { code, language, roomId });
+    socketRef.current.emit("submit_code", { code, language, roomId, problemId: problem.id });
   };
 
   const goBack = () => {
-    navigate("/battle", {
-      state: battleResult ? { result: battleResult } : undefined,
-    });
+    navigate("/battle", { state: battleResult ? { result: battleResult } : undefined });
   };
 
-  const resultToneClass = battleResult?.winner === "You" ? "livebattle-result-win" : "livebattle-result-loss";
-
-  // --- Waiting / Matchmaking screen ---
   if (status === "connecting" || status === "waiting") {
     return (
       <div className="livebattle-page">
@@ -259,13 +308,11 @@ export default function LiveBattle() {
             <h1>{status === "connecting" ? "Connecting to server" : "Finding your opponent"}</h1>
             <p>Matchmaking uses your rating and recent performance to find a fair challenge.</p>
           </div>
-
           <button className="livebattle-leave-btn" onClick={() => navigate("/battle")}>Cancel</button>
         </section>
 
         <section className="livebattle-wait-panel">
           <div className="livebattle-loader">Searching for an opponent...</div>
-
           <div className="livebattle-wait-steps">
             <article>
               <FontAwesomeIcon icon={faUsers} />
@@ -288,48 +335,75 @@ export default function LiveBattle() {
     );
   }
 
-  // --- Battle or finished screen ---
   return (
     <div className="livebattle-page">
+      {showSummary && (
+         <PostBattleSummaryModal 
+           battleResult={battleResult} 
+           liveState={liveState} 
+           problems={problems}
+           onClose={goBack} 
+         />
+      )}
+
       <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="livebattle-header-card">
-        <div className="livebattle-header-copy">
+        <div className="livebattle-header-copy" style={{ flex: 1 }}>
           <div className="livebattle-pre">LIVE BATTLE</div>
-          <h1>vs {opponentName}</h1>
-          <p>
-            {status === "finished"
-              ? "Battle completed. Review your result and return to arena."
-              : `Room ${roomId || "-"} • Submit your best solution first.`}
-          </p>
+          <h1>Room {roomId}</h1>
+          <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
+             {liveState?.players?.map(p => (
+                <div key={p.userId} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}>
+                   <span style={{ opacity: 0.7, fontSize: '0.8rem', display: 'block' }}>{p.username}</span>
+                   <strong>{p.points} pts</strong> ({p.solvedCount}/{problems.length})
+                </div>
+             ))}
+          </div>
         </div>
 
         <div className="livebattle-header-right">
-          <span className={`livebattle-status ${status === "finished" ? "finished" : "active"}`}>
-            {status === "finished" ? "Finished" : "In Progress"}
-          </span>
+          <div className={`livebattle-timer flashing`} style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ff4d4d', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FontAwesomeIcon icon={faClock} /> {formatTime(timeLeft)}
+          </div>
           <button className="livebattle-leave-btn" onClick={goBack}>
             {status === "finished" ? "Back to Arena" : "Leave Battle"}
           </button>
         </div>
       </motion.section>
 
-      {status === "finished" && battleResult && (
-        <section className={`livebattle-result-banner ${resultToneClass}`}>
-          <h2>{battleResult.message}</h2>
-          <p>Winner: {battleResult.winner}</p>
-        </section>
-      )}
-
       <div className="livebattle-grid">
         <section className="livebattle-panel livebattle-problem-panel">
-          <div className="livebattle-panel-head">
-            <h3>Problem</h3>
-            <div className="livebattle-problem-meta">
-              <span>{problem?.difficulty || "Mixed"}</span>
-            </div>
+          <div className="livebattle-panel-head" style={{ paddingBottom: 0, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+             <div className="problem-tabs" style={{ display: 'flex', gap: '10px' }}>
+                {problems.map((p, idx) => (
+                   <button 
+                     key={p.id}
+                     className={`tab-btn ${activeProblemIndex === idx ? 'active' : ''}`}
+                     onClick={() => setActiveProblemIndex(idx)}
+                     style={{
+                        padding: '10px 16px',
+                        background: activeProblemIndex === idx ? 'rgba(255,255,255,0.1)' : 'transparent',
+                        border: 'none',
+                        borderBottom: activeProblemIndex === idx ? '2px solid var(--primary-color)' : '2px solid transparent',
+                        color: '#fff',
+                        cursor: 'pointer'
+                     }}
+                   >
+                     Q{idx + 1}
+                     {liveState?.players?.find(pl => pl.username === username)?.solvedProblems?.find(sp => sp.problemId === p.id) && (
+                        <FontAwesomeIcon icon={faCheckCircle} style={{ color: '#4ade80', marginLeft: '6px' }} />
+                     )}
+                   </button>
+                ))}
+             </div>
           </div>
 
           <div className="livebattle-problem-scroll">
-            <h4>{problem?.title || "Loading problem..."}</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <h4>{problem?.title || "Loading problem..."}</h4>
+               <span style={{ fontSize: '0.8rem', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                  {problem?.difficulty || "Mixed"}
+               </span>
+            </div>
             <p>{problem?.statement || problem?.description || "Waiting for problem statement."}</p>
 
             {sampleCases.length > 0 ? (
@@ -416,13 +490,6 @@ export default function LiveBattle() {
                   <span>Time</span>
                   <strong>{lastResult.executionTime ?? 0} ms</strong>
                 </div>
-              </div>
-            ) : null}
-
-            {submissionMeta ? (
-              <div className="livebattle-submission-meta">
-                <FontAwesomeIcon icon={faClock} />
-                <span>Submission Attempts: {submissionMeta.submissions ?? 0}</span>
               </div>
             ) : null}
 

@@ -1,4 +1,4 @@
-/* ===== CYBERPUNK HUD COMBAT LOBBY STYLES ===== */
+/* ===== MODERN GLASSMORPHISM LOBBY STYLES ===== */
 
 .lobby-root {
     min-height: calc(100vh - 70px);
@@ -6,7 +6,7 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 40px 24px;
-    font-family: var(--font-primary, 'Inter', sans-serif);
+    font-family: 'Inter', sans-serif;
     color: #fff;
     position: relative;
 }
@@ -24,14 +24,14 @@
 }
 
 .btn-hud-back {
-    background: transparent;
-    border: 1px solid rgba(0, 229, 255, 0.3);
-    color: var(--hud-cyan, #00e5ff);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    color: #fff;
     padding: 10px 20px;
-    font-family: var(--font-display, 'Orbitron', sans-serif);
+    font-family: 'Inter', sans-serif;
     font-size: 0.85rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -40,16 +40,16 @@
 }
 
 .btn-hud-back:hover {
-    background: rgba(0, 229, 255, 0.1);
+    background: rgba(255, 255, 255, 0.1);
     border-color: #00e5ff;
-    box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+    color: #00e5ff;
 }
 
 .lobby-badge {
-    font-family: var(--font-mono, monospace);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
     font-size: 0.8rem;
-    color: rgba(0, 229, 255, 0.7);
-    letter-spacing: 0.15em;
+    color: rgba(0, 229, 255, 0.8);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -57,11 +57,13 @@
 
 /* Room Meta Strip */
 .lobby-card-main {
-    background: rgba(0, 15, 25, 0.85);
-    border: 1px solid rgba(0, 229, 255, 0.4);
-    border-radius: 4px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
     padding: 24px 32px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0, 229, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
 }
 
 .room-meta-strip {
@@ -77,32 +79,31 @@
     flex-direction: column;
     gap: 4px;
     cursor: pointer;
-    background: rgba(0, 229, 255, 0.06);
+    background: rgba(255, 255, 255, 0.05);
     padding: 12px 20px;
-    border: 1px dashed rgba(0, 229, 255, 0.4);
-    border-radius: 4px;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
     transition: all 0.2s ease;
 }
 
 .room-code-display:hover {
-    background: rgba(0, 229, 255, 0.12);
+    background: rgba(255, 255, 255, 0.1);
     border-color: #00e5ff;
-    box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
 }
 
 .code-label {
-    font-family: var(--font-mono, monospace);
+    font-family: 'Inter', sans-serif;
     font-size: 0.75rem;
-    color: rgba(0, 229, 255, 0.6);
-    letter-spacing: 0.1em;
+    color: #888;
+    text-transform: uppercase;
+    font-weight: 600;
 }
 
 .code-value {
-    font-family: var(--font-display, 'Orbitron', sans-serif);
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 1.8rem;
-    font-weight: 900;
+    font-weight: 800;
     color: #fff;
-    letter-spacing: 0.15em;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -125,26 +126,27 @@
 }
 
 .spec-label {
-    font-family: var(--font-mono, monospace);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
     font-size: 0.75rem;
     color: #888;
     text-transform: uppercase;
 }
 
 .spec-val {
-    font-family: var(--font-display, 'Orbitron', sans-serif);
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 1.2rem;
     font-weight: 700;
     color: #fff;
 }
 
 .spec-status {
-    font-family: var(--font-mono, monospace);
-    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
-    padding: 4px 10px;
-    border-radius: 2px;
+    padding: 4px 12px;
+    border-radius: 50px;
 }
 
 .spec-status.waiting {
@@ -155,10 +157,10 @@
 
 /* Participants */
 .section-title-hud {
-    font-family: var(--font-display, 'Orbitron', sans-serif);
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 1.1rem;
-    letter-spacing: 0.1em;
-    color: #00e5ff;
+    font-weight: 700;
+    color: #fff;
     margin-bottom: 16px;
     display: flex;
     align-items: center;
@@ -172,9 +174,9 @@
 }
 
 .participant-card {
-    background: rgba(0, 20, 30, 0.6);
-    border: 1px solid rgba(0, 229, 255, 0.2);
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
     padding: 18px 20px;
     display: flex;
     align-items: center;
@@ -183,9 +185,8 @@
 }
 
 .participant-card.me {
-    border-color: rgba(0, 229, 255, 0.6);
-    background: rgba(0, 30, 45, 0.8);
-    box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
+    border-color: rgba(0, 229, 255, 0.4);
+    background: rgba(0, 229, 255, 0.05);
 }
 
 .participant-avatar {
@@ -196,11 +197,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: var(--font-display, 'Orbitron', sans-serif);
-    font-weight: 900;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 800;
     font-size: 1.2rem;
     color: #fff;
-    box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
 }
 
 .participant-info {
@@ -208,8 +208,8 @@
 }
 
 .participant-name {
-    font-family: var(--font-primary, sans-serif);
-    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
     font-size: 1rem;
     color: #fff;
     display: flex;
@@ -221,8 +221,8 @@
     font-size: 0.65rem;
     background: rgba(0, 229, 255, 0.2);
     color: #00e5ff;
-    padding: 2px 6px;
-    border-radius: 2px;
+    padding: 2px 8px;
+    border-radius: 50px;
     font-weight: 700;
 }
 
@@ -230,8 +230,8 @@
     font-size: 0.65rem;
     background: rgba(255, 215, 0, 0.2);
     color: #ffd700;
-    padding: 2px 6px;
-    border-radius: 2px;
+    padding: 2px 8px;
+    border-radius: 50px;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -239,18 +239,18 @@
 }
 
 .participant-rating {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: #888;
-    font-family: var(--font-mono, monospace);
-    margin-top: 2px;
+    font-family: 'Inter', sans-serif;
+    margin-top: 4px;
 }
 
 .status-pill {
-    font-family: var(--font-mono, monospace);
+    font-family: 'Inter', sans-serif;
     font-size: 0.75rem;
     font-weight: 700;
     padding: 6px 12px;
-    border-radius: 2px;
+    border-radius: 50px;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -271,7 +271,7 @@
 /* Empty Slot */
 .participant-card.empty-slot {
     border: 1px dashed rgba(255, 255, 255, 0.15);
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.1);
     justify-content: center;
     text-align: center;
     min-height: 84px;
@@ -284,10 +284,11 @@
     gap: 4px;
     color: #666;
     font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
 }
 
 .slot-code {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     color: rgba(0, 229, 255, 0.7);
 }
 
@@ -302,14 +303,14 @@
 }
 
 .btn-hud-ready {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(0, 230, 118, 0.5);
     color: #00e676;
     padding: 14px 28px;
-    font-family: var(--font-display, 'Orbitron', sans-serif);
+    font-family: 'Inter', sans-serif;
     font-size: 0.95rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    font-weight: 600;
+    border-radius: 50px;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
@@ -319,14 +320,12 @@
 
 .btn-hud-ready:hover {
     background: rgba(0, 230, 118, 0.15);
-    box-shadow: 0 0 15px rgba(0, 230, 118, 0.4);
 }
 
 .btn-hud-ready.is-ready {
     background: rgba(0, 230, 118, 0.2);
     border-color: #00e676;
     color: #fff;
-    box-shadow: 0 0 20px rgba(0, 230, 118, 0.4);
 }
 
 .btn-hud-launch {
@@ -334,27 +333,28 @@
     border: none;
     color: #fff;
     padding: 14px 36px;
-    font-family: var(--font-display, 'Orbitron', sans-serif);
+    font-family: 'Inter', sans-serif;
     font-size: 1rem;
-    font-weight: 900;
-    letter-spacing: 0.15em;
+    font-weight: 600;
+    border-radius: 50px;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 10px;
-    box-shadow: 0 0 20px rgba(255, 42, 122, 0.5);
+    box-shadow: 0 4px 15px rgba(255, 42, 122, 0.2);
 }
 
 .btn-hud-launch:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 0 30px rgba(255, 42, 122, 0.8);
+    box-shadow: 0 8px 25px rgba(255, 42, 122, 0.5);
 }
 
 .btn-hud-launch:disabled {
     opacity: 0.4;
     cursor: not-allowed;
     box-shadow: none;
+    transform: none;
 }
 
 /* Countdown Overlay */
@@ -369,7 +369,7 @@
 }
 
 .countdown-number {
-    font-family: var(--font-display, 'Orbitron', sans-serif);
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 8rem;
     font-weight: 900;
     color: #00e5ff;
@@ -384,7 +384,7 @@
     min-height: 60vh;
     gap: 20px;
     color: #00e5ff;
-    font-family: var(--font-display, 'Orbitron', sans-serif);
+    font-family: 'Space Grotesk', sans-serif;
 }
 
 .lobby-loader svg {

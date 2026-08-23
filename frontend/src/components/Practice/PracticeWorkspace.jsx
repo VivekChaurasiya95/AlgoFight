@@ -66,11 +66,23 @@ export default function PracticeWorkspace() {
   const [submissionCount, setSubmissionCount] = useState(0);
   const [running, setRunning] = useState(false);
   const [runMode, setRunMode] = useState("idle");
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const sampleCases = useMemo(
     () => (Array.isArray(problem?.testCases) ? problem.testCases.slice(0, 2) : []),
     [problem]
   );
+
+  useEffect(() => {
+    const timer = setInterval(() => setElapsedTime((prev) => prev + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
 
   useEffect(() => {
     let active = true;
@@ -250,7 +262,10 @@ export default function PracticeWorkspace() {
           </p>
         </div>
 
-        <div className="livebattle-header-right">
+        <div className="livebattle-header-right" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="livebattle-timer flashing" style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FontAwesomeIcon icon={faClock} /> {formatTime(elapsedTime)}
+          </div>
           <span className="livebattle-status active">Practice Mode</span>
           <button className="livebattle-leave-btn" onClick={() => navigate("/practice")}>
             Back to Problems
