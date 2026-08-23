@@ -149,11 +149,40 @@ export class ConnectionManager {
         }
     }
 
+    // Resolve any socket matching userId, presence username, or platformCode
+    private getSocketByIdentifier(identifier: string): { userId: string; socket: WebSocket } | null {
+        if (!identifier) return null;
+
+        // 1. Direct match on userSockets map
+        const directSocket = this.userSockets.get(identifier);
+        if (directSocket && directSocket.readyState === WebSocket.OPEN) {
+            return { userId: identifier, socket: directSocket };
+        }
+
+        // 2. Fallback match in presenceMap by userId, username, or platformCode
+        const searchKey = identifier.toLowerCase();
+        for (const [uid, presence] of this.presenceMap.entries()) {
+            if (
+                uid.toLowerCase() === searchKey ||
+                presence.userId.toLowerCase() === searchKey ||
+                presence.username?.toLowerCase() === searchKey ||
+                presence.platformCode?.toLowerCase() === searchKey
+            ) {
+                const s = this.userSockets.get(uid);
+                if (s && s.readyState === WebSocket.OPEN) {
+                    return { userId: uid, socket: s };
+                }
+            }
+        }
+
+        return null;
+    }
+
     // Send an event to a single user
     sendToUser<T>(userId: string, event: string, payload: T): boolean {
-        const socket = this.userSockets.get(userId);
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({ event, payload }));
+        const found = this.getSocketByIdentifier(userId);
+        if (found) {
+            found.socket.send(JSON.stringify({ event, payload }));
             return true;
         }
         return false;
@@ -184,8 +213,7 @@ export class ConnectionManager {
 
     // Check if user is online
     isUserOnline(userId: string): boolean {
-        const socket = this.userSockets.get(userId);
-        return !!socket && socket.readyState === WebSocket.OPEN;
+        return !!this.getSocketByIdentifier(userId);
     }
 
     // ============================================
@@ -201,11 +229,12 @@ export class ConnectionManager {
     }): DirectChallenge | null {
         const { fromUserId, fromUsername, fromRating, targetUserId, targetUsername } = params;
 
-        // Check if target is online
-        if (!this.isUserOnline(targetUserId)) {
+        const resolvedTarget = this.getSocketByIdentifier(targetUserId);
+        if (!resolvedTarget) {
             return null;
         }
 
+        const actualTargetUserId = resolvedTarget.userId;
         const challengeId = `chal_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
         const now = Date.now();
         const challenge: DirectChallenge = {
@@ -213,7 +242,7 @@ export class ConnectionManager {
             fromUserId,
             fromUsername,
             fromRating: fromRating || 1200,
-            targetUserId,
+            targetUserId: actualTargetUserId,
             targetUsername,
             createdAt: now,
             expiresAt: now + 30000, // 30 seconds expiration
@@ -229,7 +258,7 @@ export class ConnectionManager {
                 current.status = "EXPIRED";
                 this.challenges.delete(challengeId);
                 this.sendToUser(fromUserId, "challenge_expired", { challengeId });
-                this.sendToUser(targetUserId, "challenge_expired", { challengeId });
+                this.sendToUser(actualTargetUserId, "challenge_expired", { challengeId });
             }
         }, 30000);
 

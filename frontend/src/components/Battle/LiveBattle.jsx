@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { connectSocket, disconnectSocket } from "../../services/socket";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext.jsx";
+import { requestJson } from "../../services/api";
+import ProblemStatement from "../Common/ProblemStatement.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faClock,
@@ -109,20 +111,56 @@ const PostBattleSummaryModal = ({ battleResult, liveState, problems, onClose }) 
 
 export default function LiveBattle() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { notify } = useNotification();
 
-  const [status, setStatus] = useState("connecting"); // connecting | waiting | matched | finished
-  const [problems, setProblems] = useState([]);
+  const initialMatch = location.state?.matchData;
+  const initialRoomCode = location.state?.roomCode;
+
+  const [status, setStatus] = useState(initialMatch || initialRoomCode ? "matched" : "connecting");
+  const [problems, setProblems] = useState(initialMatch?.problems || []);
   const [activeProblemIndex, setActiveProblemIndex] = useState(0);
   const [opponentName, setOpponentName] = useState("");
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("javascript");
-  const [timeLeft, setTimeLeft] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(initialMatch?.timeLimitSeconds || 0);
   const [liveState, setLiveState] = useState(null);
   const [showSummary, setShowSummary] = useState(false);
+  const [roomId, setRoomId] = useState(initialMatch?.roomId || null);
+  const [battleResult, setBattleResult] = useState(null);
 
   const problem = problems[activeProblemIndex] || null;
+
+  // Fetch full room and problem details from API if problem statement/testcases are missing or on direct match entry
+  useEffect(() => {
+    const targetId = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode;
+    if (!targetId) return;
+
+    let active = true;
+    requestJson(`/api/battle/rooms/${encodeURIComponent(targetId)}`)
+      .then((data) => {
+        if (!active) return;
+        const roomData = data?.room || data;
+        if (roomData) {
+          if (roomData.id) setRoomId(roomData.id);
+          if (Array.isArray(roomData.problems) && roomData.problems.length > 0) {
+            setProblems(roomData.problems);
+          }
+          if (roomData.timeLimitMinutes) {
+            setTimeLeft((prev) => (prev > 0 ? prev : roomData.timeLimitMinutes * 60));
+          }
+          setStatus("matched");
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load battle room details from REST API:", err?.message || err);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [roomId, initialRoomCode]);
 
   useEffect(() => {
     if (problem && problem.starterCode && typeof problem.starterCode === "object") {
@@ -140,8 +178,6 @@ export default function LiveBattle() {
   const [submissionMeta, setSubmissionMeta] = useState(null);
   const [running, setRunning] = useState(false);
   const [runMode, setRunMode] = useState("idle");
-  const [roomId, setRoomId] = useState(null);
-  const [battleResult, setBattleResult] = useState(null);
   const socketRef = useRef(null);
   const username = user?.displayName || user?.email || "Player";
 
@@ -173,13 +209,20 @@ export default function LiveBattle() {
       socketRef.current = socket;
 
       socket.on("connect", () => {
-        setStatus("waiting");
-        notify({ type: "info", title: "Connected", message: "Connected to battle server. Looking for an opponent...", duration: 2600 });
-        socket.emit("find_match", { username });
+        const currentTarget = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode;
+        if (currentTarget) {
+          socket.emit("join_room_channel", { roomCode: currentTarget, userId: user?.uid, username });
+        } else if (status !== "matched") {
+          setStatus("waiting");
+          notify({ type: "info", title: "Connected", message: "Connected to battle server. Looking for an opponent...", duration: 2600 });
+          socket.emit("find_match", { username });
+        }
       });
 
       socket.on("waiting_for_opponent", () => {
-        setStatus("waiting");
+        if (!roomId && !initialMatch) {
+          setStatus("waiting");
+        }
       });
 
       socket.on("match_found", (data) => {
@@ -398,28 +441,7 @@ export default function LiveBattle() {
           </div>
 
           <div className="livebattle-problem-scroll">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-               <h4>{problem?.title || "Loading problem..."}</h4>
-               <span style={{ fontSize: '0.8rem', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }}>
-                  {problem?.difficulty || "Mixed"}
-               </span>
-            </div>
-            <p>{problem?.statement || problem?.description || "Waiting for problem statement."}</p>
-
-            {sampleCases.length > 0 ? (
-              <div className="livebattle-samples">
-                {sampleCases.map((sample, index) => (
-                  <article key={`${sample.input}-${index}`}>
-                    <h5>Sample {index + 1}</h5>
-                    <pre>{`Input: ${sample.input}\nExpected: ${sample.expectedOutput ?? sample.output ?? "N/A"}`}</pre>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <pre className="livebattle-example-fallback">{problem?.example || "No sample case available."}</pre>
-            )}
-
-            <p className="livebattle-problem-note">Time Limit: 1s | Memory: 256MB</p>
+            <ProblemStatement problem={problem} />
           </div>
         </section>
 

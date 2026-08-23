@@ -18,7 +18,8 @@ export async function battleRoutes(app: FastifyInstance) {
             body.hostId,
             body.maxPlayers,
             body.timeLimitMinutes,
-            body.problemId,
+            body.difficulty,
+            body.questionCount,
         );
     });
 

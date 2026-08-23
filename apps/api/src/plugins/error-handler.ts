@@ -3,6 +3,7 @@ import { FastifyInstance } from "fastify";
 import {
     AppError,
     InfrastructureError,
+    ValidationError,
     ErrorCode,
 } from "@algofight/error-handling";
 import { logger } from "@algofight/logger";
@@ -19,10 +20,12 @@ export async function registerErrorHandler(
             const appError =
                 error instanceof AppError
                     ? error
-                    : new InfrastructureError(
-                        "Unexpected internal error",
-                        ErrorCode.UNKNOWN_ERROR,
-                    );
+                    : error instanceof Error && error.message
+                        ? new ValidationError(error.message, ErrorCode.VALIDATION_ERROR)
+                        : new InfrastructureError(
+                            "Unexpected internal error",
+                            ErrorCode.UNKNOWN_ERROR,
+                        );
             logger.error(
                 {
                     error,

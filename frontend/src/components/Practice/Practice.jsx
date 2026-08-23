@@ -15,6 +15,53 @@ import "./Practice.css";
 const DIFFICULTY_OPTIONS = ["all", "easy", "medium", "hard"];
 const PAGE_SIZE = 20;
 
+const TAG_MAP = {
+  all: "All Types",
+  dp: "Dynamic Programming",
+  "dynamic programming": "Dynamic Programming",
+  dsu: "DSU (Disjoint Set)",
+  "disjoint set": "DSU (Disjoint Set)",
+  "binary search": "Binary Search",
+  "arrays & hashing": "Arrays & Hashing",
+  "arrays and hashing": "Arrays & Hashing",
+  "brute force": "Brute Force",
+  "constructive algorithms": "Constructive Algorithms",
+  "data structures": "Data Structures",
+  "dfs and similar": "DFS & Traversal",
+  "divide and conquer": "Divide & Conquer",
+  "graph matchings": "Graph Matchings",
+  graphs: "Graphs",
+  greedy: "Greedy",
+  math: "Math",
+  probabilities: "Probabilities",
+  sortings: "Sorting",
+  sorting: "Sorting",
+  strings: "Strings",
+  trees: "Trees",
+  "two pointers": "Two Pointers",
+  "sliding window": "Sliding Window",
+  bitmasks: "Bit Manipulation",
+  "bit manipulation": "Bit Manipulation",
+  games: "Game Theory",
+  geometry: "Geometry",
+  flows: "Network Flows",
+  implementation: "Implementation",
+  "number theory": "Number Theory",
+  combinatorics: "Combinatorics",
+};
+
+function getFormattedTagName(rawTag) {
+  if (!rawTag || rawTag === "all") return "All Types";
+  const key = String(rawTag).trim().toLowerCase();
+  if (TAG_MAP[key]) return TAG_MAP[key];
+
+  return String(rawTag)
+    .trim()
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
 const getDeterministicAcceptanceRate = (problemId = "") => {
   const source = String(problemId);
   let hash = 0;
@@ -109,20 +156,34 @@ export default function Practice() {
         setTotalProblems(total);
 
         setAvailableTags((prevTags) => {
-          const tagsSet = new Set(["all", ...prevTags]);
+          const seenLabels = new Set();
+          const uniqueList = ["all"];
+
+          const addTag = (raw) => {
+            if (!raw || raw === "all") return;
+            const formatted = getFormattedTagName(raw);
+            const key = formatted.toLowerCase();
+            if (!seenLabels.has(key)) {
+              seenLabels.add(key);
+              uniqueList.push(formatted);
+            }
+          };
+
+          prevTags.forEach(addTag);
           list.forEach((problem) => {
-            (problem.tags || []).forEach((tag) => tagsSet.add(String(tag).toLowerCase()));
+            if (problem.category) addTag(problem.category);
+            (problem.tags || []).forEach(addTag);
           });
 
-          if (selectedTag !== "all") {
-            tagsSet.add(selectedTag);
+          if (selectedTag && selectedTag !== "all") {
+            addTag(selectedTag);
           }
 
-          const sorted = Array.from(tagsSet)
-            .filter((tag) => tag !== "all")
+          const sortedOthers = uniqueList
+            .filter((t) => t !== "all")
             .sort((a, b) => a.localeCompare(b));
 
-          return ["all", ...sorted];
+          return ["all", ...sortedOthers];
         });
       } catch (err) {
         if (!active) return;
@@ -171,20 +232,19 @@ export default function Practice() {
       .then((res) => res.json())
       .then((cats) => {
         if (Array.isArray(cats) && cats.length > 0) {
-          setAvailableTags(["all", ...cats]);
+          const seen = new Set();
+          const formattedCats = [];
+          cats.forEach((c) => {
+            const label = getFormattedTagName(c);
+            if (!seen.has(label.toLowerCase())) {
+              seen.add(label.toLowerCase());
+              formattedCats.push(label);
+            }
+          });
+          setAvailableTags(["all", ...formattedCats.sort((a, b) => a.localeCompare(b))]);
         }
       })
-      .catch(() => {
-        setAvailableTags([
-          "all",
-          "Arrays & Hashing",
-          "Two Pointers",
-          "Sliding Window",
-          "Stack & Queues",
-          "Binary Search",
-          "Dynamic Programming",
-        ]);
-      });
+      .catch(() => {});
   }, []);
 
 
@@ -206,7 +266,7 @@ export default function Practice() {
             >
               {DIFFICULTY_OPTIONS.map((level) => (
                 <option key={level} value={level}>
-                  {level.charAt(0).toUpperCase() + level.slice(1)}
+                  {level === "all" ? "All Difficulties" : level.charAt(0).toUpperCase() + level.slice(1)}
                 </option>
               ))}
             </select>
@@ -218,9 +278,7 @@ export default function Practice() {
             >
               {availableTags.map((tag) => (
                 <option key={tag} value={tag}>
-                  {tag === "all"
-                    ? "All Types"
-                    : tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase()}
+                  {tag === "all" ? "All Types" : getFormattedTagName(tag)}
                 </option>
               ))}
             </select>
@@ -289,14 +347,26 @@ export default function Practice() {
 
                   <div className="col-tags">
                     {(() => {
-                      const tags = [];
-                      if (problem.category) tags.push(problem.category);
-                      if (Array.isArray(problem.tags)) tags.push(...problem.tags);
-                      if (tags.length === 0) tags.push("Algorithms");
-                      return Array.from(new Set(tags)).slice(0, 2);
+                      const rawTags = [];
+                      if (problem.category) rawTags.push(problem.category);
+                      if (Array.isArray(problem.tags)) rawTags.push(...problem.tags);
+
+                      const uniqueTags = [];
+                      const seen = new Set();
+                      for (const tag of rawTags) {
+                        if (typeof tag === "string" && tag.trim()) {
+                          const key = tag.trim().toLowerCase();
+                          if (!seen.has(key)) {
+                            seen.add(key);
+                            uniqueTags.push(tag.trim());
+                          }
+                        }
+                      }
+                      if (uniqueTags.length === 0) uniqueTags.push("Algorithms");
+                      return uniqueTags.slice(0, 2);
                     })().map((tag, tagIndex) => (
                       <span key={`${problemId}-tag-${tagIndex}`} className="tag-pill">
-                        {typeof tag === 'string' ? tag.toUpperCase() : tag}
+                        {tag.toUpperCase()}
                       </span>
                     ))}
                   </div>

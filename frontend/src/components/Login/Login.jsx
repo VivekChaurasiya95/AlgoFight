@@ -13,13 +13,17 @@ function Login() {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showOAuthModal, setShowOAuthModal] = useState(false);
+  const [oauthToken, setOauthToken] = useState(null);
+  const [githubUrl, setGithubUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
   const navigate = useNavigate();
   const { user } = useAuth();
   const { notify } = useNotification();
 
   useEffect(() => {
-    if (user) navigate("/home");
-  }, [user, navigate]);
+    if (user && !showOAuthModal) navigate("/home");
+  }, [user, navigate, showOAuthModal]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,7 +57,11 @@ function Login() {
     try {
       const result = await googleSignIn();
       if (result?.notice) notify(result.notice);
-      if (result?.user) navigate("/home");
+      if (result?.user) {
+        const token = await result.user.getIdToken();
+        setOauthToken(token);
+        setShowOAuthModal(true);
+      }
     } catch {
       notify({ type: "error", title: "Sign-In Error", message: "Google sign-in failed." });
     }
@@ -63,9 +71,42 @@ function Login() {
     try {
       const result = await githubSignIn();
       if (result?.notice) notify(result.notice);
-      if (result?.user) navigate("/home");
+      if (result?.user) {
+        const token = await result.user.getIdToken();
+        setOauthToken(token);
+        setShowOAuthModal(true);
+      }
     } catch {
       notify({ type: "error", title: "Sign-In Error", message: "GitHub sign-in failed." });
+    }
+  };
+
+  const submitOAuthProfile = async () => {
+    setLoading(true);
+    try {
+      if (user && oauthToken) {
+        await fetch("/api/users", {
+          method: "POST", 
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${oauthToken}`
+          },
+          body: JSON.stringify({
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            githubUrl: githubUrl.trim() || null,
+            linkedinUrl: linkedinUrl.trim() || null
+          })
+        });
+      }
+      navigate("/home");
+    } catch (err) {
+      console.error(err);
+      navigate("/home");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -129,6 +170,58 @@ function Login() {
           {loading ? "AUTHENTICATING..." : "ENTER ARENA"}
         </button>
       </form>
+
+      {showOAuthModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
+            <h2 className="text-2xl font-bold text-white mb-2">Complete Profile</h2>
+            <p className="text-gray-400 text-sm mb-6">Add your social links (Optional)</p>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-gray-400 text-sm mb-1" htmlFor="oauth-github">GitHub Profile</label>
+                <input
+                  type="url"
+                  id="oauth-github"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                  placeholder="https://github.com/username"
+                  value={githubUrl}
+                  onChange={(e) => setGithubUrl(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-gray-400 text-sm mb-1" htmlFor="oauth-linkedin">LinkedIn Profile</label>
+                <input
+                  type="url"
+                  id="oauth-linkedin"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                  placeholder="https://linkedin.com/in/username"
+                  value={linkedinUrl}
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button 
+                type="button" 
+                onClick={() => navigate("/home")}
+                className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+              >
+                Skip
+              </button>
+              <button 
+                type="button" 
+                onClick={submitOAuthProfile}
+                disabled={loading}
+                className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors"
+              >
+                {loading ? "Saving..." : "Save & Continue"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

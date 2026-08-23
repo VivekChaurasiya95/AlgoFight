@@ -25,18 +25,35 @@ export class PrismaUserRepository implements UserRepository {
     }
 
     async upsertUser(input: CreateUserInput): Promise<UserEntity> {
-        const existing = await prisma.user.findFirst({
-            where: {
-                OR: [{ email: input.email }, { username: input.username }, { id: input.id }],
-            },
-        });
+        let existing = input.id ? await prisma.user.findUnique({ where: { id: input.id } }) : null;
+        
+        if (!existing && input.email) {
+            existing = await prisma.user.findUnique({ where: { email: input.email } });
+        }
+
+        let finalUsername = input.username;
 
         if (existing) {
+            if (input.username && input.username !== existing.username) {
+                const usernameConflict = await prisma.user.findUnique({ where: { username: input.username } });
+                if (usernameConflict && usernameConflict.id !== existing.id) {
+                    finalUsername = `${input.username}_${Math.floor(1000 + Math.random() * 9000)}`;
+                }
+            }
+
+            let finalEmail = input.email;
+            if (finalEmail && finalEmail !== existing.email) {
+                const emailConflict = await prisma.user.findUnique({ where: { email: finalEmail } });
+                if (emailConflict && emailConflict.id !== existing.id) {
+                    finalEmail = existing.email;
+                }
+            }
+
             return prisma.user.update({
                 where: { id: existing.id },
                 data: {
-                    username: input.username,
-                    email: input.email,
+                    username: finalUsername,
+                    email: finalEmail,
                     institutionName: input.institutionName || existing.institutionName,
                     secondaryEmail: input.secondaryEmail || existing.secondaryEmail,
                     githubUrl: input.githubUrl || existing.githubUrl,
@@ -45,7 +62,32 @@ export class PrismaUserRepository implements UserRepository {
             });
         }
 
-        return this.createUser(input);
+        const usernameConflict = await prisma.user.findUnique({ where: { username: input.username } });
+        if (usernameConflict) {
+            finalUsername = `${input.username}_${Math.floor(1000 + Math.random() * 9000)}`;
+        }
+
+        try {
+            return await this.createUser({ ...input, username: finalUsername });
+        } catch (error: any) {
+            // Handle race condition where another request created the user just after we checked
+            if (error?.code === "P2002") {
+                const retryExisting = await prisma.user.findUnique({ where: { id: input.id } });
+                if (retryExisting) {
+                    return prisma.user.update({
+                        where: { id: retryExisting.id },
+                        data: {
+                            email: input.email,
+                            institutionName: input.institutionName || retryExisting.institutionName,
+                            secondaryEmail: input.secondaryEmail || retryExisting.secondaryEmail,
+                            githubUrl: input.githubUrl || retryExisting.githubUrl,
+                            linkedinUrl: input.linkedinUrl || retryExisting.linkedinUrl,
+                        },
+                    });
+                }
+            }
+            throw error;
+        }
     }
 
     async getTopUsers(limit: number = 20): Promise<UserEntity[]> {

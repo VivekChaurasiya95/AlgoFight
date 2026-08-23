@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { io } from "socket.io-client";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { useAuth } from "./AuthContext";
 import { useUserStore } from "../store/useUserStore";
 import { useGameStore } from "../store/useGameStore";
@@ -13,7 +12,8 @@ export function useSocket() {
 
 export function SocketProvider({ children }) {
   const { user, loading } = useAuth();
-  const [socket, setSocket] = useState(null);
+  const [socketWrapper, setSocketWrapper] = useState(null);
+  const wsRef = useRef(null);
 
   // Zustand Store integrations
   const setMatchState = useGameStore((state) => state.setMatchState);
@@ -23,54 +23,113 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     // Only connect if user is authenticated and finished loading
     if (!loading && user) {
-      // Connect to the WebSocket server (adjust URL based on environment)
-      const socketUrl = import.meta.env.VITE_WEBSOCKET_URL || "ws://localhost:4001";
-      
-      const newSocket = io(socketUrl, {
-        auth: { token: user.accessToken },
-        transports: ["websocket"],
-      });
+      // Connect to the native WebSocket server
+      const socketUrl = import.meta.env.VITE_WS_URL || "ws://localhost:4001";
+      const ws = new WebSocket(socketUrl);
+      wsRef.current = ws;
 
-      setSocket(newSocket);
+      ws.onopen = () => {
+        console.log("WebSocket Connected");
+        // Identify / Auth with the backend immediately
+        ws.send(JSON.stringify({
+          action: "auth",
+          data: {
+            userId: user.uid,
+            email: user.email,
+            username: user.displayName || user.email?.split("@")[0]
+          }
+        }));
+      };
 
-      // --- GLOBAL EVENT LISTENERS ---
+      ws.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data);
+          const type = parsed.event; // The backend responds with { event: "...", ...payload }
+          const data = parsed; // The payload data
 
-      // Example: Real-time Profile Updates
-      newSocket.on("profile_update", (data) => {
-        setProfileData(data);
-      });
+          // Handle global events
+          switch (type) {
+            case "profile_update":
+              setProfileData(data.payload || data);
+              break;
+            case "leaderboard_update":
+              setLeaderboard(data.payload || data);
+              break;
+            case "match_found":
+              setMatchState({
+                matchId: data.roomId,
+                opponent: data.players?.find(p => p !== (user.displayName || user.email?.split("@")[0])) || "Opponent",
+                matchStatus: "found",
+                problems: data.problems,
+                timeLimitSeconds: data.timeLimitSeconds
+              });
+              break;
+            case "battle_started":
+            case "match_started":
+              setMatchState({ matchStatus: "in-progress" });
+              break;
+            case "battle_state_sync":
+            case "battle_stats_update":
+              setMatchState({ battleStats: data });
+              break;
+            case "error":
+              console.error("WebSocket Server Error:", data);
+              break;
+            default:
+              // Handle other events or ignore
+              break;
+          }
+        } catch (err) {
+          console.error("Failed to parse websocket message", err);
+        }
+      };
 
-      // Example: Global Leaderboard Updates
-      newSocket.on("leaderboard_update", (data) => {
-        setLeaderboard(data);
-      });
+      ws.onclose = () => {
+        console.log("WebSocket Disconnected");
+      };
 
-      // Example: Game / Matchmaking Events
-      newSocket.on("match_found", (data) => {
-        setMatchState({
-          matchId: data.matchId,
-          opponent: data.opponent,
-          matchStatus: "found",
-        });
-      });
+      ws.onerror = (error) => {
+        console.error("WebSocket Error:", error);
+      };
 
-      newSocket.on("match_started", () => {
-        setMatchState({ matchStatus: "in-progress" });
-      });
+      // Create a wrapper object that mimics the old socket.io API
+      // so we don't break existing components that call socket.emit()
+      const wrapper = {
+        emit: (action, data) => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ action, data }));
+          } else {
+            console.warn("WebSocket is not open. Cannot emit:", action);
+          }
+        },
+        send: (action, data) => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ action, data }));
+          }
+        },
+        disconnect: () => {
+          if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+            ws.close();
+          }
+        },
+        on: () => {
+          console.warn("socket.on is not supported outside SocketContext. Handle events inside SocketContext.jsx.");
+        }
+      };
 
-      newSocket.on("battle_stats_update", (data) => {
-        setMatchState({ battleStats: data });
-      });
+      setSocketWrapper(wrapper);
 
-      // Handle disconnection
+      // Clean up connection on unmount
       return () => {
-        newSocket.disconnect();
+        if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+          ws.close();
+        }
       };
     }
   }, [user, loading, setMatchState, setLeaderboard, setProfileData]);
 
   return (
-    <SocketContext.Provider value={{ socket }}>
+    <SocketContext.Provider value={{ socket: socketWrapper }}>
       {children}
     </SocketContext.Provider>
   );

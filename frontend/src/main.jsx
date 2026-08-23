@@ -6,15 +6,18 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { NotificationProvider } from './contexts/NotificationContext.jsx';
 import { SocketProvider } from './contexts/SocketContext.jsx';
+import { NotificationInboxProvider } from './contexts/NotificationInboxContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <NotificationProvider>
         <AuthProvider>
-          <SocketProvider>
-            <App />
-          </SocketProvider>
+          <NotificationInboxProvider>
+            <SocketProvider>
+              <App />
+            </SocketProvider>
+          </NotificationInboxProvider>
         </AuthProvider>
       </NotificationProvider>
     </BrowserRouter>

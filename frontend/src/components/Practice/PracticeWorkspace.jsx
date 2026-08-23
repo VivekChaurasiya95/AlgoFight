@@ -6,6 +6,7 @@ import { faClock, faFlask, faForward } from "@fortawesome/free-solid-svg-icons";
 import { evaluatePracticeCode, fetchProblemById, recordPracticeProgress } from "../../services/api";
 import { useNotification } from "../../contexts/NotificationContext.jsx";
 import { useAuth } from "../../contexts/AuthContext.jsx";
+import ProblemStatement from "../Common/ProblemStatement.jsx";
 import "../Battle/LiveBattle.css";
 
 const LANGUAGE_OPTIONS = [
@@ -283,25 +284,7 @@ export default function PracticeWorkspace() {
           </div>
 
           <div className="livebattle-problem-scroll">
-            <h4>{problem?.title || "Selected Problem"}</h4>
-            <p>{problem?.statement || problem?.description || "No description available."}</p>
-
-            {sampleCases.length > 0 ? (
-              <div className="livebattle-samples">
-                {sampleCases.map((sample, index) => (
-                  <article key={`${sample.input}-${index}`}>
-                    <h5>Sample {index + 1}</h5>
-                    <pre>{`Input: ${sample.input}\nExpected: ${sample.expectedOutput ?? sample.output ?? "N/A"}`}</pre>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <pre className="livebattle-example-fallback">No sample case available.</pre>
-            )}
-
-            <p className="livebattle-problem-note">
-              Practice Test uses sample cases. Practice Submit uses a balanced suite with limited hidden/edge checks.
-            </p>
+            <ProblemStatement problem={problem} />
           </div>
         </section>
 
