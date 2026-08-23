@@ -58,7 +58,7 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
 
             return tx.battleRoom.findUniqueOrThrow({
                 where: { id: created.id },
-                include: { participants: true },
+                include: { participants: true, problems: { include: { testCases: true } } },
             });
         });
 
@@ -68,7 +68,7 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
     async getRoomById(roomId: string): Promise<BattleRoomEntity | null> {
         const room = await prisma.battleRoom.findUnique({
             where: { id: roomId },
-            include: { participants: true },
+            include: { participants: true, problems: { include: { testCases: true } } },
         });
         return room ? this.mapToEntity(room) : null;
     }
@@ -76,7 +76,7 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
     async getRoomByCode(roomCode: string): Promise<BattleRoomEntity | null> {
         const room = await prisma.battleRoom.findUnique({
             where: { roomCode },
-            include: { participants: true },
+            include: { participants: true, problems: { include: { testCases: true } } },
         });
         return room ? this.mapToEntity(room) : null;
     }
@@ -109,7 +109,7 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
 
             return tx.battleRoom.findUniqueOrThrow({
                 where: { id: roomId },
-                include: { participants: true },
+                include: { participants: true, problems: { include: { testCases: true } } },
             });
         });
 
@@ -181,7 +181,7 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
 
             return tx.battleRoom.findUniqueOrThrow({
                 where: { id: roomId },
-                include: { participants: true },
+                include: { participants: true, problems: { include: { testCases: true } } },
             });
         });
 
@@ -195,7 +195,7 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
                 status: "RUNNING",
                 startedAt: new Date(),
             },
-            include: { participants: true, problems: true },
+            include: { participants: true, problems: { include: { testCases: true } } },
         });
         return this.mapToEntity(room);
     }

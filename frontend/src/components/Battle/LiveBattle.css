@@ -1,32 +1,37 @@
 
 .livebattle-page {
-	min-height: calc(100vh - 80px);
-	max-width: 1460px;
+	height: calc(100vh - 72px);
+	max-width: 1720px;
 	margin: 0 auto;
-	padding: 56px 5% 88px;
+	padding: 12px 20px 16px;
 	color: #f4f8ff;
 	font-family: 'Inter', sans-serif;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
 }
 
 .livebattle-header-card,
 .livebattle-panel,
 .livebattle-wait-panel,
 .livebattle-result-banner {
-	border-radius: 20px;
+	border-radius: 14px;
 	border: 1px solid rgba(0, 229, 255, 0.16);
 	background: linear-gradient(162deg, rgba(0, 0, 0, 0.52), rgba(4, 18, 34, 0.7));
-	box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+	box-shadow: 0 10px 28px rgba(0, 0, 0, 0.34);
 	backdrop-filter: blur(12px);
 	-webkit-backdrop-filter: blur(12px);
 }
 
 .livebattle-header-card {
-	padding: 24px;
-	margin-bottom: 18px;
+	padding: 10px 18px;
+	margin-bottom: 12px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 18px;
+	gap: 14px;
+	flex-shrink: 0;
 }
 
 .livebattle-header-copy {
@@ -34,21 +39,21 @@
 }
 
 .livebattle-pre {
-	margin-bottom: 6px;
+	margin-bottom: 2px;
 	color: #8092ae;
-	font-size: 0.74rem;
+	font-size: 0.68rem;
 	font-weight: 700;
-	letter-spacing: 0.16em;
+	letter-spacing: 0.14em;
 	text-transform: uppercase;
 }
 
 .livebattle-header-copy h1 {
-	margin: 0 0 8px;
+	margin: 0 0 2px;
 	font-family: 'Space Grotesk', sans-serif;
-	font-size: clamp(1.55rem, 3vw, 2.3rem);
+	font-size: clamp(1.15rem, 2vw, 1.45rem);
 	text-transform: none;
-	letter-spacing: -0.02em;
-	line-height: 1.1;
+	letter-spacing: -0.01em;
+	line-height: 1.15;
 	color: #eef9ff;
 	text-shadow: none;
 }
@@ -56,7 +61,10 @@
 .livebattle-header-copy p {
 	margin: 0;
 	color: #95a4ba;
-	font-size: 0.93rem;
+	font-size: 0.82rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .livebattle-header-right {
@@ -69,8 +77,8 @@
 .livebattle-status {
 	border-radius: 999px;
 	border: 1px solid rgba(255, 255, 255, 0.12);
-	padding: 7px 12px;
-	font-size: 0.72rem;
+	padding: 5px 10px;
+	font-size: 0.68rem;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	font-weight: 700;
@@ -93,8 +101,8 @@
 	background: rgba(255, 42, 122, 0.08);
 	color: #ff8ab7;
 	border-radius: 999px;
-	padding: 10px 16px;
-	font-size: 0.78rem;
+	padding: 7px 14px;
+	font-size: 0.72rem;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	font-weight: 700;
@@ -108,14 +116,15 @@
 }
 
 .livebattle-result-banner {
-	margin-bottom: 16px;
-	padding: 16px 18px;
+	margin-bottom: 12px;
+	padding: 10px 14px;
+	flex-shrink: 0;
 }
 
 .livebattle-result-banner h2 {
-	margin: 0 0 6px;
+	margin: 0 0 4px;
 	font-family: 'Space Grotesk', sans-serif;
-	font-size: 1.18rem;
+	font-size: 1.05rem;
 	text-transform: none;
 	letter-spacing: 0;
 	text-shadow: none;
@@ -124,7 +133,7 @@
 .livebattle-result-banner p {
 	margin: 0;
 	color: #99abc2;
-	font-size: 0.9rem;
+	font-size: 0.85rem;
 }
 
 .livebattle-result-win {
@@ -146,17 +155,22 @@
 }
 
 .livebattle-grid {
+	flex: 1;
+	min-height: 0;
 	display: grid;
-	grid-template-columns: minmax(260px, 1fr) minmax(420px, 1.45fr) minmax(280px, 0.95fr);
-	gap: 16px;
+	grid-template-columns: minmax(280px, 1fr) minmax(400px, 1.4fr) minmax(280px, 0.95fr);
+	gap: 12px;
 	align-items: stretch;
 }
 
 .livebattle-panel {
-	min-height: 590px;
-	padding: 18px;
+	height: 100%;
+	min-height: 0;
+	padding: 14px;
 	display: flex;
 	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
 }
 
 .livebattle-panel-head {

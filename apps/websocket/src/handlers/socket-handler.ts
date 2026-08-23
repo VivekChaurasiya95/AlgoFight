@@ -125,22 +125,36 @@ export class SocketHandler {
                 }
 
                 case "send_challenge": {
-                    const session = this.socketUsers.get(socket);
-                    const fromUserId = session?.userId || currentUserId.value;
-                    const fromUsername = session?.username || data.fromUsername || "Challenger";
-                    const fromRating = session?.rating || 1200;
-                    const { targetUserId, targetUsername } = data;
+                    const { targetUserId, targetUsername, fromUserId: rawFromUserId, fromUsername: rawFromUsername } = data;
+                    let session = this.socketUsers.get(socket);
+
+                    let fromUserId = session?.userId || rawFromUserId || currentUserId.value;
+                    let fromUsername = session?.username || rawFromUsername || "Challenger";
 
                     if (!fromUserId) {
-                        this.send(socket, "error", "You must be logged in to send a challenge.");
-                        break;
+                        fromUserId = `user_${Math.floor(1000 + Math.random() * 9000)}`;
+                        currentUserId.value = fromUserId;
                     }
-                    if (!targetUserId || targetUserId === fromUserId) {
+
+                    if (!session || !session.userId) {
+                        this.connectionManager.registerUser(fromUserId, socket, { username: fromUsername });
+                        this.socketUsers.set(socket, { userId: fromUserId, username: fromUsername, rating: 1200 });
+                        session = this.socketUsers.get(socket);
+                    }
+
+                    const fromRating = session?.rating || 1200;
+
+                    if (!targetUserId) {
                         this.send(socket, "error", "Invalid target player for duel challenge.");
                         break;
                     }
+
                     if (!this.connectionManager.isUserOnline(targetUserId)) {
-                        this.send(socket, "error", `${targetUsername || "Player"} is currently offline.`);
+                        this.send(socket, "challenge_target_offline", {
+                            targetUserId,
+                            targetUsername: targetUsername || "Player",
+                            message: `${targetUsername || "Player"} is currently offline. Would you like to battle AlgoBot (1200) instead?`
+                        });
                         break;
                     }
 
@@ -153,12 +167,80 @@ export class SocketHandler {
                     });
 
                     if (!challenge) {
-                        this.send(socket, "error", "Could not dispatch challenge. Player might be offline.");
+                        this.send(socket, "challenge_target_offline", {
+                            targetUserId,
+                            targetUsername: targetUsername || "Player",
+                            message: `${targetUsername || "Player"} is currently offline. Would you like to battle AlgoBot (1200) instead?`
+                        });
                         break;
                     }
 
                     this.connectionManager.sendToUser(targetUserId, "challenge_received", challenge);
                     this.send(socket, "challenge_sent", challenge);
+
+                    // Push persistent Redis inbox notification
+                    await this.pushInboxNotification({
+                        userId: targetUserId,
+                        type: "CHALLENGE",
+                        title: "⚔️ 1v1 Battle Invite",
+                        message: `${fromUsername} challenged you to an instant 1v1 battle duel!`,
+                        metadata: {
+                            challengeId: challenge.challengeId,
+                            fromUserId,
+                            fromUsername,
+                            fromRating,
+                        },
+                    });
+                    break;
+                }
+
+                case "start_bot_battle": {
+                    let session = this.socketUsers.get(socket);
+                    let activeUserId = session?.userId || currentUserId.value || data.fromUserId;
+                    let activeUsername = session?.username || data.fromUsername || "Player";
+
+                    if (!activeUserId) {
+                        activeUserId = `user_${Date.now()}`;
+                        currentUserId.value = activeUserId;
+                    }
+
+                    if (!session) {
+                        this.connectionManager.registerUser(activeUserId, socket, { username: activeUsername });
+                        this.socketUsers.set(socket, { userId: activeUserId, username: activeUsername, rating: 1200 });
+                    }
+
+                    try {
+                        await this.userRepo.upsertUser({
+                            id: "bot",
+                            username: "AlgoBot",
+                            email: "bot@algofight.local",
+                            userType: "INDIVIDUAL",
+                        });
+
+                        const botRoom = await this.battleRoomService.createRoom({
+                            hostId: activeUserId,
+                            maxPlayers: 2,
+                            timeLimitMinutes: 15,
+                            difficulty: "MIX",
+                            questionCount: 3
+                        });
+
+                        await this.battleRoomService.joinRoom(botRoom.id, "bot");
+                        await this.battleRoomService.setPlayerReady(botRoom.id, "bot", true);
+
+                        const botMatch = {
+                            roomId: botRoom.id,
+                            roomCode: botRoom.roomCode,
+                            player1Id: activeUserId,
+                            player2Id: "bot",
+                        };
+
+                        this.connectionManager.updatePresenceStatus(activeUserId, "IN_BATTLE", botRoom.id);
+                        await this.dispatchMatch(botMatch, activeUsername, socket, "AlgoBot (1200)");
+                    } catch (err: any) {
+                        logger.error({ err, userId: activeUserId }, "Failed to start bot battle");
+                        this.send(socket, "error", "Failed to start bot battle");
+                    }
                     break;
                 }
 
@@ -174,20 +256,24 @@ export class SocketHandler {
                     challenge.status = "ACCEPTED";
                     this.connectionManager.removeChallenge(challengeId);
 
-                    const room = await this.battleRoomService.createRoom({
-                        hostId: challenge.fromUserId,
-                        maxPlayers: 2,
-                        timeLimitMinutes: 15,
-                        difficulty: "MIX",
-                        questionCount: 3
-                    });
+                    try {
+                        const room = await this.battleRoomService.createRoom({
+                            hostId: challenge.fromUserId,
+                            maxPlayers: 2,
+                            timeLimitMinutes: 15,
+                            difficulty: "MIX",
+                            questionCount: 3
+                        });
 
-                    await this.battleRoomService.startBattle(room.id, challenge.fromUserId);
-                    const roomWithProblems = await this.battleRoomRepo.getRoomById(room.id);
-                    const problems = roomWithProblems?.problems || [];
+                        await this.battleRoomService.joinRoom(room.id, challenge.targetUserId);
+                        await this.battleRoomService.setPlayerReady(room.id, challenge.targetUserId, true);
 
-                    this.connectionManager.updatePresenceStatus(challenge.fromUserId, "IN_BATTLE", room.id);
-                    this.connectionManager.updatePresenceStatus(challenge.targetUserId, "IN_BATTLE", room.id);
+                        await this.battleRoomService.startBattle(room.id, challenge.fromUserId);
+                        const roomWithProblems = await this.battleRoomRepo.getRoomById(room.id);
+                        const problems = roomWithProblems?.problems || [];
+
+                        this.connectionManager.updatePresenceStatus(challenge.fromUserId, "IN_BATTLE", room.id);
+                        this.connectionManager.updatePresenceStatus(challenge.targetUserId, "IN_BATTLE", room.id);
 
                     const matchPayload = {
                         roomId: room.id,
@@ -227,6 +313,17 @@ export class SocketHandler {
                     this.connectionManager.sendToUser(challenge.fromUserId, "match_found", matchPayload);
                     this.connectionManager.sendToUser(challenge.targetUserId, "match_found", matchPayload);
                     this.connectionManager.broadcastToRoom(room.id, "battle_state_sync", battleState);
+
+                    await this.pushInboxNotification({
+                        userId: challenge.fromUserId,
+                        type: "CHALLENGE_ACCEPTED",
+                        title: "⚔️ Challenge Accepted!",
+                        message: `${challenge.targetUsername} accepted your battle challenge!`,
+                        metadata: { roomId: room.id },
+                    });
+                    } catch (err) {
+                        this.send(socket, "error", "Failed to accept challenge or start battle.");
+                    }
                     break;
                 }
 
@@ -239,6 +336,14 @@ export class SocketHandler {
                         this.connectionManager.sendToUser(challenge.fromUserId, "challenge_declined", {
                             challengeId,
                             targetUsername: challenge.targetUsername,
+                        });
+
+                        await this.pushInboxNotification({
+                            userId: challenge.fromUserId,
+                            type: "CHALLENGE_DECLINED",
+                            title: "⚔️ Challenge Declined",
+                            message: `${challenge.targetUsername} declined your battle challenge.`,
+                            metadata: { challengeId },
                         });
                     }
                     break;
@@ -306,26 +411,41 @@ export class SocketHandler {
                         this.send(socket, "waiting_for_opponent", { status: "queued" });
 
                         setTimeout(async () => {
-                            if (this.matchmakingService.isQueued(activeUserId)) {
-                                this.matchmakingService.cancelQueue(activeUserId);
+                            try {
+                                if (this.matchmakingService.isQueued(activeUserId)) {
+                                    this.matchmakingService.cancelQueue(activeUserId);
 
-                                const botRoom = await this.battleRoomService.createRoom({
-                                    hostId: activeUserId,
-                                    maxPlayers: 2,
-                                    timeLimitMinutes: 15,
-                                    difficulty: "MIX",
-                                    questionCount: 3
-                                });
+                                    await this.userRepo.upsertUser({
+                                        id: "bot",
+                                        username: "AlgoBot",
+                                        email: "bot@algofight.local",
+                                        userType: "INDIVIDUAL",
+                                    });
 
-                                const botMatch = {
-                                    roomId: botRoom.id,
-                                    roomCode: botRoom.roomCode,
-                                    player1Id: activeUserId,
-                                    player2Id: "bot",
-                                };
+                                    const botRoom = await this.battleRoomService.createRoom({
+                                        hostId: activeUserId,
+                                        maxPlayers: 2,
+                                        timeLimitMinutes: 15,
+                                        difficulty: "MIX",
+                                        questionCount: 3
+                                    });
 
-                                this.connectionManager.updatePresenceStatus(activeUserId, "IN_BATTLE", botRoom.id);
-                                await this.dispatchMatch(botMatch, activeUsername, socket, "AlgoBot (1200)");
+                                    await this.battleRoomService.joinRoom(botRoom.id, "bot");
+                                    await this.battleRoomService.setPlayerReady(botRoom.id, "bot", true);
+
+                                    const botMatch = {
+                                        roomId: botRoom.id,
+                                        roomCode: botRoom.roomCode,
+                                        player1Id: activeUserId,
+                                        player2Id: "bot",
+                                    };
+
+                                    this.connectionManager.updatePresenceStatus(activeUserId, "IN_BATTLE", botRoom.id);
+                                    await this.dispatchMatch(botMatch, activeUsername, socket, "AlgoBot (1200)");
+                                }
+                            } catch (err: any) {
+                                logger.error({ err, userId: activeUserId }, "Failed to dispatch bot match");
+                                this.send(socket, "error", "Matchmaking error occurred");
                             }
                         }, 2000);
                     }
@@ -463,7 +583,13 @@ export class SocketHandler {
                     if (roomCode) {
                         const room = await this.battleRoomRepo.getRoomByCode(roomCode);
                         if (room) {
-                            await this.battleRoomService.startBattle(room.id, room.hostId);
+                            try {
+                                await this.battleRoomService.startBattle(room.id, room.hostId);
+                            } catch (err: any) {
+                                logger.error({ err, roomCode }, "Failed to start room battle");
+                                this.send(socket, "error", err.message || "Cannot start battle");
+                                break;
+                            }
                             const roomWithProblems = await this.battleRoomRepo.getRoomById(room.id);
                             const problems = roomWithProblems?.problems || [];
 
@@ -573,11 +699,42 @@ export class SocketHandler {
             this.connectionManager.broadcastToRoom(session.roomId, "opponent_disconnected", {
                 username: session.username,
             });
+            this.connectionManager.leaveRoom(session.roomId, socket);
         }
+
         if (session?.userId) {
             this.connectionManager.unregisterUser(session.userId, socket);
         }
         this.socketUsers.delete(socket);
+    }
+
+    private async pushInboxNotification(params: {
+        userId: string;
+        type: "CHALLENGE" | "CHALLENGE_ACCEPTED" | "CHALLENGE_DECLINED" | "BATTLE_START" | "BATTLE_RESULT" | "SYSTEM";
+        title: string;
+        message: string;
+        metadata?: Record<string, any>;
+    }) {
+        try {
+            const notification = {
+                id: `notif_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`,
+                userId: params.userId,
+                type: params.type,
+                title: params.title,
+                message: params.message,
+                read: false,
+                createdAt: Date.now(),
+                metadata: params.metadata || {},
+            };
+            const key = `user:notifications:${params.userId}`;
+            await this.redis.lpush(key, JSON.stringify(notification));
+            await this.redis.ltrim(key, 0, 49);
+
+            // Broadcast live inbox update event to user if online
+            this.connectionManager.sendToUser(params.userId, "inbox_notification", notification);
+        } catch (err) {
+            logger.error({ err, userId: params.userId }, "Failed to push persistent inbox notification");
+        }
     }
 
     private send(socket: WebSocket, event: string, payload: any): void {

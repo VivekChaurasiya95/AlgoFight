@@ -77,31 +77,41 @@
 }
 
 .filter-select {
-  min-height: 42px;
-  padding: 0 16px;
+  min-height: 40px;
+  padding: 0 36px 0 16px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.04);
-  color: #f0f6ff;
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  background: rgba(4, 18, 34, 0.85);
+  color: #7ceeff;
   font-family: 'Inter', sans-serif;
-  font-size: 0.93rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
   cursor: pointer;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237ceeff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
 .filter-select:focus,
 .filter-select:hover {
-  border-color: rgba(0, 229, 255, 0.55);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12);
+  border-color: rgba(0, 229, 255, 0.65);
+  background-color: rgba(6, 26, 48, 0.95);
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.18), 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 
 .filter-select option {
-  background: #04080d;
-  color: #f0f6ff;
+  background-color: #050e1a;
+  color: #e2f1ff;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 10px 14px;
 }
 
 .archive-meta-pills {

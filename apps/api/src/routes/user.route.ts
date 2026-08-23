@@ -10,6 +10,7 @@ export async function userRoutes(app: FastifyInstance) {
     app.post("/users", async (req) => {
         const body = req.body as any;
         return userController.syncUser({
+            id: body.uid || body.id,
             email: body.email,
             username: body.username,
             displayName: body.displayName,

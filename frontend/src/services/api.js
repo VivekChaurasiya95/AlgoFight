@@ -69,14 +69,14 @@ export async function requestJson(path, options = {}) {
 /**
  * Sync Firebase user to backend after login/signup
  */
-export async function syncUserToBackend({ uid, email, displayName, photoURL, authToken }) {
+export async function syncUserToBackend({ uid, email, displayName, photoURL, authToken, githubUrl, linkedinUrl }) {
   return requestJson("/api/users", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     },
-    body: JSON.stringify({ uid, email, displayName, photoURL }),
+    body: JSON.stringify({ uid, email, displayName, photoURL, githubUrl, linkedinUrl }),
     includeAuth: true,
   });
 }
@@ -94,8 +94,8 @@ export async function fetchLeaderboard() {
 // frontend/src/services/api.js
 export async function fetchUserProfile(uid) {
   try {
-    const email = auth.currentUser?.email;
-    const identifier = email || uid;
+    const identifier = uid || auth.currentUser?.email || auth.currentUser?.uid;
+    if (!identifier) return null;
     return await requestJson(`/api/users/${encodeURIComponent(identifier)}`, {
       includeAuth: true,
     });
@@ -170,6 +170,38 @@ export async function fetchAvailablePlayers({ search = "", status = "", limit = 
 
   const queryString = params.toString();
   return requestJson(`/api/players/available${queryString ? `?${queryString}` : ""}`);
+}
+
+export async function fetchUserNotifications(userId) {
+  if (!userId) return { notifications: [], unreadCount: 0, total: 0 };
+  return requestJson(`/api/notifications?userId=${encodeURIComponent(userId)}`);
+}
+
+export async function markNotificationAsRead(userId, notificationId) {
+  if (!userId || !notificationId) return { success: false };
+  return requestJson(`/api/notifications/${encodeURIComponent(notificationId)}/read`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }),
+  });
+}
+
+export async function markAllNotificationsAsRead(userId) {
+  if (!userId) return { count: 0 };
+  return requestJson(`/api/notifications/read-all`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }),
+  });
+}
+
+export async function clearUserNotifications(userId) {
+  if (!userId) return { success: false };
+  return requestJson(`/api/notifications`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }),
+  });
 }
 
 export { API_URL };

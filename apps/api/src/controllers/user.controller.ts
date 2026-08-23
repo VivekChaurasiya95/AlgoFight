@@ -4,10 +4,13 @@ import { PrismaUserRepository } from "@algofight/database";
 export class UserController {
     constructor(private readonly userRepository: PrismaUserRepository = new PrismaUserRepository()) { }
 
-    async syncUser(payload: { email: string; username?: string; displayName?: string; githubUrl?: string; linkedinUrl?: string }) {
-        const username = payload.displayName || payload.username || payload.email.split("@")[0];
+    async syncUser(payload: { email: string; username?: string; displayName?: string; githubUrl?: string; linkedinUrl?: string, id?: string, uid?: string }) {
+        const userId = payload.id || payload.uid;
+        const email = payload.email || `${userId}@algofight.local`;
+        const username = payload.displayName || payload.username || email.split("@")[0];
         const user = await this.userRepository.upsertUser({
-            email: payload.email,
+            id: userId,
+            email: email,
             username,
             githubUrl: payload.githubUrl,
             linkedinUrl: payload.linkedinUrl,

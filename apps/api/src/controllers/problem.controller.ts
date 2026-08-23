@@ -36,6 +36,20 @@ export class ProblemController {
         if (!problem) throw new Error("Problem not found");
 
         const testCases = problem.testCases || [];
+
+        // Guard: never report a pass for a problem that has no test cases to judge
+        // against (otherwise failedCount === 0 would falsely mark it "ACCEPTED").
+        if (testCases.length === 0) {
+            return {
+                passed: false,
+                output: "This problem has no test cases available to judge against yet.",
+                passedTestCases: 0,
+                totalTestCases: 0,
+                executionTime: 0,
+                verdict: "INTERNAL_ERROR",
+            };
+        }
+
         const result = await this.executor.execute({
             submissionId: `practice-${Date.now()}`,
             language: payload.language,

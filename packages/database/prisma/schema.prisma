@@ -87,11 +87,18 @@ model Problem {
   tags        String[]     @default([])
   timeLimit   Int          // in milliseconds
   memoryLimit Int          // in MB
+  // --- Provenance for imported problems (e.g. HuggingFace datasets) ---
+  source      String?      // e.g. "code_contests"
+  externalId  String?      @unique // stable id from the source, used for idempotent re-imports
+  sourceUrl   String?      // canonical link back to the original problem, when available
+  // -------------------------------------------------------------------
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   testCases   TestCase[]
   submissions Submission[]
   battleRooms BattleRoom[]
+
+  @@index([source])
 }
 
 model Submission {

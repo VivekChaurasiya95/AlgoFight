@@ -505,6 +505,8 @@ export default function AvailablePlayers({ onPlayerCountChange }) {
                         <motion.div
                             key={player.id}
                             className={`ap-card ${player.isMe ? "is-self" : ""} ${isInBattle ? "is-in-battle" : ""}`}
+                            onClick={() => navigate(player.isMe ? "/profile" : `/profile/${encodeURIComponent(player.id)}`)}
+                            title={`Click to view ${player.username}'s full profile`}
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.2 }}
@@ -527,7 +529,10 @@ export default function AvailablePlayers({ onPlayerCountChange }) {
                                     {player.platformCode && (
                                         <span
                                             className="ap-code-badge"
-                                            onClick={() => copyCode(player.platformCode)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                copyCode(player.platformCode);
+                                            }}
                                             title="Click to copy Platform Code"
                                         >
                                             {player.platformCode} <FontAwesomeIcon icon={faCopy} />
@@ -578,7 +583,10 @@ export default function AvailablePlayers({ onPlayerCountChange }) {
                                 ) : isAvailable ? (
                                     <button
                                         className="ap-btn-challenge"
-                                        onClick={() => handleSendChallenge(player)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleSendChallenge(player);
+                                        }}
                                         title={`Send direct 1v1 duel challenge to ${player.username}`}
                                     >
                                         <FontAwesomeIcon icon={faBolt} /> Challenge 1v1

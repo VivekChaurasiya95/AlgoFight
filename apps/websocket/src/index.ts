@@ -34,3 +34,4 @@ wss.on("connection", (socket: WebSocket) => {
 logger.info({ port: WS_PORT }, "WebSocket server is running");
 
 export { connectionManager };
+// Trigger restart

@@ -11,6 +11,7 @@ import { userRoutes } from "./routes/user.route";
 import { battleRoutes } from "./routes/battle.route";
 import { matchmakingRoutes } from "./routes/matchmaking.route";
 import { adminRoutes } from "./routes/admin.route";
+import { notificationRoutes } from "./routes/notification.route";
 const app = fastify();
 
 const start = async () => {
@@ -29,6 +30,7 @@ const start = async () => {
         app.register(userRoutes);
         app.register(battleRoutes);
         app.register(matchmakingRoutes);
+        app.register(notificationRoutes);
 
         app.register(
             async (api) => {
@@ -39,6 +41,7 @@ const start = async () => {
                 api.register(battleRoutes);
                 api.register(matchmakingRoutes);
                 api.register(adminRoutes);
+                api.register(notificationRoutes);
             },
             {
                 prefix: "/api"

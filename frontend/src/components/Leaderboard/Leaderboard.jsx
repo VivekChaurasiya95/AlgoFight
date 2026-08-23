@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrophy, faArrowTrendUp, faArrowTrendDown, faMinus } from "@fortawesome/free-solid-svg-icons";
@@ -6,9 +7,17 @@ import { fetchLeaderboard } from "../../services/api";
 import "./Leaderboard.css";
 
 export default function Leaderboard() {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const handleUserClick = (userObj) => {
+    const id = userObj?.id || userObj?.username || userObj?.user;
+    if (id) {
+      navigate(`/profile/${encodeURIComponent(id)}`);
+    }
+  };
 
   useEffect(() => {
     fetchLeaderboard()
@@ -84,14 +93,14 @@ export default function Leaderboard() {
         {/* Podium for Top 3 */}
         {topPlayers.length >= 3 && (
             <div className="podium-container">
-                <div className="podium-item podium-2">
+                <div className="podium-item podium-2" onClick={() => handleUserClick(topPlayers[1])} style={{ cursor: "pointer" }}>
                     <div className="avatar avatar-silver">{topPlayers[1].user.charAt(0).toUpperCase()}</div>
                     <div className="podium-name">{topPlayers[1].user}</div>
                     <div className="podium-score">{topPlayers[1].score}</div>
                     <div className="podium-block block-silver">2</div>
                 </div>
                 
-                <div className="podium-item podium-1">
+                <div className="podium-item podium-1" onClick={() => handleUserClick(topPlayers[0])} style={{ cursor: "pointer" }}>
                     <FontAwesomeIcon icon={faTrophy} className="podium-trophy" />
                     <div className="avatar avatar-gold">{topPlayers[0].user.charAt(0).toUpperCase()}</div>
                     <div className="podium-name">{topPlayers[0].user}</div>
@@ -99,7 +108,7 @@ export default function Leaderboard() {
                     <div className="podium-block block-gold">1</div>
                 </div>
 
-                <div className="podium-item podium-3">
+                <div className="podium-item podium-3" onClick={() => handleUserClick(topPlayers[2])} style={{ cursor: "pointer" }}>
                     <div className="avatar avatar-bronze">{topPlayers[2].user.charAt(0).toUpperCase()}</div>
                     <div className="podium-name">{topPlayers[2].user}</div>
                     <div className="podium-score">{topPlayers[2].score}</div>
@@ -111,7 +120,7 @@ export default function Leaderboard() {
         {/* List for the rest */}
         <div className="ranking-list">
             {otherPlayers.map((entry, i) => (
-                <div className="ranking-row" key={i}>
+                <div className="ranking-row" key={i} onClick={() => handleUserClick(entry)} style={{ cursor: "pointer" }}>
                     <div className="rank-num">{entry.rank}</div>
                     <div className="rank-avatar">{entry.user.charAt(0).toUpperCase()}</div>
                     <div className="rank-name">
