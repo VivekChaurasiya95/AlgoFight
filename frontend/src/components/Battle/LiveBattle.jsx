@@ -21,7 +21,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "./LiveBattle.css";
 
-const PostBattleSummaryModal = ({ battleResult, liveState, problems, onClose }) => {
+const PostBattleSummaryModal = ({ battleResult, liveState, problems, ratingUpdates, onClose }) => {
   if (!battleResult) return null;
   const isWin = battleResult.winner === "You";
 
@@ -53,16 +53,34 @@ const PostBattleSummaryModal = ({ battleResult, liveState, problems, onClose }) 
               <div className="lb-header">Player</div>
               <div className="lb-header">Points</div>
               <div className="lb-header">Status</div>
-              {liveState?.players?.map((p, i) => (
-                <React.Fragment key={p.userId}>
-                  <div className="lb-cell">
-                    {i === 0 && <FontAwesomeIcon icon={faTrophy} style={{ color: "gold", marginRight: "8px" }} />}
-                    {p.username}
-                  </div>
-                  <div className="lb-cell">{p.points}</div>
-                  <div className="lb-cell">{p.solvedCount === problems.length ? "Completed" : "Incomplete"}</div>
-                </React.Fragment>
-              ))}
+              <div className="lb-header">Rating</div>
+              {liveState?.players?.map((p, i) => {
+                const ratingChange = ratingUpdates?.[p.userId]?.ratingDelta;
+                const newRating = ratingUpdates?.[p.userId]?.winnerNewRating;
+                
+                return (
+                  <React.Fragment key={p.userId}>
+                    <div className="lb-cell">
+                      {i === 0 && <FontAwesomeIcon icon={faTrophy} style={{ color: "gold", marginRight: "8px" }} />}
+                      {p.username}
+                    </div>
+                    <div className="lb-cell">{p.points}</div>
+                    <div className="lb-cell">{p.solvedCount === problems.length ? "Completed" : "Incomplete"}</div>
+                    <div className="lb-cell">
+                      {newRating ? (
+                        <span>
+                          {newRating} 
+                          <span style={{ color: ratingChange > 0 ? '#4ade80' : '#ef4444', marginLeft: '6px', fontSize: '0.85em' }}>
+                            ({ratingChange > 0 ? '+' : ''}{ratingChange})
+                          </span>
+                        </span>
+                      ) : (
+                        <span style={{ opacity: 0.5 }}>--</span>
+                      )}
+                    </div>
+                  </React.Fragment>
+                );
+              })}
             </div>
           </div>
 
@@ -129,6 +147,7 @@ export default function LiveBattle() {
   const [showSummary, setShowSummary] = useState(false);
   const [roomId, setRoomId] = useState(initialMatch?.roomId || null);
   const [battleResult, setBattleResult] = useState(null);
+  const [ratingUpdates, setRatingUpdates] = useState(null);
 
   const problem = problems[activeProblemIndex] || null;
 
@@ -285,11 +304,13 @@ export default function LiveBattle() {
       socket.on("battle_over", (data) => {
         const winner = data?.winner || "Opponent";
         const youWin = winner === username;
+        let message = `Time is up! ${winner} wins.`;
+        if (data.reason === "ALL_SOLVED") message = `${winner} completed all questions first!`;
+        if (data.reason === "OPPONENT_FORFEIT") message = `Your opponent forfeited! You win!`;
+        
         setBattleResult({
           winner: youWin ? "You" : winner,
-          message: data.reason === "ALL_SOLVED" 
-            ? `${winner} completed all questions first!` 
-            : `Time is up! ${winner} wins.`,
+          message,
         });
         if (data.finalState) {
            setLiveState(data.finalState);
@@ -299,9 +320,12 @@ export default function LiveBattle() {
       });
 
       socket.on("opponent_disconnected", () => {
-        setBattleResult({ winner: "You", message: "Your opponent disconnected. You win!" });
-        setStatus("finished");
-        setShowSummary(true);
+        // Just show a toast, backend will emit battle_over if the match is still running
+        notify({ type: "info", title: "Opponent Left", message: "Your opponent has disconnected from the lobby." });
+      });
+
+      socket.on("rating_updates", (updates) => {
+        setRatingUpdates(updates);
       });
     };
 
@@ -317,6 +341,8 @@ export default function LiveBattle() {
         socketRef.current.off("battle_state_sync");
         socketRef.current.off("code_result");
         socketRef.current.off("battle_over");
+        socketRef.current.off("opponent_disconnected");
+        socketRef.current.off("rating_updates");
         disconnectSocket();
       }
     };
@@ -385,6 +411,7 @@ export default function LiveBattle() {
            battleResult={battleResult} 
            liveState={liveState} 
            problems={problems}
+           ratingUpdates={ratingUpdates}
            onClose={goBack} 
          />
       )}

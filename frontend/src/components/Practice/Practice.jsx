@@ -244,7 +244,7 @@ export default function Practice() {
           setAvailableTags(["all", ...formattedCats.sort((a, b) => a.localeCompare(b))]);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
 

@@ -117,14 +117,14 @@ export class BattleRoomService {
         return this.battleRoomRepository.startBattle(roomId);
     }
 
-    async finishBattle(roomId: string): Promise<{ room: BattleRoomEntity; eloResult?: EloResult }> {
+    async finishBattle(roomId: string, forfeitedUserId?: string): Promise<{ room: BattleRoomEntity; eloResults?: Record<string, EloResult> }> {
         const room = await this.battleRoomRepository.getRoomById(roomId);
         if (!room) {
             throw new Error("Room not found");
         }
 
         // Rank participants: Solved first (fastest solve), then highest score
-        const sorted = [...room.participants].sort((a, b) => {
+        let sorted = [...room.participants].sort((a, b) => {
             if (a.solvedAt && b.solvedAt) {
                 return a.solvedAt.getTime() - b.solvedAt.getTime();
             }
@@ -132,23 +132,36 @@ export class BattleRoomService {
             if (b.solvedAt) return 1;
             return b.score - a.score;
         });
+        
+        if (forfeitedUserId) {
+            const forfeitedIdx = sorted.findIndex(p => p.userId === forfeitedUserId);
+            if (forfeitedIdx > -1) {
+                const forfeitedPlayer = sorted.splice(forfeitedIdx, 1)[0];
+                sorted.push(forfeitedPlayer);
+            }
+        }
 
         // Persist ranks (1st, 2nd, ...)
         for (let i = 0; i < sorted.length; i++) {
             await this.battleRoomRepository.updateParticipantRank(roomId, sorted[i].userId, i + 1);
         }
 
-        let eloResult: EloResult | undefined;
+        let eloResults: Record<string, EloResult> | undefined;
 
-        // Apply ELO if 1v1 battle and ratingService is available
-        if (sorted.length === 2 && this.ratingService) {
-            const [player1, player2] = sorted;
-            if (player1.solvedAt || player1.score > player2.score) {
-                eloResult = await this.ratingService.applyBattleResult(player1.userId, player2.userId);
+        if (this.ratingService) {
+            const rankedUserIds = sorted.map(p => p.userId).filter(id => id !== "bot");
+            if (rankedUserIds.length >= 2) {
+                // If it's a draw where nobody scored and no forfeit happened, we could optionally skip,
+                // but applyMultiplayerBattleResult will treat 1st tied index as win, others as loss. 
+                // Let's assume some score separation or tie-break logic applies.
+                const shouldApplyElo = forfeitedUserId || sorted.some(p => p.score > 0 || p.solvedAt);
+                if (shouldApplyElo) {
+                    eloResults = await this.ratingService.applyMultiplayerBattleResult(rankedUserIds);
+                }
             }
         }
 
         const finishedRoom = await this.battleRoomRepository.finishBattle(roomId);
-        return { room: finishedRoom, eloResult };
+        return { room: finishedRoom, eloResults };
     }
 }

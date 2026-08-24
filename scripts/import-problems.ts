@@ -193,8 +193,8 @@ async function main() {
   const total = await prisma.problem.count();
   console.log(
     `\n✅ Done. Created ${created}, updated ${updated} (scanned ${scanned} rows).` +
-      ` Distribution: EASY=${buckets.EASY} MEDIUM=${buckets.MEDIUM} HARD=${buckets.HARD}.` +
-      ` Total problems in DB: ${total}.\n`,
+    ` Distribution: EASY=${buckets.EASY} MEDIUM=${buckets.MEDIUM} HARD=${buckets.HARD}.` +
+    ` Total problems in DB: ${total}.\n`,
   );
 }
 
@@ -206,4 +206,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

@@ -12,6 +12,7 @@ import {
     faTrophy,
     faInfoCircle,
 } from '@fortawesome/free-solid-svg-icons';
+import { getSocket } from '../../services/socket';
 import { useNotificationInbox } from '../../contexts/NotificationInboxContext';
 import './InboxDropdown.css';
 
@@ -62,6 +63,25 @@ function getNotificationTone(type) {
 export default function InboxDropdown({ isOpen, onClose }) {
     const { notifications, unreadCount, markAsRead, markAllAsRead, clearInbox } = useNotificationInbox();
     const [filter, setFilter] = useState('ALL');
+
+    const handleAcceptChallenge = (e, challengeId, notificationId) => {
+        e.stopPropagation();
+        const socket = getSocket();
+        if (socket) {
+            socket.emit("accept_challenge", { challengeId });
+        }
+        markAsRead(notificationId);
+        onClose(); // Optional: close the inbox dropdown when accepting
+    };
+
+    const handleDeclineChallenge = (e, challengeId, notificationId) => {
+        e.stopPropagation();
+        const socket = getSocket();
+        if (socket) {
+            socket.emit("decline_challenge", { challengeId });
+        }
+        markAsRead(notificationId);
+    };
 
     if (!isOpen) return null;
 
@@ -169,6 +189,23 @@ export default function InboxDropdown({ isOpen, onClose }) {
                                             <span className="inbox-item-time">{formatTimeAgo(item.createdAt)}</span>
                                         </div>
                                         <p>{item.message}</p>
+                                        
+                                        {item.type === 'CHALLENGE' && !item.read && item.metadata?.challengeId && (
+                                            <div className="inbox-challenge-actions">
+                                                <button
+                                                    className="inbox-action-btn tone-green"
+                                                    onClick={(e) => handleAcceptChallenge(e, item.metadata.challengeId, item.id)}
+                                                >
+                                                    <FontAwesomeIcon icon={faBolt} /> Accept
+                                                </button>
+                                                <button
+                                                    className="inbox-action-btn tone-danger"
+                                                    onClick={(e) => handleDeclineChallenge(e, item.metadata.challengeId, item.id)}
+                                                >
+                                                    <FontAwesomeIcon icon={faTimes} /> Decline
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {!item.read && <span className="inbox-unread-dot" title="Unread notification" />}

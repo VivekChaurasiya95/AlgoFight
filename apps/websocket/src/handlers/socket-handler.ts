@@ -681,7 +681,7 @@ export class SocketHandler {
         this.connectionManager.broadcastToRoom(match.roomId, "battle_state_sync", battleState);
     }
 
-    private async endBattle(roomId: string, finalState: any) {
+    private async endBattle(roomId: string, finalState: any, forfeitedUserId?: string) {
         // Persist final state to postgres
         for (const player of finalState.players) {
             if (player.userId !== "bot") {
@@ -689,16 +689,39 @@ export class SocketHandler {
                 this.connectionManager.updatePresenceStatus(player.userId, "AVAILABLE");
             }
         }
-        await this.battleRoomService.finishBattle(roomId).catch(() => {});
+        try {
+            const { eloResults } = await this.battleRoomService.finishBattle(roomId, forfeitedUserId);
+            if (eloResults) {
+                this.connectionManager.broadcastToRoom(roomId, "rating_updates", eloResults);
+            }
+        } catch (err) {
+            logger.error({ err, roomId }, "Failed to finish battle and update ratings");
+        }
         await this.redis.del(`battle_state:${roomId}`);
     }
 
-    handleDisconnect(socket: WebSocket): void {
+    async handleDisconnect(socket: WebSocket): Promise<void> {
         const session = this.socketUsers.get(socket);
         if (session?.roomId) {
-            this.connectionManager.broadcastToRoom(session.roomId, "opponent_disconnected", {
-                username: session.username,
-            });
+            const rawState = await this.redis.get(`battle_state:${session.roomId}`);
+            if (rawState) {
+                const state = JSON.parse(rawState);
+                if (state.status === "RUNNING") {
+                    state.status = "FINISHED";
+                    const winnerCandidate = state.players.find((p: any) => p.userId !== session.userId);
+                    
+                    this.connectionManager.broadcastToRoom(session.roomId, "battle_over", {
+                        winner: winnerCandidate?.username || "Someone",
+                        reason: "OPPONENT_FORFEIT",
+                        finalState: state,
+                    });
+                    await this.endBattle(session.roomId, state, session.userId);
+                }
+            } else {
+                this.connectionManager.broadcastToRoom(session.roomId, "opponent_disconnected", {
+                    username: session.username,
+                });
+            }
             this.connectionManager.leaveRoom(session.roomId, socket);
         }
 
