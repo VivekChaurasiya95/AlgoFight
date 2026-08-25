@@ -9,28 +9,23 @@ export const transitions: Record<
     ],
 
     [SubmissionStatus.QUEUED]: [
-        SubmissionStatus.PROCESSING,
-        SubmissionStatus.FAILED,
+        SubmissionStatus.COMPILING,
+        SubmissionStatus.FINALIZED,
     ],
 
-    [SubmissionStatus.PROCESSING]: [
-        SubmissionStatus.COMPLETED,
-        SubmissionStatus.FAILED,
-        SubmissionStatus.RETRYING,
-        SubmissionStatus.STALE,
+    [SubmissionStatus.COMPILING]: [
+        SubmissionStatus.RUNNING,
+        SubmissionStatus.FINALIZED,
     ],
 
-    [SubmissionStatus.RETRYING]: [
-        SubmissionStatus.QUEUED,
-        SubmissionStatus.FAILED,
+    [SubmissionStatus.RUNNING]: [
+        SubmissionStatus.EVALUATING,
+        SubmissionStatus.FINALIZED,
     ],
 
-    [SubmissionStatus.STALE]: [
-        SubmissionStatus.RETRYING,
-        SubmissionStatus.FAILED,
+    [SubmissionStatus.EVALUATING]: [
+        SubmissionStatus.FINALIZED,
     ],
 
-    [SubmissionStatus.COMPLETED]: [],
-
-    [SubmissionStatus.FAILED]: []
+    [SubmissionStatus.FINALIZED]: []
 };

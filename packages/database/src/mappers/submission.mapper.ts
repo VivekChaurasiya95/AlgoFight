@@ -8,11 +8,10 @@ const prismaToDomainStatus: Record<
 > = {
     CREATED: SubmissionStatus.CREATED,
     QUEUED: SubmissionStatus.QUEUED,
-    PROCESSING: SubmissionStatus.PROCESSING,
-    COMPLETED: SubmissionStatus.COMPLETED,
-    FAILED: SubmissionStatus.FAILED,
-    RETRYING: SubmissionStatus.RETRYING,
-    STALE: SubmissionStatus.STALE,
+    COMPILING: SubmissionStatus.COMPILING,
+    RUNNING: SubmissionStatus.RUNNING,
+    EVALUATING: SubmissionStatus.EVALUATING,
+    FINALIZED: SubmissionStatus.FINALIZED,
 };
 
 export const toSubmissionEntity = (

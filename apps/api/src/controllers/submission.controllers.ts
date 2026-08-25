@@ -1,8 +1,9 @@
 import { ProblemNotFoundError } from "@algofight/error-handling";
 import { enqueueSubmissionJob } from "@algofight/queue";
-import { SubmissionInput } from "../schema/submission.schema";
+import { SubmissionInput, TestRunInput } from "../schema/submission.schema";
 import { SubmissionRepository, ProblemRepository } from "@algofight/database";
 import { SubmissionStatus } from "@algofight/types";
+import { EvaluationService } from "@algofight/application";
 
 export class SubmissionController {
     constructor(
@@ -42,5 +43,19 @@ export class SubmissionController {
 
     async getSubmissionById(submissionId: string) {
         return this.submissionRepository.getSubmissionById(submissionId);
+    }
+
+    async test(body: TestRunInput) {
+        const evaluationService = new EvaluationService();
+        const result = await evaluationService.evaluateSubmission({
+            submissionId: "test-run",
+            language: body.language,
+            code: body.code,
+            testCases: body.testCases,
+            timeLimitMs: 2000,
+            memoryLimitBytes: 256 * 1024 * 1024,
+        });
+
+        return result;
     }
 }

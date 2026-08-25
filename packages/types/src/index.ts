@@ -1,11 +1,10 @@
 export enum SubmissionStatus {
     CREATED = "CREATED",
     QUEUED = "QUEUED",
-    PROCESSING = "PROCESSING",
-    COMPLETED = "COMPLETED",
-    FAILED = "FAILED",
-    RETRYING = "RETRYING",
-    STALE = "STALE",
+    COMPILING = "COMPILING",
+    RUNNING = "RUNNING",
+    EVALUATING = "EVALUATING",
+    FINALIZED = "FINALIZED",
 }
 
 export enum SystemEvent {
@@ -21,13 +20,74 @@ export enum SystemEvent {
 }
 
 export enum Verdict {
+    QUEUED = "QUEUED",
+    COMPILING = "COMPILING",
+    COMPILATION_ERROR = "COMPILATION_ERROR",
+    RUNNING = "RUNNING",
     ACCEPTED = "ACCEPTED",
     WRONG_ANSWER = "WRONG_ANSWER",
+    RUNTIME_ERROR = "RUNTIME_ERROR",
     TIME_LIMIT_EXCEEDED = "TIME_LIMIT_EXCEEDED",
     MEMORY_LIMIT_EXCEEDED = "MEMORY_LIMIT_EXCEEDED",
-    RUNTIME_ERROR = "RUNTIME_ERROR",
-    COMPILATION_ERROR = "COMPILATION_ERROR",
     SYSTEM_ERROR = "SYSTEM_ERROR",
 }
 
 export type UUID = string;
+
+export interface ExecutionMetrics {
+    executionTime: number; 
+    memoryUsage: number; 
+    cpuUsage?: number;
+    exitCode?: number | null;
+    signal?: string | null;
+    stdout?: string;
+    stderr?: string;
+    compilationTime?: number;
+}
+
+export interface TestCaseResult {
+    testCaseId: string;
+    status: Verdict;
+    passed: boolean;
+    expectedOutput?: string;
+    actualOutput?: string;
+    error?: string;
+    metrics?: ExecutionMetrics;
+}
+
+export interface EvaluationResult {
+    submissionId: string;
+    verdict: Verdict;
+    compilation?: {
+        output: string;
+        error?: string;
+        success: boolean;
+        timeMs?: number;
+    };
+    testCases?: TestCaseResult[];
+    execution?: ExecutionMetrics;
+    resourceUsage?: {
+        maxMemory: number;
+        totalTime: number;
+    };
+    metadata?: Record<string, any>;
+}
+
+export interface TestCase {
+    id: string;
+    input: string;
+    expectedOutput: string;
+}
+
+export interface SubmissionPayload {
+    submissionId: string;
+    language: string;
+    code: string;
+    testCases: TestCase[];
+    timeLimitMs?: number;
+    memoryLimitBytes?: number;
+}
+
+export interface EvaluationServiceContract {
+    evaluateSubmission(payload: SubmissionPayload): Promise<EvaluationResult>;
+}

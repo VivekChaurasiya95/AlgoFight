@@ -58,11 +58,10 @@ enum Difficulty {
 enum SubmissionStatus {
   CREATED
   QUEUED
-  PROCESSING
-  COMPLETED
-  FAILED
-  RETRYING
-  STALE
+  COMPILING
+  RUNNING
+  EVALUATING
+  FINALIZED
 }
 
 model TestCase {
