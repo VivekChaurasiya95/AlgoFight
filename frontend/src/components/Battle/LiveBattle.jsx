@@ -293,11 +293,37 @@ export default function LiveBattle() {
         const result = data?.result || data?.payload?.result || data;
         setRunning(false);
         setRunMode("idle");
-        setLastResult(result || null);
-        setOutput(result?.output || "No output returned.");
 
-        if (result?.passed) {
-          notify({ type: "success", title: "Execution Passed", message: `Passed ${result.passedTestCases ?? 0}/${result.totalTestCases ?? 0} test cases.`, duration: 2200 });
+        const isSuccess = result?.success || false;
+        const testCases = result?.results || [];
+        const passedCount = testCases.filter(tc => tc.passed).length;
+        const totalCount = testCases.length || 1;
+        
+        let outputText = isSuccess ? "All test cases passed successfully!" : "Some test cases failed.\n";
+        if (!isSuccess && testCases.length > 0) {
+            const failedTc = testCases.find(tc => !tc.passed);
+            if (failedTc) {
+                outputText += `\nError: ${failedTc.error || "Wrong Answer"}`;
+                if (failedTc.input) outputText += `\nInput: ${failedTc.input}`;
+                if (failedTc.expected) outputText += `\nExpected: ${failedTc.expected}`;
+                if (failedTc.actual) outputText += `\nActual: ${failedTc.actual}`;
+            }
+        }
+
+        const uiResult = {
+            passed: isSuccess,
+            passedTestCases: passedCount,
+            totalTestCases: totalCount,
+            output: outputText
+        };
+
+        setLastResult(uiResult);
+        setOutput(uiResult.output);
+
+        if (uiResult.passed) {
+          notify({ type: "success", title: "Execution Passed", message: `Passed ${passedCount}/${totalCount} test cases.`, duration: 2200 });
+        } else {
+          notify({ type: "error", title: "Execution Failed", message: `Passed ${passedCount}/${totalCount} test cases.`, duration: 2200 });
         }
       });
 
@@ -319,9 +345,12 @@ export default function LiveBattle() {
         setShowSummary(true);
       });
 
-      socket.on("opponent_disconnected", () => {
-        // Just show a toast, backend will emit battle_over if the match is still running
-        notify({ type: "info", title: "Opponent Left", message: "Your opponent has disconnected from the lobby." });
+      socket.on("opponent_disconnected", (data) => {
+        notify({ type: "warning", title: "Opponent Disconnected", message: "Your opponent left! They have 60 seconds to return before forfeiting.", duration: 5000 });
+      });
+
+      socket.on("opponent_reconnected", (data) => {
+        notify({ type: "success", title: "Opponent Reconnected", message: "Your opponent is back in the battle!", duration: 3000 });
       });
 
       socket.on("rating_updates", (updates) => {
@@ -342,6 +371,7 @@ export default function LiveBattle() {
         socketRef.current.off("code_result");
         socketRef.current.off("battle_over");
         socketRef.current.off("opponent_disconnected");
+        socketRef.current.off("opponent_reconnected");
         socketRef.current.off("rating_updates");
         disconnectSocket();
       }

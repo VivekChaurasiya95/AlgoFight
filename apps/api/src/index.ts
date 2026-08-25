@@ -50,7 +50,7 @@ const start = async () => {
 
         await app.listen({
             port: config.port,
-            host: "0.0.0.0",
+            host: "::",
         });
 
         logger.info({ port: config.port }, "API server started");

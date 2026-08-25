@@ -5,15 +5,14 @@ export class EvaluationService implements EvaluationServiceContract {
     private pistonAdapter = new PistonAdapter();
 
     async evaluateSubmission(payload: SubmissionPayload): Promise<EvaluationResult> {
-        const testCaseResults: TestCaseResult[] = [];
         let maxMemory = 0;
         let totalTime = 0;
         let compilationResult: EvaluationResult["compilation"] = undefined;
         let allPassed = true;
         let overallVerdict: Verdict = Verdict.ACCEPTED;
 
-        for (let i = 0; i < payload.testCases.length; i++) {
-            const testCase = payload.testCases[i];
+        // Run all test cases at the exact same time!
+        const executionPromises = payload.testCases.map(async (testCase, i) => {
             const execution = await this.pistonAdapter.executeCode(
                 payload.language,
                 payload.code,
@@ -21,8 +20,16 @@ export class EvaluationService implements EvaluationServiceContract {
                 payload.timeLimitMs,
                 payload.memoryLimitBytes
             );
+            return { index: i, testCase, execution };
+        });
 
-            // Populate compilation result from the first execution (Piston compiles and runs in one go)
+        // Wait for all HTTP requests to finish together
+        const results = await Promise.all(executionPromises);
+
+        const testCaseResults: TestCaseResult[] = [];
+
+        // Process the results in order
+        for (const { index: i, testCase, execution } of results) {
             if (i === 0) {
                 compilationResult = {
                     success: execution.compile.success,
@@ -40,7 +47,6 @@ export class EvaluationService implements EvaluationServiceContract {
             }
 
             const { run } = execution;
-            
             let passed = false;
             let currentError = undefined;
             let status = Verdict.ACCEPTED;
@@ -55,7 +61,6 @@ export class EvaluationService implements EvaluationServiceContract {
                 status = Verdict.RUNTIME_ERROR;
                 currentError = run.stderr || "Runtime Error";
             } else {
-                // Check answer
                 const actual = run.stdout.trim();
                 const expected = testCase.expectedOutput.trim();
                 if (actual === expected) {
@@ -70,7 +75,6 @@ export class EvaluationService implements EvaluationServiceContract {
 
             if (!passed) {
                 allPassed = false;
-                // If overall verdict is still ACCEPTED, take the first failure reason
                 if (overallVerdict === Verdict.ACCEPTED) {
                     overallVerdict = status;
                 }
@@ -89,14 +93,7 @@ export class EvaluationService implements EvaluationServiceContract {
                 expectedOutput: testCase.expectedOutput,
                 actualOutput: run.stdout,
                 error: currentError,
-                metrics: {
-                    executionTime,
-                    memoryUsage,
-                    exitCode: run.code,
-                    signal: run.signal,
-                    stdout: run.stdout,
-                    stderr: run.stderr
-                }
+                metrics: { executionTime, memoryUsage, exitCode: run.code, signal: run.signal, stdout: run.stdout, stderr: run.stderr }
             });
         }
 
@@ -105,11 +102,8 @@ export class EvaluationService implements EvaluationServiceContract {
             verdict: overallVerdict,
             compilation: compilationResult,
             testCases: testCaseResults,
-            execution: undefined, // Used only if it's a single run vs tests
-            resourceUsage: {
-                maxMemory,
-                totalTime
-            }
+            execution: undefined,
+            resourceUsage: { maxMemory, totalTime }
         };
     }
 }

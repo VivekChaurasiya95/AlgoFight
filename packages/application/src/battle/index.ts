@@ -12,6 +12,7 @@ export * from "./services/battle-room.service";
 export * from "./services/matchmaking.service";
 export * from "./services/invitation.service";
 export * from "./services/rating.service";
+export * from "./services/battle.service";
 
 // Types
 export * from "./types/battle-status";

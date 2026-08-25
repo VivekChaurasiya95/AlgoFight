@@ -13,7 +13,8 @@
     "@algofight/logger": "workspace:*",
     "@algofight/state-machine": "workspace:*",
     "@algofight/types": "workspace:*",
-    "dockerode": "^5.0.0"
+    "dockerode": "^5.0.0",
+    "ioredis": "5.10.1"
   },
   "devDependencies": {
     "@types/dockerode": "^4.0.1"

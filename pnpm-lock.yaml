@@ -330,6 +330,9 @@ importers:
       '@algofight/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@algofight/queue':
+        specifier: workspace:*
+        version: link:../../packages/queue
       '@algofight/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -401,6 +404,9 @@ importers:
       dockerode:
         specifier: ^5.0.0
         version: 5.0.0
+      ioredis:
+        specifier: 5.10.1
+        version: 5.10.1
     devDependencies:
       '@types/dockerode':
         specifier: ^4.0.1

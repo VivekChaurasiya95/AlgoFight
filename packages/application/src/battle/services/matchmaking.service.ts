@@ -80,6 +80,7 @@ export class MatchmakingService {
 
                 // Auto-join 2nd player and auto-ready both
                 await this.battleRoomService.joinRoom(room.id, newTicket.userId);
+                await this.battleRoomService.setPlayerReady(room.id, candidateId, true);
                 await this.battleRoomService.setPlayerReady(room.id, newTicket.userId, true);
 
                 return {

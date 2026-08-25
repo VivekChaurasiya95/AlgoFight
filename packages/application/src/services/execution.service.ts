@@ -4,6 +4,7 @@ import {
     BattleRoomRepository,
 } from "@algofight/database";
 import { logger } from "@algofight/logger";
+import { BattleService } from "../battle/services/battle.service";
 import { EvaluationServiceContract, SubmissionStatus, Verdict } from "@algofight/types";
 import {
     SubmissionNotFoundError,
@@ -16,6 +17,7 @@ export class ExecutionService {
         private readonly evaluationService: EvaluationServiceContract,
         private readonly problemRepository: ProblemRepository,
         private readonly battleRoomRepository?: BattleRoomRepository,
+        private readonly battleService?: BattleService,
     ) { }
 
     async processSubmission(submissionId: string): Promise<void> {
@@ -78,6 +80,16 @@ export class ExecutionService {
                     100,
                     true,
                 );
+
+                if (this.battleService) {
+                    await this.battleService.processEvaluationResult(
+                        submission.roomId,
+                        submission.userId,
+                        submission.problemId,
+                        true,
+                        100
+                    );
+                }
 
                 logger.info(
                     {

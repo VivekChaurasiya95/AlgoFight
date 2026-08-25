@@ -96,8 +96,9 @@ export async function fetchUserProfile(uid) {
   try {
     const identifier = uid || auth.currentUser?.email || auth.currentUser?.uid;
     if (!identifier) return null;
-    return await requestJson(`/api/users/${encodeURIComponent(identifier)}`, {
+    return await requestJson(`/api/users/${encodeURIComponent(identifier)}?t=${Date.now()}`, {
       includeAuth: true,
+      cache: "no-store",
     });
   } catch {
     return null;

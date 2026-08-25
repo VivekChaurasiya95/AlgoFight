@@ -11,3 +11,5 @@ export * from "./battle/services/battle-room.service";
 export * from "./battle/services/rating.service";
 export * from "./battle/utils/room-code.generator";
 export * from "./battle/services/matchmaking.service";
+export * from "./battle/services/battle.service";
+
