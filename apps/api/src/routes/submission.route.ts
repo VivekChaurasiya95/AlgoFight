@@ -9,6 +9,8 @@ import {
 import {
     SubmissionInput,
     submissionSchema,
+    TestRunInput,
+    testRunSchema
 } from "../schema/submission.schema";
 const submissionRepository = new PrismaSubmissionRepository();
 const problemRepository = new PrismaProblemRepository();
@@ -31,8 +33,20 @@ export async function submissionRoutes(
             return submissionController.submit(
                 body,
             )
+        },
+    );
 
+    app.post(
+        "/test",
+        async (request) => {
+            const body: TestRunInput =
+                testRunSchema.parse(
+                    request.body,
+                );
 
+            return submissionController.test(
+                body,
+            )
         },
     );
 

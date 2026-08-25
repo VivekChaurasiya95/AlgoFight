@@ -7,7 +7,7 @@ import { prisma } from "../packages/database/src/client/prisma";
 import { BattleRoomService } from "../packages/application/src/battle/services/battle-room.service";
 import { RatingService } from "../packages/application/src/battle/services/rating.service";
 import { MatchmakingService } from "../packages/application/src/battle/services/matchmaking.service";
-import { SubmissionStatus } from "../packages/types/src/index";
+import { SubmissionStatus, Verdict } from "../packages/types/src/index";
 
 
 
@@ -89,7 +89,8 @@ async function runE2ETest() {
             hostId: player1.id,
             maxPlayers: 2,
             timeLimitMinutes: 15,
-            problemId: problem.id,
+            difficulty: "EASY",
+            questionCount: 1,
         });
         console.log(`   ✅ Room created: Code ${room.roomCode} | Status: ${room.status}`);
 
@@ -128,18 +129,17 @@ async function runE2ETest() {
             language: "javascript",
             code: "console.log(5);",
         });
-        // Transition: CREATED -> QUEUED -> PROCESSING -> COMPLETED
+        // Transition: CREATED -> QUEUED -> COMPILING -> RUNNING -> EVALUATING -> FINALIZED
         await submissionRepo.updateStatus(subAlice.id, SubmissionStatus.QUEUED);
-        await submissionRepo.updateStatus(subAlice.id, SubmissionStatus.PROCESSING);
+        await submissionRepo.updateStatus(subAlice.id, SubmissionStatus.COMPILING);
+        await submissionRepo.updateStatus(subAlice.id, SubmissionStatus.RUNNING);
+        await submissionRepo.updateStatus(subAlice.id, SubmissionStatus.EVALUATING);
         await submissionRepo.completeSubmission(subAlice.id, {
-            stdout: "5\n",
-            stderr: null,
+            status: SubmissionStatus.FINALIZED,
+            verdict: Verdict.ACCEPTED,
             executionTime: 45,
             exitCode: 0,
-            status: SubmissionStatus.COMPLETED,
-            passedCount: 2,
-            failedCount: 0,
-        });
+        } as any);
         await battleRoomRepo.recordParticipantScore(room.id, player1.id, 100, true);
         console.log("   ✅ Alice scored 100 points and recorded solvedAt!");
         // Bob submits incorrect solution
@@ -151,18 +151,17 @@ async function runE2ETest() {
             language: "javascript",
             code: "console.log(999);",
         });
-        // Transition: CREATED -> QUEUED -> PROCESSING -> COMPLETED
+        // Transition: CREATED -> QUEUED -> COMPILING -> RUNNING -> EVALUATING -> FINALIZED
         await submissionRepo.updateStatus(subBob.id, SubmissionStatus.QUEUED);
-        await submissionRepo.updateStatus(subBob.id, SubmissionStatus.PROCESSING);
+        await submissionRepo.updateStatus(subBob.id, SubmissionStatus.COMPILING);
+        await submissionRepo.updateStatus(subBob.id, SubmissionStatus.RUNNING);
+        await submissionRepo.updateStatus(subBob.id, SubmissionStatus.EVALUATING);
         await submissionRepo.completeSubmission(subBob.id, {
-            stdout: "999\n",
-            stderr: null,
+            status: SubmissionStatus.FINALIZED,
+            verdict: Verdict.WRONG_ANSWER,
             executionTime: 50,
             exitCode: 0,
-            status: SubmissionStatus.COMPLETED,
-            passedCount: 0,
-            failedCount: 2,
-        });
+        } as any);
         await battleRoomRepo.recordParticipantScore(room.id, player2.id, 0, false);
         console.log("   ✅ Bob scored 0 points.\n");
 
@@ -174,7 +173,11 @@ async function runE2ETest() {
         const finalResult = await battleRoomService.finishBattle(room.id);
 
         console.log(`   ✅ Battle Status: ${finalResult.room.status}`);
-        console.log(`   📊 ELO Deltas Applied: Winner +${finalResult.eloResult?.ratingDelta} | Loser -${finalResult.eloResult?.ratingDelta}`);
+        if (finalResult.eloResults) {
+            const aliceElo = finalResult.eloResults[player1.id];
+            const bobElo = finalResult.eloResults[player2.id];
+            console.log(`   📊 ELO Deltas Applied: Winner +${aliceElo?.ratingDelta} | Loser ${bobElo?.ratingDelta}`);
+        }
 
         const updatedAlice = await userRepo.getUserById(player1.id);
         const updatedBob = await userRepo.getUserById(player2.id);

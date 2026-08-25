@@ -1,5 +1,5 @@
 import { Worker } from "bullmq";
-import { ExecutionService, DockerExecutor } from "@algofight/application";
+import { ExecutionService, EvaluationService } from "@algofight/application";
 import { logger } from "@algofight/logger";
 import {
   PrismaSubmissionRepository,
@@ -12,11 +12,11 @@ import { QUEUE_NAMES } from "../constants/queue.constants";
 const submissionRepository = new PrismaSubmissionRepository();
 const problemRepository = new PrismaProblemRepository();
 const battleRoomRepository = new PrismaBattleRoomRepository();
-const codeExecutor = new DockerExecutor();
+const evaluationService = new EvaluationService();
 
 const executionService = new ExecutionService(
   submissionRepository,
-  codeExecutor,
+  evaluationService,
   problemRepository,
   battleRoomRepository,
 );
