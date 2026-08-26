@@ -7,15 +7,17 @@ import {
     ReadyRoomSchema,
     StartBattleSchema,
 } from "../validators/battle.validator";
+import { requireAuth } from "../plugins/auth.plugin";
 
 const battleController = new BattleController();
 
 export async function battleRoutes(app: FastifyInstance) {
     // 1. Create room
-    app.post("/battle/rooms", async (req) => {
+    app.post("/battle/rooms", { preHandler: [requireAuth] }, async (req) => {
         const body = CreateBattleRoomSchema.parse(req.body);
+        const hostId = req.user?.id || body.hostId;
         return battleController.createRoom(
-            body.hostId,
+            hostId,
             body.maxPlayers,
             body.timeLimitMinutes,
             body.difficulty,
@@ -30,35 +32,39 @@ export async function battleRoutes(app: FastifyInstance) {
     });
 
     // 3. Join room
-    app.post("/battle/rooms/:idOrCode/join", async (req) => {
+    app.post("/battle/rooms/:idOrCode/join", { preHandler: [requireAuth] }, async (req) => {
         const { idOrCode } = req.params as { idOrCode: string };
         const body = JoinRoomSchema.parse(req.body);
-        return battleController.joinRoom(idOrCode, body.userId);
+        const userId = req.user?.id || body.userId;
+        return battleController.joinRoom(idOrCode, userId);
     });
 
     // 4. Leave room
-    app.post("/battle/rooms/:id/leave", async (req) => {
+    app.post("/battle/rooms/:id/leave", { preHandler: [requireAuth] }, async (req) => {
         const { id } = req.params as { id: string };
         const body = LeaveRoomSchema.parse(req.body);
-        return battleController.leaveRoom(id, body.userId);
+        const userId = req.user?.id || body.userId;
+        return battleController.leaveRoom(id, userId);
     });
 
     // 5. Toggle Ready status
-    app.post("/battle/rooms/:id/ready", async (req) => {
+    app.post("/battle/rooms/:id/ready", { preHandler: [requireAuth] }, async (req) => {
         const { id } = req.params as { id: string };
         const body = ReadyRoomSchema.parse(req.body);
-        return battleController.setPlayerReady(id, body.userId, body.isReady);
+        const userId = req.user?.id || body.userId;
+        return battleController.setPlayerReady(id, userId, body.isReady);
     });
 
     // 6. Start Battle (Host only)
-    app.post("/battle/rooms/:id/start", async (req) => {
+    app.post("/battle/rooms/:id/start", { preHandler: [requireAuth] }, async (req) => {
         const { id } = req.params as { id: string };
         const body = StartBattleSchema.parse(req.body);
-        return battleController.startBattle(id, body.hostId, body.problemId);
+        const hostId = req.user?.id || body.hostId;
+        return battleController.startBattle(id, hostId, body.problemId);
     });
 
     // 7. Finish Battle
-    app.post("/battle/rooms/:id/finish", async (req) => {
+    app.post("/battle/rooms/:id/finish", { preHandler: [requireAuth] }, async (req) => {
         const { id } = req.params as { id: string };
         return battleController.finishBattle(id);
     });

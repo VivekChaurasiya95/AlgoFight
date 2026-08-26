@@ -29,14 +29,15 @@ export enum Verdict {
     RUNTIME_ERROR = "RUNTIME_ERROR",
     TIME_LIMIT_EXCEEDED = "TIME_LIMIT_EXCEEDED",
     MEMORY_LIMIT_EXCEEDED = "MEMORY_LIMIT_EXCEEDED",
+    OUTPUT_LIMIT_EXCEEDED = "OUTPUT_LIMIT_EXCEEDED",
     SYSTEM_ERROR = "SYSTEM_ERROR",
 }
 
 export type UUID = string;
 
 export interface ExecutionMetrics {
-    executionTime: number; 
-    memoryUsage: number; 
+    executionTime: number;
+    memoryUsage: number;
     cpuUsage?: number;
     exitCode?: number | null;
     signal?: string | null;

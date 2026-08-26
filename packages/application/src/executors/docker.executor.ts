@@ -93,7 +93,7 @@ export class DockerExecutor
 
                 return {
                     ...executionResult,
-                    status: SubmissionStatus.COMPLETED,
+                    status: SubmissionStatus.FINALIZED,
                     passedCount: judgeResult.passedCount,
                     failedCount: judgeResult.failedCount,
                 };

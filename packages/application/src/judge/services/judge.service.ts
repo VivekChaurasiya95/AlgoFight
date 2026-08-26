@@ -43,6 +43,7 @@ export class JudgeService {
       runtimeError: testcase.runtimeError,
       timeLimitExceededError: testcase.timeLimitExceededError,
       memoryLimitExceededError: testcase.memoryLimitExceededError,
+      outputLimitExceededError: testcase.outputLimitExceededError,
     });
 
     return {

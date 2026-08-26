@@ -33,7 +33,7 @@ export async function runBattleExpirationJob(): Promise<void> {
             logger.info(
                 {
                     roomId: room.id,
-                    eloResult: result.eloResult,
+                    result,
                 },
                 "Battle finalized due to expiration",
             );

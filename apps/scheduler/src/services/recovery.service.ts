@@ -5,7 +5,7 @@ import { SubmissionStatus } from "@algofight/types";
 import { enqueueSubmissionJob } from "@algofight/queue";
 export class RecoveryService {
     private readonly submissionRepository =
-         new PrismaSubmissionRepository();
+        new PrismaSubmissionRepository();
 
     async detectStaleSubmissions() {
 
@@ -14,16 +14,16 @@ export class RecoveryService {
         );
 
         const staleSubmissions = await this.submissionRepository
-                                 .getStaleSubmissions(
-                                    RECOVERY_POLICY.STALE_THRESHOLD_MS,
-                                );
-        for (const submissionId of staleSubmissions){
+            .getStaleSubmissions(
+                RECOVERY_POLICY.STALE_THRESHOLD_MS,
+            );
+        for (const submissionId of staleSubmissions) {
             await this.submissionRepository.markAsStale(submissionId);
         }
 
         return staleSubmissions;
 
-       
+
     }
     async recoverSubmission(
         submissionId: string,
@@ -38,23 +38,23 @@ export class RecoveryService {
 
         const submission = await this.submissionRepository.findById(submissionId)
 
-        if(!submission) {
+        if (!submission) {
             logger.warn(
 
-                {submissionId},
+                { submissionId },
                 "Submission not found",
             );
-            return ;
+            return;
         }
 
-        if(
+        if (
             submission.retryCount >=
-             RECOVERY_POLICY.MAX_RETRIES
-        ){
+            RECOVERY_POLICY.MAX_RETRIES
+        ) {
             await this.submissionRepository.
-                 updateStatus(
+                updateStatus(
                     submissionId,
-                    SubmissionStatus.FAILED,
+                    SubmissionStatus.FINALIZED,
                 );
 
             logger.warn({
@@ -70,14 +70,14 @@ export class RecoveryService {
 
         await this.submissionRepository.updateStatus(
             submissionId,
-            SubmissionStatus.RETRYING,
+            SubmissionStatus.QUEUED,
         );
 
-        logger.info (
-           {
-            submissionId,
-           },
-           "Submission moved to RETRYING",
+        logger.info(
+            {
+                submissionId,
+            },
+            "Submission moved to RETRYING",
         )
         await this.submissionRepository.updateStatus(
             submissionId,

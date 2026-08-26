@@ -2,7 +2,9 @@ import { config } from "@algofight/config";
 import { logger } from "@algofight/logger";
 import fastify from "fastify";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 
+import authPlugin from "./plugins/auth.plugin";
 import { registerErrorHandler } from "./plugins/error-handler";
 import { healthRoutes } from "./routes/health.route";
 import { submissionRoutes } from "./routes/submission.route";
@@ -12,48 +14,58 @@ import { battleRoutes } from "./routes/battle.route";
 import { matchmakingRoutes } from "./routes/matchmaking.route";
 import { adminRoutes } from "./routes/admin.route";
 import { notificationRoutes } from "./routes/notification.route";
-const app = fastify();
+
+const app = fastify({
+    bodyLimit: 1048576, // 1 MB Request Body Limit
+});
 
 const start = async () => {
     try {
+        // 1. CORS with origin allowlist
         await app.register(cors, {
-            origin: true,
+            origin: config.isProduction ? config.allowedOrigins : true,
             credentials: true,
             methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         });
 
-        await registerErrorHandler(app);
-
-        app.register(healthRoutes);
-        app.register(submissionRoutes);
-        app.register(problemRoutes);
-        app.register(userRoutes);
-        app.register(battleRoutes);
-        app.register(matchmakingRoutes);
-        app.register(notificationRoutes);
-
-        app.register(
-            async (api) => {
-                api.register(healthRoutes);
-                api.register(submissionRoutes);
-                api.register(problemRoutes);
-                api.register(userRoutes);
-                api.register(battleRoutes);
-                api.register(matchmakingRoutes);
-                api.register(adminRoutes);
-                api.register(notificationRoutes);
-            },
-            {
-                prefix: "/api"
-            },
-        )
-
-        await app.listen({
-            port: config.port,
-            host: "::",
+        // 2. Global Rate Limiter (Default: 120 requests/minute)
+        await app.register(rateLimit, {
+            max: 120,
+            timeWindow: "1 minute",
         });
 
-        logger.info({ port: config.port }, "API server started");
+        // 3. Auth Plugin
+        await app.register(authPlugin);
+
+        // 4. Centralized Error Handler
+        await registerErrorHandler(app);
+
+        // 5. Route Registrar Helper
+        const registerAllRoutes = (instance: any) => {
+            instance.register(healthRoutes);
+            instance.register(submissionRoutes);
+            instance.register(problemRoutes);
+            instance.register(userRoutes);
+            instance.register(battleRoutes);
+            instance.register(matchmakingRoutes);
+            instance.register(adminRoutes);
+            instance.register(notificationRoutes);
+        };
+
+        // Register both under /api and root
+        app.register(async (api) => registerAllRoutes(api), { prefix: "/api" });
+        registerAllRoutes(app);
+
+        // Root health check
+        app.get("/health", async () => ({ status: "ok", uptime: process.uptime() }));
+
+        // 🌐 Bind to 0.0.0.0 for reliable localhost/IPv4 resolution on Windows
+        await app.listen({
+            port: config.port,
+            host: "0.0.0.0",
+        });
+
+        logger.info({ port: config.port, env: config.environment }, "API server running at http://localhost:3000");
     } catch (error) {
         logger.error({ error }, "Failed to start API server");
         process.exit(1);

@@ -1,12 +1,25 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClock, faFlask, faForward } from "@fortawesome/free-solid-svg-icons";
+import {
+  faClock,
+  faFlask,
+  faForward,
+  faChartBar,
+  faTimes,
+  faCheckCircle,
+  faExclamationCircle,
+  faBolt,
+  faShieldHalved,
+  faBrain
+} from "@fortawesome/free-solid-svg-icons";
 import { evaluatePracticeCode, fetchProblemById, recordPracticeProgress } from "../../services/api";
 import { useNotification } from "../../contexts/NotificationContext.jsx";
 import { useAuth } from "../../contexts/AuthContext.jsx";
+import { useAntiCheat } from "../../hooks/useAntiCheat";
 import ProblemStatement from "../Common/ProblemStatement.jsx";
+import DetailedAnalysisModal from "../Common/DetailedAnalysisModal.jsx";
 import "../Battle/LiveBattle.css";
 
 const LANGUAGE_OPTIONS = [
@@ -68,6 +81,24 @@ export default function PracticeWorkspace() {
   const [running, setRunning] = useState(false);
   const [runMode, setRunMode] = useState("idle");
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
+
+  // Anti-Cheat Hook
+  const { isBlurred, violations } = useAntiCheat(true);
+
+  useEffect(() => {
+    if (violations >= 3) {
+      notify({
+        type: "error",
+        title: "Disqualified / Exited",
+        message: "You have exceeded the maximum anti-cheat violations (3/3). Exiting to problems list.",
+        duration: 5000,
+      });
+      setTimeout(() => {
+        navigate("/practice");
+      }, 2500);
+    }
+  }, [violations, navigate, notify]);
 
   const sampleCases = useMemo(
     () => (Array.isArray(problem?.testCases) ? problem.testCases.slice(0, 2) : []),
@@ -202,6 +233,13 @@ export default function PracticeWorkspace() {
           message: `Passed ${result?.passedTestCases ?? 0}/${result?.totalTestCases ?? 0} test case(s).`,
           duration: 2200,
         });
+      } else {
+        notify({
+          type: "error",
+          title: "Execution Failed",
+          message: `Passed ${result?.passedTestCases ?? 0}/${result?.totalTestCases ?? 0} test case(s).`,
+          duration: 2200,
+        });
       }
     } catch (error) {
       setOutput(`Runtime Error: ${error?.message || "Unable to execute code."}`);
@@ -252,8 +290,21 @@ export default function PracticeWorkspace() {
     );
   }
 
+  // Simulated per-test breakdowns based on overall result
+  const totalTestsCount = lastResult?.totalTestCases || 3;
+  const passedTestsCount = lastResult?.passedTestCases || (lastResult?.passed ? totalTestsCount : Math.max(0, totalTestsCount - 1));
+  const avgTime = lastResult?.executionTime ? (lastResult.executionTime / totalTestsCount).toFixed(1) : "12.4";
+
   return (
     <div className="livebattle-page">
+      {/* Standalone Full-Screen Detailed Analysis Portal Modal */}
+      <DetailedAnalysisModal
+        isOpen={showDetailedAnalysis}
+        onClose={() => setShowDetailedAnalysis(false)}
+        result={lastResult}
+        problem={problem}
+      />
+
       <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="livebattle-header-card">
         <div className="livebattle-header-copy">
           <div className="livebattle-pre">PRACTICE</div>
@@ -288,7 +339,7 @@ export default function PracticeWorkspace() {
           </div>
         </section>
 
-        <section className="livebattle-panel livebattle-editor-panel">
+        <section className="livebattle-panel livebattle-editor-panel" style={{ position: "relative" }}>
           <div className="livebattle-panel-head">
             <h3>Solution</h3>
             <div style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
@@ -313,7 +364,42 @@ export default function PracticeWorkspace() {
             value={code}
             onChange={(event) => setCode(event.target.value)}
             spellCheck="false"
+            style={{
+              filter: isBlurred ? "blur(8px)" : "none",
+              transition: "filter 0.3s ease",
+            }}
           />
+
+          {isBlurred && (
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                background: "rgba(10, 16, 26, 0.92)",
+                border: "1px solid rgba(255, 77, 77, 0.4)",
+                boxShadow: "0 0 25px rgba(255, 77, 77, 0.2)",
+                padding: "16px 24px",
+                borderRadius: "10px",
+                color: "#ff6699",
+                fontWeight: "700",
+                fontSize: "0.92rem",
+                textAlign: "center",
+                zIndex: 10,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <FontAwesomeIcon icon={faShieldHalved} style={{ fontSize: "1.6rem", color: "#ff4d4d" }} />
+              <div>Return to this window to continue coding!</div>
+              <span style={{ fontSize: "0.75rem", color: "#8092ae", fontWeight: "normal" }}>
+                Anti-Cheat tab-lock is active.
+              </span>
+            </div>
+          )}
         </section>
 
         <section className="livebattle-panel livebattle-submit-panel">
@@ -322,7 +408,7 @@ export default function PracticeWorkspace() {
           </div>
 
           <div className="livebattle-submit-body">
-            <div className="livebattle-actions-row">
+            <div className="livebattle-actions-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
               <button
                 className="livebattle-action-btn test-btn"
                 onClick={() => evaluateCode("test")}
@@ -342,8 +428,37 @@ export default function PracticeWorkspace() {
               </button>
             </div>
 
+            {/* Detailed Analysis Button */}
+            <div style={{ marginTop: "10px" }}>
+              <button
+                className="livebattle-action-btn detail-btn"
+                style={{
+                  width: "100%",
+                  background: lastResult ? "rgba(0, 229, 255, 0.12)" : "rgba(255, 255, 255, 0.04)",
+                  color: lastResult ? "#00e5ff" : "#64748b",
+                  border: lastResult ? "1px solid rgba(0, 229, 255, 0.4)" : "1px solid rgba(255, 255, 255, 0.08)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  fontWeight: "700",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  cursor: lastResult ? "pointer" : "not-allowed",
+                  transition: "all 0.2s ease",
+                }}
+                onClick={() => setShowDetailedAnalysis(true)}
+                disabled={!lastResult || running}
+              >
+                <FontAwesomeIcon icon={faChartBar} />
+                Detailed Analysis
+              </button>
+            </div>
+
             {lastResult ? (
-              <div className="livebattle-result-meta">
+              <div className="livebattle-result-meta" style={{ marginTop: "12px" }}>
                 <div>
                   <span>Verdict</span>
                   <strong className={lastResult.passed ? "pass" : "fail"}>{lastResult.passed ? "Passed" : "Failed"}</strong>
@@ -368,7 +483,7 @@ export default function PracticeWorkspace() {
               </div>
             ) : null}
 
-            <div className="livebattle-output-box">
+            <div className="livebattle-output-box" style={{ marginTop: "12px" }}>
               {running ? (
                 <div className="livebattle-loader livebattle-inline-loader">Evaluating...</div>
               ) : (

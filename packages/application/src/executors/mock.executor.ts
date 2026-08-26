@@ -70,7 +70,7 @@ export class MockExecutor
             stderr: null,
             executionTime,
             exitCode: 0,
-            status: SubmissionStatus.COMPLETED as any,
+            status: SubmissionStatus.FINALIZED,
             passedCount: payload.testCases.length,
             failedCount: 0,
 

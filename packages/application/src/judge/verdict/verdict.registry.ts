@@ -32,6 +32,11 @@ export const VERDICTS: readonly VerdictRule[] = [
         matches: input => input.isMatch,
     },
     {
+        name: Verdict.OUTPUT_LIMIT_EXCEEDED,
+        priority: 50,
+        matches: input => !!input.outputLimitExceededError,
+    },
+    {
         name: Verdict.SYSTEM_ERROR,
         priority: 110,
         matches: input => !!input.systemError,

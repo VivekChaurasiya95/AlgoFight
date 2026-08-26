@@ -153,21 +153,15 @@ export class SocketHandler {
                 }
 
                 case "send_challenge": {
-                    const { targetUserId, targetUsername, fromUserId: rawFromUserId, fromUsername: rawFromUsername } = data;
-                    let session = this.socketUsers.get(socket);
+                    const { targetUserId, targetUsername, fromUsername: rawFromUsername } = data;
+                    const session = this.socketUsers.get(socket);
 
-                    let fromUserId = session?.userId || rawFromUserId || currentUserId.value;
-                    let fromUsername = session?.username || rawFromUsername || "Challenger";
+                    const fromUserId = session?.userId || currentUserId.value;
+                    const fromUsername = session?.username || rawFromUsername || "Challenger";
 
                     if (!fromUserId) {
-                        fromUserId = `user_${Math.floor(1000 + Math.random() * 9000)}`;
-                        currentUserId.value = fromUserId;
-                    }
-
-                    if (!session || !session.userId) {
-                        this.connectionManager.registerUser(fromUserId, socket, { username: fromUsername });
-                        this.socketUsers.set(socket, { userId: fromUserId, username: fromUsername, rating: 1200 });
-                        session = this.socketUsers.get(socket);
+                        this.send(socket, "error", "Authentication required before sending challenges.");
+                        break;
                     }
 
                     const fromRating = session?.rating || 1200;
@@ -223,18 +217,13 @@ export class SocketHandler {
                 }
 
                 case "start_bot_battle": {
-                    let session = this.socketUsers.get(socket);
-                    let activeUserId = session?.userId || currentUserId.value || data.fromUserId;
-                    let activeUsername = session?.username || data.fromUsername || "Player";
+                    const session = this.socketUsers.get(socket);
+                    const activeUserId = session?.userId || currentUserId.value;
+                    const activeUsername = session?.username || data.fromUsername || "Player";
 
                     if (!activeUserId) {
-                        activeUserId = `user_${Date.now()}`;
-                        currentUserId.value = activeUserId;
-                    }
-
-                    if (!session) {
-                        this.connectionManager.registerUser(activeUserId, socket, { username: activeUsername });
-                        this.socketUsers.set(socket, { userId: activeUserId, username: activeUsername, rating: 1200 });
+                        this.send(socket, "error", "Authentication required before starting battle.");
+                        break;
                     }
 
                     try {
@@ -636,12 +625,17 @@ export class SocketHandler {
                     this.send(socket, "code_result", {
                         action: "test_result",
                         success: result.verdict === "ACCEPTED",
+                        verdict: result.verdict,
+                        executionTime: result.resourceUsage?.totalTime || 0,
+                        memoryUsage: result.resourceUsage?.maxMemory || 0,
                         results: (result.testCases || []).map((tc) => ({
+                            testCaseId: tc.testCaseId,
                             input: problem.testCases.find(p => p.id === tc.testCaseId)?.input || "",
                             expected: problem.testCases.find(p => p.id === tc.testCaseId)?.expectedOutput || "",
                             actual: tc.actualOutput,
                             passed: tc.passed,
                             error: tc.error,
+                            metrics: tc.metrics,
                         })),
                     });
                     break;
@@ -677,9 +671,14 @@ export class SocketHandler {
                     this.send(socket, "code_result", {
                         action: "submit_result",
                         success: isAccepted,
+                        verdict: result.verdict,
+                        executionTime: result.resourceUsage?.totalTime || 0,
+                        memoryUsage: result.resourceUsage?.maxMemory || 0,
                         results: (result.testCases || []).map((tc) => ({
+                            testCaseId: tc.testCaseId,
                             passed: tc.passed,
                             error: tc.error,
+                            metrics: tc.metrics,
                         })),
                     });
 

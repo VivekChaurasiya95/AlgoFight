@@ -5,13 +5,19 @@ import { SubmissionStatus, Verdict } from "@algofight/types";
 import { logger } from "@algofight/logger";
 
 const PISTON_URL = process.env.PISTON_URL || "http://localhost:2000";
+const MAX_OUTPUT_BYTES = 512 * 1024; // 512 KB Output Limit
 
 type SandboxResult = {
     stdout: string;
     stderr: string;
     exitCode: number;
+    signal: string | null;
     timedOut: boolean;
+    memoryLimitExceeded: boolean;
+    outputLimitExceeded: boolean;
     compilationError: boolean;
+    memoryUsed: number;
+    cpuTime: number;
 };
 
 export class SandboxExecutor implements CodeExecutor {
@@ -19,76 +25,126 @@ export class SandboxExecutor implements CodeExecutor {
 
     async execute(payload: ExecutionPayload): Promise<SubmissionResult> {
         const startTime = Date.now();
-
         const {
             submissionId,
             language,
             code,
             testCases,
             timeLimit = 2000,
+            memoryLimit = 256, // In MB
         } = payload;
+
+        const memoryLimitBytes = memoryLimit * 1024 * 1024;
 
         logger.info(
             {
                 submissionId,
                 language,
                 testCasesCount: testCases.length,
+                timeLimitMs: timeLimit,
+                memoryLimitMb: memoryLimit,
             },
-            "Dispatching code to self-hosted sandbox",
+            "Dispatching code to hardened Piston sandbox",
         );
 
-        const judgeInputs = [];
-
+        const individualExecutions: any[] = [];
+        const judgeInputs: any[] = [];
         let combinedStdout = "";
         let combinedStderr: string | null = null;
         let anyError = false;
+        let peakMemoryUsed = 0;
 
-        for (let i = 0; i < testCases.length; i++) {
-            const tc = testCases[i];
+        // Bounded parallel execution: execute in concurrency chunks of 3
+        const CONCURRENCY = 3;
+        let shortCircuit = false;
 
-            const res = await this.executeInSandbox(
-                language,
-                code,
-                tc.input,
-                timeLimit,
-            );
+        for (let i = 0; i < testCases.length; i += CONCURRENCY) {
+            if (shortCircuit) break;
 
-            if (i === 0) {
-                combinedStdout = res.stdout;
-            }
+            const chunk = testCases.slice(i, i + CONCURRENCY);
+            const chunkPromises = chunk.map(async (tc, chunkIdx) => {
+                const globalIdx = i + chunkIdx;
+                const tcStart = Date.now();
 
-            if (res.stderr && !combinedStderr) {
-                combinedStderr = res.stderr;
-            }
+                const res = await this.executeInSandbox(
+                    language,
+                    code,
+                    tc.input,
+                    timeLimit,
+                    memoryLimitBytes,
+                );
 
-            if (
-                res.exitCode !== 0 ||
-                res.timedOut ||
-                res.compilationError
-            ) {
-                anyError = true;
-            }
-
-            judgeInputs.push({
-                testcaseId: `tc-${i + 1}`,
-                expectedOutput: tc.expectedOutput,
-                actualOutput:
-                    res.exitCode === 0 &&
-                        !res.timedOut &&
-                        !res.compilationError
-                        ? res.stdout
-                        : "",
-                executionTime: 0,
-                memoryUsed: 0,
-                exitCode: res.exitCode,
-                timeLimitExceededError: res.timedOut,
-                runtimeError:
-                    res.exitCode !== 0 &&
-                    !res.timedOut &&
-                    !res.compilationError,
-                compilationError: res.compilationError,
+                const tcTime = Math.max(res.cpuTime || 1, Date.now() - tcStart);
+                return { globalIdx, tc, res, tcTime };
             });
 
+            const chunkResults = await Promise.all(chunkPromises);
+
+            for (const item of chunkResults) {
+                const { globalIdx, tc, res, tcTime } = item;
+
+                if (globalIdx === 0) {
+                    combinedStdout = res.stdout;
+                }
+                if (res.stderr && !combinedStderr) {
+                    combinedStderr = res.stderr;
+                }
+
+                if (res.memoryUsed > peakMemoryUsed) {
+                    peakMemoryUsed = res.memoryUsed;
+                }
+
+                if (res.exitCode !== 0 || res.timedOut || res.memoryLimitExceeded || res.outputLimitExceeded || res.compilationError) {
+                    anyError = true;
+                }
+
+                // Short-circuit on compilation error (no need to run remaining tests)
+                if (res.compilationError) {
+                    shortCircuit = true;
+                }
+
+                const isMatch =
+                    res.exitCode === 0 &&
+                    !res.timedOut &&
+                    !res.memoryLimitExceeded &&
+                    !res.outputLimitExceeded &&
+                    !res.compilationError &&
+                    (res.stdout || "").trim() === (tc.expectedOutput || "").trim();
+
+                let tcVerdict = Verdict.ACCEPTED;
+                if (res.compilationError) tcVerdict = Verdict.COMPILATION_ERROR;
+                else if (res.timedOut) tcVerdict = Verdict.TIME_LIMIT_EXCEEDED;
+                else if (res.outputLimitExceeded) tcVerdict = Verdict.OUTPUT_LIMIT_EXCEEDED;
+                else if (res.memoryLimitExceeded) tcVerdict = Verdict.MEMORY_LIMIT_EXCEEDED;
+                else if (res.exitCode !== 0) tcVerdict = Verdict.RUNTIME_ERROR;
+                else if (!isMatch) tcVerdict = Verdict.WRONG_ANSWER;
+
+                judgeInputs.push({
+                    testcaseId: `tc-${globalIdx + 1}`,
+                    expectedOutput: tc.expectedOutput,
+                    actualOutput: res.exitCode === 0 && !res.timedOut && !res.compilationError ? res.stdout : "",
+                    executionTime: tcTime,
+                    memoryUsed: res.memoryUsed,
+                    exitCode: res.exitCode,
+                    timeLimitExceededError: res.timedOut,
+                    memoryLimitExceededError: res.memoryLimitExceeded,
+                    outputLimitExceededError: res.outputLimitExceeded,
+                    runtimeError: res.exitCode !== 0 && !res.timedOut && !res.memoryLimitExceeded && !res.outputLimitExceeded && !res.compilationError,
+                    compilationError: res.compilationError,
+                });
+
+                individualExecutions.push({
+                    testCaseId: `tc-${globalIdx + 1}`,
+                    input: tc.input,
+                    expectedOutput: tc.expectedOutput,
+                    actualOutput: res.stdout,
+                    passed: isMatch,
+                    verdict: tcVerdict,
+                    executionTime: tcTime,
+                    memoryUsage: res.memoryUsed,
+                    error: res.stderr || (res.timedOut ? "Time Limit Exceeded" : res.outputLimitExceeded ? "Output Limit Exceeded" : res.memoryLimitExceeded ? "Memory Limit Exceeded" : !isMatch ? "Wrong Answer" : undefined),
+                });
+            }
         }
 
         const judgeResult = this.judgeService.judge({
@@ -96,9 +152,7 @@ export class SandboxExecutor implements CodeExecutor {
         });
 
         const totalExecutionTime = Date.now() - startTime;
-
-        const isAccepted =
-            judgeResult.verdict === Verdict.ACCEPTED;
+        const isAccepted = judgeResult.verdict === Verdict.ACCEPTED;
 
         logger.info(
             {
@@ -106,28 +160,24 @@ export class SandboxExecutor implements CodeExecutor {
                 verdict: judgeResult.verdict,
                 passed: judgeResult.passedCount,
                 total: testCases.length,
+                peakMemoryBytes: peakMemoryUsed,
             },
-            "Sandbox judging completed",
+            "Hardened sandbox judging completed",
         );
 
         return {
             stdout:
                 combinedStdout ||
-                (isAccepted
-                    ? "All test cases passed successfully!"
-                    : "Output mismatch on testcase."),
-
+                (isAccepted ? "All test cases passed successfully!" : "Output mismatch on testcase."),
             stderr: combinedStderr,
-
             executionTime: totalExecutionTime,
-
             exitCode: anyError ? 1 : 0,
-
-            status: SubmissionStatus.COMPLETED,
-
+            status: SubmissionStatus.FINALIZED,
             passedCount: judgeResult.passedCount,
-
             failedCount: judgeResult.failedCount,
+            verdict: judgeResult.verdict,
+            memoryUsage: peakMemoryUsed,
+            individualExecutions: individualExecutions as any,
         };
     }
 
@@ -136,189 +186,172 @@ export class SandboxExecutor implements CodeExecutor {
         code: string,
         stdinInput: string,
         timeoutMs: number,
+        memoryLimitBytes: number,
     ): Promise<SandboxResult> {
         const langMap: Record<string, string> = {
             javascript: "javascript",
             js: "javascript",
+            typescript: "typescript",
+            ts: "typescript",
             python: "python",
             py: "python",
+            python3: "python",
             cpp: "c++",
             "c++": "c++",
+            c: "c",
             java: "java",
         };
 
         const targetLang = langMap[language.toLowerCase()];
-
         if (!targetLang) {
-            throw new Error(
-                `Unsupported language: ${language}`,
-            );
+            throw new Error(`Unsupported language: ${language}`);
         }
+
+        const wrappedCode = this.wrapCodeForLanguage(targetLang, code);
 
         const requestBody = {
             language: targetLang,
             version: "*",
             files: [
                 {
-                    content: this.wrapCodeForLanguage(
-                        targetLang,
-                        code,
-                    ),
+                    content: wrappedCode,
                 },
             ],
             stdin: stdinInput,
             run_timeout: timeoutMs,
+            compile_timeout: 10000,
+            run_memory_limit: memoryLimitBytes,
         };
 
         try {
-            const res = await fetch(
-                `${PISTON_URL}/api/v2/execute`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(requestBody),
-                    signal: AbortSignal.timeout(
-                        timeoutMs + 2000,
-                    ),
-                },
-            );
+            const res = await fetch(`${PISTON_URL}/api/v2/execute`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestBody),
+                signal: AbortSignal.timeout(timeoutMs + 3000),
+            });
 
             if (!res.ok) {
-                const errorText = await res
-                    .text()
-                    .catch(() => "");
-
-                throw new Error(
-                    `Sandbox service error (${res.status}): ${errorText}`,
-                );
+                const errorText = await res.text().catch(() => "");
+                throw new Error(`Sandbox service error (${res.status}): ${errorText}`);
             }
 
             const data = (await res.json()) as any;
 
-            /*
-             * Compilation failure
-             */
-            if (data.compile?.status) {
+            // 1. Check Compilation Failure
+            if (data.compile && (data.compile.code !== 0 || data.compile.status)) {
                 return {
                     stdout: "",
-                    stderr:
-                        data.compile.message ||
-                        data.compile.stderr ||
-                        "Compilation error",
-                    exitCode: 1,
-                    timedOut: false,
+                    stderr: (data.compile.message || data.compile.stderr || data.compile.output || "Compilation error").trim(),
+                    exitCode: data.compile.code || 1,
+                    signal: data.compile.signal || null,
+                    timedOut: data.compile.status === "TO",
+                    memoryLimitExceeded: data.compile.status === "MLE",
+                    outputLimitExceeded: false,
                     compilationError: true,
+                    memoryUsed: data.compile.memory || 0,
+                    cpuTime: 0,
                 };
             }
 
             const run = data.run || {};
+            let stdout = (run.stdout || "").trim();
+            let stderr = (run.stderr || "").trim();
+            let outputTruncated = false;
 
-            const timedOut = run.status === "TO";
+            // 2. Enforce Output Capping (OLE)
+            if (stdout.length > MAX_OUTPUT_BYTES || stderr.length > MAX_OUTPUT_BYTES) {
+                stdout = stdout.slice(0, MAX_OUTPUT_BYTES);
+                stderr = stderr.slice(0, MAX_OUTPUT_BYTES) + "\n[Output limit exceeded. Truncated.]";
+                outputTruncated = true;
+            }
 
-            const runtimeError =
-                run.status === "RE" ||
-                run.status === "SG";
+            const timedOut = run.status === "TO" || run.signal === "SIGXCPU";
+            const memoryLimitExceeded = run.status === "MLE" || (run.signal === "SIGKILL" && !timedOut);
+            const outputLimitExceeded = outputTruncated || run.status === "OLE";
 
             return {
-                stdout: (run.stdout || "").trim(),
-
-                stderr: (run.stderr || "").trim(),
-
-                exitCode:
-                    run.code ??
-                    (runtimeError ? 1 : 0),
-
+                stdout,
+                stderr,
+                exitCode: run.code ?? (timedOut || memoryLimitExceeded || outputLimitExceeded ? 1 : 0),
+                signal: run.signal || null,
                 timedOut,
-
+                memoryLimitExceeded,
+                outputLimitExceeded,
                 compilationError: false,
+                memoryUsed: Number(run.memory || 0),
+                cpuTime: Number(run.cpu_time || 0),
             };
         } catch (err: any) {
             logger.error(
-                {
-                    error: err.message,
-                    PISTON_URL,
-                    language: targetLang,
-                },
-                "Sandbox execution failed",
+                { error: err.message, PISTON_URL, language: targetLang },
+                "Sandbox execution connection failed",
             );
-
-            /*
-             * Do NOT execute user code outside the sandbox.
-             * Let the queue/recovery layer handle this failure.
-             */
-            throw new Error(
-                `Execution sandbox unavailable: ${err.message}`,
-            );
+            throw new Error(`Execution sandbox unavailable: ${err.message}`);
         }
     }
 
-    private wrapCodeForLanguage(
-        language: string,
-        rawCode: string,
-    ): string {
-        if (language === "javascript") {
-            return `
+    private wrapCodeForLanguage(language: string, rawCode: string): string {
+        switch (language) {
+            case "javascript":
+            case "typescript":
+                return `
 const fs = require("fs");
-
 const input = fs.readFileSync(0, "utf-8");
 
 ${rawCode}
 
 if (typeof solution === "function") {
     const raw = input.trim();
-
-    const lines = raw
-        .split("\\n")
-        .map(l => l.trim())
-        .filter(Boolean);
-
+    const lines = raw.split("\\n").map(l => l.trim()).filter(Boolean);
     let res;
-
     if (lines.length > 1) {
         const args = lines.map(l => {
-            try {
-                return JSON.parse(l);
-            } catch {
-                return l.includes(" ")
-                    ? l.split(" ").map(Number)
-                    : l;
-            }
+            try { return JSON.parse(l); } catch { return l.includes(" ") ? l.split(" ").map(Number) : l; }
         });
-
         res = solution(...args);
     } else if (raw.includes(" ")) {
-        const nums = raw
-            .split(" ")
-            .map(n =>
-                isNaN(Number(n))
-                    ? n
-                    : Number(n)
-            );
-
+        const nums = raw.split(" ").map(n => isNaN(Number(n)) ? n : Number(n));
         res = solution(...nums);
     } else {
         let single = raw;
-
-        try {
-            single = JSON.parse(raw);
-        } catch {}
-
+        try { single = JSON.parse(raw); } catch {}
         res = solution(single);
     }
-
     if (res !== undefined) {
-        console.log(
-            typeof res === "object"
-                ? JSON.stringify(res)
-                : res
-        );
+        console.log(typeof res === "object" ? JSON.stringify(res) : res);
     }
 }
 `;
-        }
+            case "python":
+                return `
+import sys, json
 
-        return rawCode;
+${rawCode}
+
+if __name__ == '__main__':
+    raw_input = sys.stdin.read().strip()
+    if 'solution' in globals() and callable(globals()['solution']):
+        lines = [l.strip() for l in raw_input.split('\\n') if l.strip()]
+        if len(lines) > 1:
+            parsed_args = []
+            for l in lines:
+                try: parsed_args.append(json.loads(l))
+                except: parsed_args.append([int(x) if x.isdigit() else x for x in l.split()] if ' ' in l else l)
+            res = solution(*parsed_args)
+        elif ' ' in raw_input:
+            nums = [int(x) if x.lstrip('-').isdigit() else x for x in raw_input.split()]
+            res = solution(*nums)
+        else:
+            try: single = json.loads(raw_input)
+            except: single = raw_input
+            res = solution(single)
+        if res is not None:
+            print(json.dumps(res) if isinstance(res, (list, dict)) else res)
+`;
+            default:
+                // For C++, Java, or user code that already has main(), execute as-is
+                return rawCode;
+        }
     }
 }

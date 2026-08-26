@@ -1,15 +1,41 @@
 import "@algofight/config";
-import "@algofight/queue/src/workers/submission.worker";
-import { logger } from "@algofight/logger"; // 👈 Clean package import
+import { submissionWorker, redisConnection } from "@algofight/queue";
+import { prisma } from "@algofight/database";
+import { logger } from "@algofight/logger";
 
-logger.info("Worker service started");
+logger.info("Worker service started with graceful shutdown handlers");
 
-process.on("SIGINT", () => {
-    logger.info("Worker shutting down");
-    process.exit(0);
-});
+let isShuttingDown = false;
 
-process.on("SIGTERM", () => {
-    logger.info("Worker shutting down");
-    process.exit(0);
-});
+const gracefulShutdown = async (signal: string) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    logger.info({ signal }, "Worker received termination signal, starting graceful drain...");
+
+    try {
+        // 1. Pause worker to stop accepting new submissions
+        await submissionWorker.pause();
+        logger.info("Submission worker paused");
+
+        // 2. Wait for active jobs in flight to complete cleanly
+        await submissionWorker.close();
+        logger.info("Active submission jobs drained and worker closed");
+
+        // 3. Disconnect Redis connection
+        await redisConnection.quit();
+        logger.info("Redis connection closed");
+
+        // 4. Disconnect Prisma pool
+        await prisma.$disconnect();
+        logger.info("Database connection closed cleanly");
+
+        logger.info("Worker graceful shutdown complete");
+        process.exit(0);
+    } catch (error) {
+        logger.error({ error }, "Error during graceful worker shutdown");
+        process.exit(1);
+    }
+};
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));

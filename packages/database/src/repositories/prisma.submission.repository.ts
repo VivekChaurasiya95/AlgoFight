@@ -22,14 +22,14 @@ export class PrismaSubmissionRepository implements SubmissionRepository {
   }
 
   async markAsStale(submissionId: string) {
-    return this.updateStatus(submissionId, SubmissionStatus.STALE);
+    return this.updateStatus(submissionId, SubmissionStatus.FINALIZED);
   }
 
   async getStaleSubmissions(thresholdMs: number): Promise<string[]> {
     const thresholdDate = new Date(Date.now() - thresholdMs);
     const submissions = await prisma.submission.findMany({
       where: {
-        status: SubmissionStatus.PROCESSING,
+        status: SubmissionStatus.RUNNING as any,
         updatedAt: { lt: thresholdDate },
       },
       select: { id: true },
@@ -48,7 +48,7 @@ export class PrismaSubmissionRepository implements SubmissionRepository {
       data: {
         userId: input.userId,
         problemId: input.problemId,
-        roomId: input.roomId, // ðŸ‘ˆ Persist roomId
+        roomId: input.roomId,
         language: input.language,
         code: input.code,
       },
@@ -66,11 +66,31 @@ export class PrismaSubmissionRepository implements SubmissionRepository {
     }
   }
 
-  async updateStatus(submissionId: string, status: SubmissionStatus) {
+  // 🛡️ Atomic Conditional Status Transition
+  async updateStatus(submissionId: string, status: SubmissionStatus, expectedCurrentStatus?: SubmissionStatus) {
+    if (expectedCurrentStatus) {
+      const updateResult = await prisma.submission.updateMany({
+        where: {
+          id: submissionId,
+          status: expectedCurrentStatus as any,
+        },
+        data: {
+          status: status as any,
+        },
+      });
+      if (updateResult.count === 0) {
+        const current = await this.getSubmissionById(submissionId);
+        if (!current) throw new SubmissionNotFoundError(submissionId);
+        throw new InvalidTransitionError(current.status, status);
+      }
+      const updated = await this.getSubmissionById(submissionId);
+      return updated!;
+    }
+
     await this.validateTransition(submissionId, status);
     const submission = await prisma.submission.update({
       where: { id: submissionId },
-      data: { status },
+      data: { status: status as any },
     });
     return toSubmissionEntity(submission);
   }
@@ -82,25 +102,19 @@ export class PrismaSubmissionRepository implements SubmissionRepository {
     const updated = await prisma.submission.update({
       where: { id: submissionId },
       data: {
-        status: result.status,
+        status: result.status as any,
         stdout: result.stdout,
         stderr: result.stderr,
         executionTime: result.executionTime,
         exitCode: result.exitCode,
-
-        // --- 1. SAVE THE AGGREGATE METRICS ---
         verdict: result.verdict as any,
         cpuUsage: result.cpuUsage,
         memoryUsage: result.memoryUsage,
         compileTime: result.compileTime,
       },
     });
-
-    // ... (leave the rest of your method mapping to SubmissionEntity as is)
     return toSubmissionEntity(updated);
-    // Or however it currently returns
   }
-
 
   async getSubmissionById(submissionId: string) {
     const submission = await prisma.submission.findUnique({
@@ -111,8 +125,9 @@ export class PrismaSubmissionRepository implements SubmissionRepository {
   }
 
   async getAllSubmission() {
-    const submissions = await prisma.submission.findMany();
+    const submissions = await prisma.submission.findMany({
+      orderBy: { createdAt: "desc" }
+    });
     return submissions.map(toSubmissionEntity);
   }
 }
-

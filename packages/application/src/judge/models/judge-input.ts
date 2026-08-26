@@ -11,6 +11,7 @@ export interface JudgeInput {
   runtimeError?: boolean;
   timeLimitExceededError?: boolean;
   memoryLimitExceededError?: boolean;
+  outputLimitExceededError?: boolean;
 
   exitCode?: number;
 }

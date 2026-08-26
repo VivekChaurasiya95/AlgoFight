@@ -7,6 +7,7 @@ import { useNotification } from "../../contexts/NotificationContext.jsx";
 import { requestJson } from "../../services/api";
 import { useAntiCheat } from "../../hooks/useAntiCheat";
 import ProblemStatement from "../Common/ProblemStatement.jsx";
+import DetailedAnalysisModal from "../Common/DetailedAnalysisModal.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faClock,
@@ -18,7 +19,8 @@ import {
   faTimes,
   faCheckCircle,
   faTrophy,
-  faBolt
+  faBolt,
+  faChartBar
 } from "@fortawesome/free-solid-svg-icons";
 import "./LiveBattle.css";
 
@@ -153,9 +155,20 @@ export default function LiveBattle() {
   // Execution stream states
   const [executionTimeline, setExecutionTimeline] = useState([]);
   const [executionTests, setExecutionTests] = useState([]);
+  const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
 
   // Anti-Cheat Hook
-  const { isBlurred } = useAntiCheat(status === "matched");
+  const { isBlurred, violations } = useAntiCheat(status === "matched");
+
+  useEffect(() => {
+    if (violations >= 3 && status !== "finished") {
+        notify({ type: "error", title: "Disqualified", message: "You have been disqualified for multiple anti-cheat violations.", duration: 5000 });
+        setStatus("finished");
+        setTimeout(() => {
+            navigate("/battle");
+        }, 3000);
+    }
+  }, [violations, status, navigate, notify]);
 
   const problem = problems[activeProblemIndex] || null;
 
@@ -340,6 +353,10 @@ export default function LiveBattle() {
             passed: isSuccess,
             passedTestCases: passedCount,
             totalTestCases: totalCount,
+            executionTime: result?.executionTime || 0,
+            memoryUsage: result?.memoryUsage || 0,
+            verdict: result?.verdict || (isSuccess ? "ACCEPTED" : "WRONG_ANSWER"),
+            testCaseResults: testCases,
             output: outputText
         };
 
@@ -477,6 +494,14 @@ export default function LiveBattle() {
          />
       )}
 
+      {/* Standalone Full-Screen Detailed Analysis Portal Modal */}
+      <DetailedAnalysisModal
+        isOpen={showDetailedAnalysis}
+        onClose={() => setShowDetailedAnalysis(false)}
+        result={lastResult}
+        problem={problem}
+      />
+
       <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="livebattle-header-card">
         <div className="livebattle-header-copy" style={{ flex: 1 }}>
           <div className="livebattle-pre">LIVE BATTLE</div>
@@ -590,6 +615,16 @@ export default function LiveBattle() {
               >
                 <FontAwesomeIcon icon={faForward} />
                 {running && runMode === "submit" ? "Submitting..." : "Submit (All)"}
+              </button>
+              
+              <button
+                className="livebattle-action-btn detail-btn"
+                style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}
+                onClick={() => setShowDetailedAnalysis(true)}
+                disabled={!lastResult || running}
+              >
+                <FontAwesomeIcon icon={faChartBar} />
+                Detailed Analysis
               </button>
             </div>
 

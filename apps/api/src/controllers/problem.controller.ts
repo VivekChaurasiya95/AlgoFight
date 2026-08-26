@@ -70,7 +70,8 @@ export class ProblemController {
             passedTestCases: result.passedCount,
             totalTestCases: result.passedCount + result.failedCount,
             executionTime: result.executionTime,
-            verdict: passed ? "ACCEPTED" : "WRONG_ANSWER",
+            verdict: result.verdict || (passed ? "ACCEPTED" : "WRONG_ANSWER"),
+            testCaseResults: result.individualExecutions || [],
         };
     }
 }

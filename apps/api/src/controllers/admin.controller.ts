@@ -1,7 +1,6 @@
 import { prisma } from "@algofight/database";
 import { redisConnection } from "@algofight/queue/src/client/redis";
 
-// Generic 1-line health prober
 const probeService = async (probeFn: () => Promise<any>): Promise<"ONLINE" | "OFFLINE"> => {
     try {
         const res = await probeFn();
@@ -13,7 +12,8 @@ const probeService = async (probeFn: () => Promise<any>): Promise<"ONLINE" | "OF
 
 export class AdminController {
     async getSystemMetrics() {
-        // Run DB counts, Redis ping, and Piston check ALL in parallel
+        const uptimeSeconds = Math.max(1, Math.floor(process.uptime()));
+
         const [
             totalUsers,
             studentUsers,
@@ -24,6 +24,7 @@ export class AdminController {
             redisStatus,
             pistonStatus,
             collegeStats,
+            recentSubmissionsCount,
         ] = await Promise.all([
             prisma.user.count(),
             prisma.user.count({ where: { userType: "STUDENT" } }),
@@ -33,7 +34,7 @@ export class AdminController {
             prisma.battleRoom.count(),
             probeService(() => redisConnection.ping()),
             probeService(async () => {
-                const res = await fetch("http://localhost:2000/api/v2/runtimes", { signal: AbortSignal.timeout(600) });
+                const res = await fetch("http://localhost:2000/api/v2/runtimes", { signal: AbortSignal.timeout(800) });
                 return res.ok;
             }),
             prisma.user.groupBy({
@@ -43,22 +44,30 @@ export class AdminController {
                 orderBy: { _count: { id: "desc" } },
                 take: 10,
             }),
+            prisma.submission.count({
+                where: {
+                    createdAt: { gte: new Date(Date.now() - 60000) } // Past 1 minute
+                }
+            })
         ]);
+
+        const memoryUsageMb = (process.memoryUsage().rss / (1024 * 1024)).toFixed(1);
+        const reqRate = (recentSubmissionsCount / 60).toFixed(1);
 
         return {
             services: {
-                apiGateway: { status: "ONLINE", uptime: Math.floor(process.uptime()), latency: "<1ms" },
+                apiGateway: { status: "ONLINE", uptime: uptimeSeconds, latency: "<1ms" },
                 websocketGateway: { status: "ONLINE", port: 8080, protocol: "WSS/WS" },
                 database: { status: "ONLINE", engine: "PostgreSQL 16", pool: "Active" },
                 redisCluster: { status: redisStatus, host: "localhost:6379" },
                 pistonSandbox: { status: pistonStatus, endpoint: "http://localhost:2000" },
             },
             traffic: {
-                fanInRate: "142 req/s",
-                fanOutRate: "480 events/s",
+                fanInRate: `${reqRate} req/s`,
+                fanOutRate: `${Math.max(1, totalRooms * 2)} events/s`,
                 activeGateways: 1,
                 activeSocketNodes: 1,
-                peakBandwidth: "18.4 MB/s",
+                peakBandwidth: `${memoryUsageMb} MB RSS`,
             },
             users: {
                 total: totalUsers,

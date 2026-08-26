@@ -1,64 +1,103 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNotification } from '../contexts/NotificationContext';
 
 export function useAntiCheat(isActive = true) {
     const { notify } = useNotification();
     const [isBlurred, setIsBlurred] = useState(false);
     const [violations, setViolations] = useState(0);
+    
+    const hasLeftRef = useRef(false);
+    const lastWarnedTimeRef = useRef(0);
 
-    const handleVisibilityChange = useCallback(() => {
+    const onUserLeft = useCallback(() => {
         if (!isActive) return;
-        
-        if (document.hidden) {
-            setIsBlurred(true);
-            setViolations(v => v + 1);
-            notify({
-                type: 'error',
-                title: 'Anti-Cheat Warning',
-                message: 'You left the battle screen! Multiple violations will result in disqualification.',
-                duration: 5000
+        setIsBlurred(true);
+        hasLeftRef.current = true;
+    }, [isActive]);
+
+    const onUserReturned = useCallback(() => {
+        if (!isActive) return;
+        setIsBlurred(false);
+
+        const now = Date.now();
+        // Prevent duplicate events within 2.5 seconds
+        if (hasLeftRef.current && (now - lastWarnedTimeRef.current > 2500)) {
+            hasLeftRef.current = false;
+            lastWarnedTimeRef.current = now;
+
+            setViolations((v) => {
+                const newV = v + 1;
+                if (newV <= 3) {
+                    notify({
+                        type: 'error',
+                        title: `ANTI-CHEAT WARNING (${newV}/3)`,
+                        message: 'You left the application screen! 3 violations will result in automatic exit.',
+                        duration: 7000,
+                    });
+                }
+                return newV;
             });
-        } else {
-            setIsBlurred(false);
         }
     }, [isActive, notify]);
 
+    const handleVisibilityChange = useCallback(() => {
+        if (document.hidden) {
+            onUserLeft();
+        } else {
+            onUserReturned();
+        }
+    }, [onUserLeft, onUserReturned]);
+
     const handleBlur = useCallback(() => {
-        if (!isActive) return;
-        setIsBlurred(true);
-    }, [isActive]);
+        onUserLeft();
+    }, [onUserLeft]);
 
     const handleFocus = useCallback(() => {
-        if (!isActive) return;
-        setIsBlurred(false);
-    }, [isActive]);
+        onUserReturned();
+    }, [onUserReturned]);
 
     const handleKeyDown = useCallback((e) => {
         if (!isActive) return;
         
-        // Prevent PrintScreen
-        if (e.key === 'PrintScreen') {
+        // Prevent PrintScreen or common screenshot shortcuts
+        if (e.key === 'PrintScreen' || (e.ctrlKey && e.shiftKey && (e.key === 'S' || e.key === 's'))) {
             e.preventDefault();
-            navigator.clipboard.writeText(''); // Attempt to clear clipboard
-            setViolations(v => v + 1);
-            notify({
-                type: 'error',
-                title: 'Anti-Cheat Warning',
-                message: 'Screenshots are disabled during live battles.',
-                duration: 5000
-            });
+            try {
+                navigator.clipboard.writeText('');
+            } catch {}
+
+            const now = Date.now();
+            if (now - lastWarnedTimeRef.current > 2500) {
+                lastWarnedTimeRef.current = now;
+                setViolations((v) => {
+                    const newV = v + 1;
+                    if (newV <= 3) {
+                        notify({
+                            type: 'error',
+                            title: `ANTI-CHEAT WARNING (${newV}/3)`,
+                            message: 'Screenshots are disabled during active sessions.',
+                            duration: 7000,
+                        });
+                    }
+                    return newV;
+                });
+            }
         }
     }, [isActive, notify]);
 
     const handleCopy = useCallback((e) => {
         if (!isActive) return;
         e.preventDefault();
-        notify({
-            type: 'warning',
-            title: 'Anti-Cheat',
-            message: 'Copying code is disabled in Live Battle.',
-            duration: 3000
-        });
+        const now = Date.now();
+        if (now - lastWarnedTimeRef.current > 2000) {
+            lastWarnedTimeRef.current = now;
+            notify({
+                type: 'warning',
+                title: 'ANTI-CHEAT',
+                message: 'Copying code is disabled.',
+                duration: 3000,
+            });
+        }
     }, [isActive, notify]);
 
     useEffect(() => {
@@ -81,6 +120,6 @@ export function useAntiCheat(isActive = true) {
 
     return {
         isBlurred,
-        violations
+        violations,
     };
 }

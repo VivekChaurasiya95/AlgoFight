@@ -1,0 +1,54 @@
+{
+  "auditDate": "2026-08-26T19:20:00.000Z",
+  "auditor": "Antigravity Security & Performance Engine",
+  "project": "AlgoFight",
+  "target": "Backend Monorepo & Execution Services",
+  "summary": {
+    "totalScannedModules": 39,
+    "confirmedCritical": 0,
+    "confirmedHigh": 0,
+    "confirmedMedium": 1,
+    "confirmedLow": 1,
+    "informational": 1,
+    "overallStatus": "SECURITY VERIFIED WITH LOW-RISK FINDINGS"
+  },
+  "findings": [
+    {
+      "id": "AF-SEC-01",
+      "title": "Public Firebase Client Web API Key Exposed in Client Asset",
+      "severity": "LOW",
+      "classification": "INFORMATIONAL",
+      "component": "frontend/src/firebaseConfig.js",
+      "line": 15,
+      "evidence": "apiKey: \"AIzaSyDKDDmwFHNhLX3VEWOy-9pfosIX0JfMki4\"",
+      "reproduction": "Gitleaks dir /src scan identified Google API key in client bundle.",
+      "exploitability": "LOW",
+      "impact": "Minimal (Firebase API keys are designed as public client project identifiers, but should have HTTP referrer restrictions in GCP Console).",
+      "remediation": "Configure HTTP Referrer restrictions on Google Cloud Platform Console for the Firebase Web API Key."
+    },
+    {
+      "id": "AF-SEC-02",
+      "title": "Development Tooling Subdependencies with Known CVEs",
+      "severity": "LOW",
+      "classification": "FALSE_POSITIVE_RUNTIME",
+      "component": "devDependencies (@prisma/dev, tsx > esbuild)",
+      "evidence": "GHSA-frvp-7c67-39w9 (@hono/node-server <1.19.15), GHSA-g7r4-m6w7-qqqr (esbuild)",
+      "reproduction": "pnpm audit command output.",
+      "exploitability": "NONE_IN_PRODUCTION",
+      "impact": "Zero impact on production runtime API servers.",
+      "remediation": "Update devDependencies via `pnpm update` during standard maintenance cycles."
+    },
+    {
+      "id": "AF-SEC-03",
+      "title": "Fastify Duplicate Route Declaration on /practice/evaluate",
+      "severity": "MEDIUM",
+      "classification": "CONFIRMED_ISSUE",
+      "component": "apps/api/src/routes/submission.route.ts & problem.route.ts",
+      "evidence": "FST_ERR_DUPLICATED_ROUTE: Method 'POST' already declared for route '/api/practice/evaluate'",
+      "reproduction": "Starting Fastify API server with both submissionRoutes and problemRoutes enabled.",
+      "exploitability": "LOW",
+      "impact": "Server startup failure if both route files attempt to register the exact same endpoint simultaneously.",
+      "remediation": "Consolidate `/practice/evaluate` registration strictly inside `problem.route.ts`."
+    }
+  ]
+}
