@@ -36,6 +36,7 @@ services:
       - "2000:2000"
     volumes:
       - piston_packages:/piston/packages
+      - ./package.js:/piston_api/src/package.js
     networks:
       - algofight-network
 

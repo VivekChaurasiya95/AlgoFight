@@ -57,7 +57,7 @@ export class PistonAdapter {
 
     // Maps AlgoFight languages to Piston (language, version)
     private languageMap: Record<string, { language: string; version: string; fileExtension: string }> = {
-        javascript: { language: "javascript", version: "*", fileExtension: "js" },
+        javascript: { language: "node", version: "*", fileExtension: "js" },
         cpp: { language: "c++", version: "*", fileExtension: "cpp" },
         python: { language: "python", version: "*", fileExtension: "py" },
         java: { language: "java", version: "*", fileExtension: "java" }

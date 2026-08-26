@@ -38,6 +38,7 @@ export class SocketHandler {
     );
     private readonly mockExecutor = new MockExecutor();
     private readonly redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+    private readonly redisSubscriber = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
 
     // Map socket -> user session
     private readonly socketUsers = new Map<WebSocket, {
@@ -49,7 +50,28 @@ export class SocketHandler {
     }>();
     private readonly disconnectTimeouts = new Map<string, NodeJS.Timeout>();
 
-    constructor(private readonly connectionManager: ConnectionManager) { }
+    constructor(private readonly connectionManager: ConnectionManager) { 
+        this.setupRedisSubscriptions();
+    }
+
+    private setupRedisSubscriptions() {
+        this.redisSubscriber.psubscribe("execution:stream:*", (err) => {
+            if (err) logger.error({ err }, "Failed to subscribe to execution streams");
+        });
+
+        this.redisSubscriber.on("pmessage", (pattern, channel, message) => {
+            try {
+                const userId = channel.split(":")[2];
+                const socket = this.connectionManager.userSockets.get(userId);
+                if (socket) {
+                    const parsed = JSON.parse(message);
+                    this.send(socket, parsed.event, parsed.data);
+                }
+            } catch (err) {
+                logger.error({ err }, "Error processing pubsub message");
+            }
+        });
+    }
 
     private formatTime(seconds: number) {
         const m = Math.floor(seconds / 60).toString().padStart(2, "0");
