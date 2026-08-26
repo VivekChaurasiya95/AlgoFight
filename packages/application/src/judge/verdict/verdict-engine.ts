@@ -16,10 +16,10 @@ export class VerdictEngine {
     if(results.length == 0) return Verdict.SYSTEM_ERROR;
 
     return results.reduce((highest, current) => {
-      const currentRule = VERDICT_MAP.get(current.verdict)!;
-      const highestRule = VERDICT_MAP.get(highest.verdict)!;
+      const currentPriority = VERDICT_MAP.get(current.verdict)?.priority ?? 50;
+      const highestPriority = VERDICT_MAP.get(highest.verdict)?.priority ?? 50;
 
-      return currentRule.priority > highestRule.priority
+      return currentPriority > highestPriority
              ? current
              : highest;
     }).verdict

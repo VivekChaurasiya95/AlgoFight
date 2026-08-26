@@ -27,7 +27,8 @@ export class SubmissionController {
 
         await enqueueSubmissionJob({
             submissionId: submission.id,
-        });
+            mode: "SUBMIT"
+        } as any);
 
         await this.submissionRepository.updateStatus(
             submission.id,
@@ -54,7 +55,7 @@ export class SubmissionController {
             testCases: body.testCases,
             timeLimitMs: 2000,
             memoryLimitBytes: 256 * 1024 * 1024,
-        });
+        }, () => {}, "SAMPLE");
 
         return result;
     }

@@ -25,7 +25,7 @@ const executionService = new ExecutionService(
 export const submissionWorker = new Worker(
   QUEUE_NAMES.SUBMISSION,
   async (job) => {
-    await executionService.processSubmission(job.data.submissionId);
+    await executionService.processSubmission(job.data.submissionId, job.data.mode || "SUBMIT");
   },
   {
     connection: redisConnection,

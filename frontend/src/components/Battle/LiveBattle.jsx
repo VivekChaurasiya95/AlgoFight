@@ -5,6 +5,7 @@ import { connectSocket, disconnectSocket } from "../../services/socket";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext.jsx";
 import { requestJson } from "../../services/api";
+import { useAntiCheat } from "../../hooks/useAntiCheat";
 import ProblemStatement from "../Common/ProblemStatement.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -148,6 +149,13 @@ export default function LiveBattle() {
   const [roomId, setRoomId] = useState(initialMatch?.roomId || null);
   const [battleResult, setBattleResult] = useState(null);
   const [ratingUpdates, setRatingUpdates] = useState(null);
+  
+  // Execution stream states
+  const [executionTimeline, setExecutionTimeline] = useState([]);
+  const [executionTests, setExecutionTests] = useState([]);
+
+  // Anti-Cheat Hook
+  const { isBlurred } = useAntiCheat(status === "matched");
 
   const problem = problems[activeProblemIndex] || null;
 
@@ -258,6 +266,8 @@ export default function LiveBattle() {
         setCode("// write your solution here");
         setOutput("");
         setLastResult(null);
+        setExecutionTimeline([]);
+        setExecutionTests([]);
         setSubmissionMeta(null);
 
         const opp = players.find((p) => p !== username) || "Opponent";
@@ -280,6 +290,8 @@ export default function LiveBattle() {
         setCode("// write your solution here");
         setOutput("");
         setLastResult(null);
+        setExecutionTimeline([]);
+        setExecutionTests([]);
         setStatus("matched");
 
         notify({ type: "success", title: "Battle Started", message: `The group battle has begun!`, duration: 3000 });
@@ -287,6 +299,20 @@ export default function LiveBattle() {
 
       socket.on("battle_state_sync", (state) => {
         setLiveState(state);
+      });
+
+      socket.on("execution_progress", (data) => {
+          if (data.stage === "PREPARE" || data.stage === "COMPILE") {
+              setExecutionTimeline(prev => [...prev.filter(s => s !== data.stage), data.stage]);
+          } else if (data.stage === "TEST_STARTED") {
+              setExecutionTimeline(prev => [...prev.filter(s => s !== "TEST_STARTED"), "TEST_STARTED"]);
+          } else if (data.stage === "TEST_COMPLETED") {
+              setExecutionTests(prev => {
+                  const updated = [...prev];
+                  updated[data.testCaseIndex] = data.testCaseResult;
+                  return updated;
+              });
+          }
       });
 
       socket.on("code_result", (data) => {
@@ -368,6 +394,7 @@ export default function LiveBattle() {
         socketRef.current.off("match_found");
         socketRef.current.off("battle_started");
         socketRef.current.off("battle_state_sync");
+        socketRef.current.off("execution_progress");
         socketRef.current.off("code_result");
         socketRef.current.off("battle_over");
         socketRef.current.off("opponent_disconnected");
@@ -382,14 +409,18 @@ export default function LiveBattle() {
     if (!roomId || !socketRef.current) return;
     setRunning(true);
     setRunMode("test");
+    setExecutionTimeline(["PREPARE"]);
+    setExecutionTests([]);
     setOutput("Testing against sample cases...");
-    socketRef.current.emit("test_code", { code, language, roomId });
+    socketRef.current.emit("test_code", { code, language, roomId, problemId: problem.id });
   };
 
   const onSubmitCode = () => {
     if (!roomId || !socketRef.current || !problem) return;
     setRunning(true);
     setRunMode("submit");
+    setExecutionTimeline(["PREPARE"]);
+    setExecutionTests([]);
     setOutput("Testing against hidden and edge cases...");
     socketRef.current.emit("submit_code", { code, language, roomId, problemId: problem.id });
   };
@@ -524,7 +555,16 @@ export default function LiveBattle() {
             onChange={(e) => setCode(e.target.value)}
             spellCheck="false"
             disabled={status === "finished"}
+            style={{ 
+                filter: isBlurred ? 'blur(8px)' : 'none',
+                transition: 'filter 0.3s'
+            }}
           />
+          {isBlurred && (
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#ff4d4d', fontWeight: 'bold', fontSize: '1.2rem', background: 'rgba(0,0,0,0.8)', padding: '20px', borderRadius: '8px', zIndex: 10 }}>
+                  Return to this window to continue coding!
+              </div>
+          )}
         </section>
 
         <section className="livebattle-panel livebattle-submit-panel">
@@ -574,7 +614,48 @@ export default function LiveBattle() {
 
             <div className="livebattle-output-box">
               {running ? (
-                <div className="livebattle-loader livebattle-inline-loader">Evaluating...</div>
+                <div className="execution-timeline">
+                  <div className="timeline-nodes" style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                      {['PREPARE', 'COMPILE', 'TEST_STARTED'].map(stage => (
+                          <div key={stage} style={{ 
+                              color: executionTimeline.includes(stage) ? '#4ade80' : 'rgba(255,255,255,0.3)',
+                              fontSize: '0.8rem',
+                              fontWeight: 'bold'
+                          }}>
+                              {stage} {executionTimeline.includes(stage) ? '✓' : '...'}
+                          </div>
+                      ))}
+                  </div>
+                  <div className="livebattle-tests-progress" style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {executionTests.map((tc, idx) => (
+                          <div key={idx} style={{ 
+                              padding: '10px', 
+                              borderRadius: '8px', 
+                              background: tc.passed ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                              border: `1px solid ${tc.passed ? '#4ade80' : '#ef4444'}`,
+                              fontSize: '0.9rem'
+                          }}>
+                              <strong style={{ color: tc.passed ? '#4ade80' : '#ef4444' }}>
+                                  Test Case {idx + 1} - {tc.passed ? 'PASSED' : 'FAILED'}
+                              </strong>
+                              <div style={{ marginTop: '4px', opacity: 0.8, fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>Time: {tc.metrics?.executionTime}ms</span>
+                                  <span>Memory: {(tc.metrics?.memoryUsage / (1024 * 1024)).toFixed(2)} MB</span>
+                              </div>
+                              {runMode === "test" && (
+                                  <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(0,0,0,0.5)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '0.8rem', overflowX: 'auto' }}>
+                                      <div style={{color: '#aaa'}}>Input:</div>
+                                      <div>{tc.expectedOutput ? problem?.testCases?.[idx]?.input : "Hidden"}</div>
+                                      <div style={{color: '#aaa', marginTop: '4px'}}>Expected:</div>
+                                      <div>{tc.expectedOutput || "Hidden"}</div>
+                                      <div style={{color: '#aaa', marginTop: '4px'}}>Actual:</div>
+                                      <div style={{ color: tc.passed ? '#fff' : '#ef4444'}}>{tc.actualOutput || "Hidden"}</div>
+                                  </div>
+                              )}
+                          </div>
+                      ))}
+                  </div>
+                </div>
               ) : (
                 <pre>{output || "Output will appear here."}</pre>
               )}

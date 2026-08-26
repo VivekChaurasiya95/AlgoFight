@@ -89,5 +89,5 @@ export interface SubmissionPayload {
 }
 
 export interface EvaluationServiceContract {
-    evaluateSubmission(payload: SubmissionPayload): Promise<EvaluationResult>;
+    evaluateSubmission(payload: SubmissionPayload, onProgress?: any, mode?: "SAMPLE" | "SUBMIT"): Promise<EvaluationResult>;
 }

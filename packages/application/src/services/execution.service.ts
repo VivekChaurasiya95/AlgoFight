@@ -10,8 +10,12 @@ import {
     SubmissionNotFoundError,
     ProblemNotFoundError,
 } from "@algofight/error-handling";
+import Redis from "ioredis";
+import { PipelineProgressEvent } from "../judge/models/execute-request";
 
 export class ExecutionService {
+    private redisPublisher = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+
     constructor(
         private readonly submissionRepository: SubmissionRepository,
         private readonly evaluationService: EvaluationServiceContract,
@@ -20,9 +24,9 @@ export class ExecutionService {
         private readonly battleService?: BattleService,
     ) { }
 
-    async processSubmission(submissionId: string): Promise<void> {
+    async processSubmission(submissionId: string, mode: "SAMPLE" | "SUBMIT" = "SUBMIT"): Promise<void> {
         try {
-            logger.info({ submissionId }, "Starting submission processing");
+            logger.info({ submissionId, mode }, "Starting submission processing");
 
             const submission = await this.submissionRepository.getSubmissionById(submissionId);
             if (!submission) {
@@ -39,8 +43,20 @@ export class ExecutionService {
 
             // Step through strict state machine transitions
             await this.submissionRepository.updateStatus(submissionId, SubmissionStatus.COMPILING);
-            await this.submissionRepository.updateStatus(submissionId, SubmissionStatus.RUNNING);
-            await this.submissionRepository.updateStatus(submissionId, SubmissionStatus.EVALUATING);
+            
+            const onProgress = (event: PipelineProgressEvent) => {
+                this.redisPublisher.publish(
+                    `execution:stream:${submission.userId}`,
+                    JSON.stringify({
+                        event: "execution_progress",
+                        data: {
+                            roomId: submission.roomId,
+                            problemId: submission.problemId,
+                            ...event
+                        }
+                    })
+                );
+            };
 
             const evalResult = await this.evaluationService.evaluateSubmission({
                 submissionId,
@@ -53,7 +69,7 @@ export class ExecutionService {
                 })),
                 timeLimitMs: problem.timeLimit,
                 memoryLimitBytes: problem.memoryLimit,
-            });
+            }, onProgress, mode);
 
             const passedCount = evalResult.testCases?.filter((tc) => tc.passed).length || 0;
             const failedCount = evalResult.testCases?.filter((tc) => !tc.passed).length || 0;
