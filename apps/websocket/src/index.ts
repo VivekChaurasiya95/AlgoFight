@@ -1,5 +1,5 @@
-import Redis from "ioredis";
 import "@algofight/config";
+import { createRedisClient } from "@algofight/queue";
 import { WebSocketServer, WebSocket } from "ws";
 import { ConnectionManager } from "./server/connection-manager";
 import { SocketHandler } from "./handlers/socket-handler";
@@ -54,12 +54,7 @@ wss.on("connection", (socket: any) => {
 
 logger.info({ port: WS_PORT }, "WebSocket server is running with active heartbeat");
 
-const redisSubscriber = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
-    maxRetriesPerRequest: null,
-    retryStrategy(times) {
-        return Math.min(times * 100, 3000);
-    },
-});
+const redisSubscriber = createRedisClient();
 
 redisSubscriber.on("error", (err) => {
     logger.warn({ error: err.message }, "Non-fatal Redis subscriber error in WebSocket server");

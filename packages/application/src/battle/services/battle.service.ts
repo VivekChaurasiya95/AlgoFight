@@ -1,10 +1,10 @@
-import Redis from "ioredis";
+import { createRedisClient } from "@algofight/queue";
 import { logger } from "@algofight/logger";
 import { BattleRoomRepository } from "@algofight/database";
 import { BattleRoomService } from "./battle-room.service";
 
 export class BattleService {
-    private readonly redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+    private readonly redis = createRedisClient();
 
     constructor(
         private readonly battleRoomRepo?:

@@ -10,11 +10,11 @@ import {
     SubmissionNotFoundError,
     ProblemNotFoundError,
 } from "@algofight/error-handling";
-import Redis from "ioredis";
+import { createRedisClient } from "@algofight/queue";
 import { PipelineProgressEvent } from "../judge/models/execute-request";
 
 export class ExecutionService {
-    private redisPublisher = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+    private redisPublisher = createRedisClient();
 
     constructor(
         private readonly submissionRepository: SubmissionRepository,

@@ -17,7 +17,7 @@ import {
     BattleService,
     EvaluationService,
 } from "@algofight/application";
-import { battleTimerQueue, JOB_NAMES } from "@algofight/queue";
+import { battleTimerQueue, JOB_NAMES, createRedisClient } from "@algofight/queue";
 
 export class SocketHandler {
     private readonly userRepo = new PrismaUserRepository();
@@ -37,8 +37,8 @@ export class SocketHandler {
         this.problemRepo,
     );
     private readonly mockExecutor = new MockExecutor();
-    private readonly redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
-    private readonly redisSubscriber = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+    private readonly redis = createRedisClient();
+    private readonly redisSubscriber = createRedisClient();
 
     // Map socket -> user session
     private readonly socketUsers = new Map<WebSocket, {
