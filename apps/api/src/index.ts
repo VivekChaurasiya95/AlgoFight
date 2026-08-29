@@ -22,11 +22,32 @@ const app = fastify({
 
 const start = async () => {
     try {
-        // 1. CORS with origin allowlist
+        // 1. CORS with dynamic origin matching for Vercel & Production
         await app.register(cors, {
-            origin: config.isProduction ? config.allowedOrigins : true,
+            origin: (origin, cb) => {
+                if (!origin) return cb(null, true);
+                
+                const isAllowed =
+                    !config.isProduction ||
+                    origin.endsWith(".vercel.app") ||
+                    origin.includes("localhost") ||
+                    origin.includes("127.0.0.1") ||
+                    config.allowedOrigins.some(o => origin.startsWith(o) || o === origin);
+
+                cb(null, isAllowed);
+            },
             credentials: true,
             methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            allowedHeaders: [
+                "Content-Type",
+                "Authorization",
+                "x-admin-key",
+                "x-api-key",
+                "x-request-id",
+                "x-context-id",
+                "Accept",
+            ],
+            exposedHeaders: ["x-request-id", "x-gateway-id", "x-context-id", "x-gateway-latency-ms"],
         });
 
         // 2. Gateway Plugin (Logical Admission, Filtering, Identity, Rate Limiter)

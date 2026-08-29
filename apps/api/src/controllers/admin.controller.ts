@@ -75,9 +75,9 @@ export class AdminController {
                 faculty: facultyUsers,
                 independent: totalUsers - (studentUsers + facultyUsers),
             },
-            subBatches: collegeStats.map((c) => ({
+            subBatches: collegeStats.map((c: any) => ({
                 institution: c.institutionName,
-                count: c._count.id,
+                count: c._count?.id || 0,
             })),
             activity: {
                 totalProblems,

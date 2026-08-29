@@ -36,6 +36,11 @@ async function gatewayPlugin(app: FastifyInstance) {
     });
 
     app.addHook("onRequest", async (request: FastifyRequest, reply: FastifyReply) => {
+        // Bypass CORS preflight OPTIONS requests immediately
+        if (request.method === "OPTIONS") {
+            return;
+        }
+
         const start = performance.now();
 
         try {
