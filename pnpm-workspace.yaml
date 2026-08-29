@@ -3,7 +3,7 @@ packages:
   - "packages/*"
   - "frontend"
 allowBuilds:
-  '@firebase/util': set this to true or false
+  '@firebase/util': false
   '@prisma/engines': true
   cpu-features: false
   esbuild: true
