@@ -1,4 +1,5 @@
 import pino from "pino";
+import pinoPretty from "pino-pretty";
 import { Writable } from "node:stream";
 
 const TELEMETRY_URL =
@@ -25,6 +26,14 @@ const telemetryStream = new Writable({
     },
 });
 
+const prettyStream = pinoPretty({
+    colorize: true,
+    translateTime: "yyyy-mm-dd HH:MM:ss",
+    ignore: "pid,hostname",
+    singleLine: false,
+    messageFormat: "[{service}] {msg}",
+});
+
 export const logger = pino(
     {
         level: process.env.LOG_LEVEL || "info",
@@ -39,7 +48,7 @@ export const logger = pino(
         timestamp: pino.stdTimeFunctions.isoTime,
     },
     pino.multistream([
-        { stream: process.stdout },
+        { stream: prettyStream },
         { stream: telemetryStream },
     ])
 );

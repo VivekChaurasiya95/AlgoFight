@@ -57,34 +57,6 @@ export async function submissionRoutes(app: FastifyInstance) {
         },
     );
 
-    // 3. Practice Evaluate
-    app.post(
-        "/practice/evaluate",
-        {
-            config: {
-                rateLimit: {
-                    max: 20,
-                    timeWindow: "1 minute",
-                },
-            },
-        },
-        async (request, reply) => {
-            const body = request.body as any;
-            const problem = await problemRepository.getProblemWithAllTestCases(body.problemId);
-            if (!problem) {
-                return reply.status(404).send({ error: "NOT_FOUND", message: "Problem not found." });
-            }
-            return submissionController.test({
-                language: body.language,
-                code: body.code,
-                testCases: (problem.testCases || []).map((tc: any) => ({
-                    id: tc.id,
-                    input: tc.input,
-                    expectedOutput: tc.expectedOutput,
-                })),
-            });
-        }
-    );
 
     // 4. Submissions List (Public Summary DTOs)
     app.get(

@@ -4,6 +4,7 @@ import fastify from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 
+import gatewayPlugin from "./plugins/gateway.plugin";
 import authPlugin from "./plugins/auth.plugin";
 import { registerErrorHandler } from "./plugins/error-handler";
 import { healthRoutes } from "./routes/health.route";
@@ -28,13 +29,10 @@ const start = async () => {
             methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         });
 
-        // 2. Global Rate Limiter (Default: 120 requests/minute)
-        await app.register(rateLimit, {
-            max: 120,
-            timeWindow: "1 minute",
-        });
+        // 2. Gateway Plugin (Logical Admission, Filtering, Identity, Rate Limiter)
+        await app.register(gatewayPlugin);
 
-        // 3. Auth Plugin
+        // 3. Auth Plugin (Authorization & RBAC)
         await app.register(authPlugin);
 
         // 4. Centralized Error Handler
@@ -71,5 +69,14 @@ const start = async () => {
         process.exit(1);
     }
 };
+
+// 🛡️ Global Process Resilience - Prevent Unhandled Errors from Crashing Server
+process.on("unhandledRejection", (reason: any) => {
+    logger.warn({ error: reason?.message || reason }, "Non-fatal unhandled promise rejection caught");
+});
+
+process.on("uncaughtException", (error: Error) => {
+    logger.error({ error: error.message, stack: error.stack }, "Uncaught exception intercepted by process guard");
+});
 
 start();

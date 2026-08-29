@@ -182,21 +182,153 @@
 }
 
 .lock-hub-btn {
-    background: rgba(255, 51, 102, 0.1);
-    border: 1px solid rgba(255, 51, 102, 0.3);
-    color: #ff5f8a;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #e6edf8;
     padding: 8px 18px;
+    border-radius: 999px;
     font-size: 0.82rem;
     font-weight: 600;
-    border-radius: 999px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .lock-hub-btn:hover {
-    background: rgba(255, 51, 102, 0.2);
-    border-color: rgba(255, 51, 102, 0.5);
-    color: #fff;
+    background: rgba(255, 77, 106, 0.15);
+    border-color: rgba(255, 77, 106, 0.4);
+    color: #ff6b8b;
+}
+
+/* Tabs Bar */
+.admin-tabs-bar {
+    display: flex;
+    gap: 12px;
+    margin: 24px 0 32px;
+    border-bottom: 1px solid rgba(0, 229, 255, 0.12);
+    padding-bottom: 14px;
+}
+
+.admin-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #8da1b9;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-tab-btn:hover {
+    background: rgba(0, 229, 255, 0.08);
+    border-color: rgba(0, 229, 255, 0.3);
+    color: #e2f4ff;
+}
+
+.admin-tab-btn.active {
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 136, 255, 0.15));
+    border-color: #00e5ff;
+    color: #00e5ff;
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.22);
+}
+
+.linux-status-pill {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.linux-status-pill.online {
+    background: rgba(0, 255, 136, 0.15);
+    border: 1px solid rgba(0, 255, 136, 0.4);
+    color: #00ff88;
+}
+
+.linux-status-pill.offline,
+.linux-status-pill.checking {
+    background: rgba(255, 77, 106, 0.15);
+    border: 1px solid rgba(255, 77, 106, 0.4);
+    color: #ff4d6a;
+}
+
+/* Linux Telemetry Embed View */
+.admin-linux-telemetry-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: fadeIn 0.3s ease;
+}
+
+.linux-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(160deg, rgba(0, 0, 0, 0.65), rgba(4, 18, 34, 0.85));
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 16px;
+    padding: 16px 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+}
+
+.toolbar-info h4 {
+    margin: 0 0 4px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.2rem;
+    color: #f4f9ff;
+}
+
+.target-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: #8da1b9;
+}
+
+.external-window-btn {
+    background: rgba(0, 229, 255, 0.12);
+    border: 1px solid rgba(0, 229, 255, 0.35);
+    color: #00e5ff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.external-window-btn:hover {
+    background: rgba(0, 229, 255, 0.25);
+    box-shadow: 0 0 14px rgba(0, 229, 255, 0.35);
+    transform: translateY(-1px);
+}
+
+.linux-iframe-container {
+    width: 100%;
+    height: 840px;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 229, 255, 0.24);
+    background: #060d17;
+    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.5);
+}
+
+.linux-telemetry-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #060d17;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Sections */

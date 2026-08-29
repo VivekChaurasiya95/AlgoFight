@@ -4,7 +4,7 @@ import { JudgeService } from "../judge/services/judge.service";
 import { SubmissionStatus, Verdict } from "@algofight/types";
 import { logger } from "@algofight/logger";
 
-const PISTON_URL = process.env.PISTON_URL || "http://localhost:2000";
+const PISTON_URL = process.env.PISTON_URL || "http://127.0.0.1:2000";
 const MAX_OUTPUT_BYTES = 512 * 1024; // 512 KB Output Limit
 
 type SandboxResult = {

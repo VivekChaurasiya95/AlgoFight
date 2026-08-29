@@ -18,6 +18,7 @@ import {
     faFire,
     faCheck,
     faTimes,
+    faCopy,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -410,6 +411,27 @@ function Profile() {
                             <div className="profile-pre-heading">{isOwnProfile ? "PLAYER PROFILE" : "COMPETITOR PROFILE"}</div>
                             <h1>{displayName}</h1>
                             <p>{email || 'Competitor'}</p>
+                            {(profile?.platformCode || user?.platformCode) && (
+                                <div
+                                    className="profile-code-badge"
+                                    onClick={() => {
+                                        const codeToCopy = profile?.platformCode || user?.platformCode;
+                                        if (codeToCopy) {
+                                            navigator.clipboard.writeText(codeToCopy);
+                                            notify({
+                                                type: "success",
+                                                title: "Code Copied!",
+                                                message: `Platform Code ${codeToCopy} copied to clipboard.`,
+                                                duration: 2500,
+                                            });
+                                        }
+                                    }}
+                                    title="Click to copy Platform Code"
+                                >
+                                    <span>{profile?.platformCode || user?.platformCode}</span>
+                                    <FontAwesomeIcon icon={faCopy} className="profile-code-copy-icon" />
+                                </div>
+                            )}
                         </div>
 
                         <div className="profile-header-actions">

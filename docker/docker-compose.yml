@@ -31,16 +31,14 @@ services:
     image: ghcr.io/engineer-man/piston
     container_name: algofight-piston
     restart: unless-stopped
-    # 🔐 Security Hardening Controls
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
+    privileged: true
     ports:
       - "2000:2000"
     volumes:
       - piston_packages:/piston/packages
       - ./package.js:/piston_api/src/package.js
+    tmpfs:
+      - /tmp
     networks:
       - algofight-network
 

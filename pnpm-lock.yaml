@@ -256,6 +256,9 @@ importers:
       '@algofight/error-handling':
         specifier: workspace:*
         version: link:../../packages/error_handling
+      '@algofight/events':
+        specifier: workspace:*
+        version: link:../../packages/events
       '@algofight/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -265,6 +268,9 @@ importers:
       '@algofight/state-machine':
         specifier: workspace:*
         version: link:../../packages/state-machine
+      '@algofight/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
       '@algofight/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -495,6 +501,8 @@ importers:
       '@algofight/types':
         specifier: workspace:*
         version: link:../types
+
+  packages/telemetry: {}
 
   packages/types: {}
 

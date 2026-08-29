@@ -54,7 +54,16 @@ wss.on("connection", (socket: any) => {
 
 logger.info({ port: WS_PORT }, "WebSocket server is running with active heartbeat");
 
-const redisSubscriber = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+const redisSubscriber = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
+    maxRetriesPerRequest: null,
+    retryStrategy(times) {
+        return Math.min(times * 100, 3000);
+    },
+});
+
+redisSubscriber.on("error", (err) => {
+    logger.warn({ error: err.message }, "Non-fatal Redis subscriber error in WebSocket server");
+});
 
 redisSubscriber.subscribe("battle-events", (err, count) => {
     if (err) logger.error({ err }, "Failed to subscribe to battle-events channel");
@@ -114,5 +123,14 @@ const gracefulShutdown = async (signal: string) => {
 
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+
+// 🛡️ Global Process Resilience - Prevent Unhandled Errors from Crashing WebSocket Server
+process.on("unhandledRejection", (reason: any) => {
+    logger.warn({ error: reason?.message || reason }, "Non-fatal unhandled promise rejection in WebSocket server");
+});
+
+process.on("uncaughtException", (error: Error) => {
+    logger.error({ error: error.message, stack: error.stack }, "Uncaught exception in WebSocket server intercepted");
+});
 
 export { connectionManager };

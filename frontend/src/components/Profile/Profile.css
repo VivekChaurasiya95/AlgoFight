@@ -107,6 +107,42 @@
     font-size: 0.93rem;
 }
 
+.profile-code-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(0, 229, 255, 0.08);
+    border: 1px solid rgba(0, 229, 255, 0.28);
+    color: #00e5ff;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 8px rgba(0, 229, 255, 0.08);
+}
+
+.profile-code-badge:hover {
+    background: rgba(0, 229, 255, 0.18);
+    border-color: rgba(0, 229, 255, 0.6);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.profile-code-copy-icon {
+    font-size: 0.76rem;
+    opacity: 0.75;
+    transition: opacity 0.2s ease;
+}
+
+.profile-code-badge:hover .profile-code-copy-icon {
+    opacity: 1;
+}
+
 .profile-header-actions {
     margin-left: auto;
     display: flex;

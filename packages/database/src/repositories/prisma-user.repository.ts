@@ -99,7 +99,7 @@ export class PrismaUserRepository implements UserRepository {
 
     async getUserById(identifier: string): Promise<UserEntity | null> {
         if (!identifier) return null;
-        return prisma.user.findFirst({
+        const user = await prisma.user.findFirst({
             where: {
                 OR: [
                     { id: identifier },
@@ -109,6 +109,14 @@ export class PrismaUserRepository implements UserRepository {
                 ],
             },
         });
+        if (user && !user.platformCode) {
+            const newCode = generatePlatformCode(user.userType as any);
+            return prisma.user.update({
+                where: { id: user.id },
+                data: { platformCode: newCode },
+            });
+        }
+        return user;
     }
 
     async getUserByUsername(username: string): Promise<UserEntity | null> {

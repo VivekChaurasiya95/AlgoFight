@@ -526,18 +526,17 @@ export default function AvailablePlayers({ onPlayerCountChange }) {
                                         {player.isMe && <span className="ap-self-pill">YOU</span>}
                                     </div>
 
-                                    {player.platformCode && (
-                                        <span
-                                            className="ap-code-badge"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                copyCode(player.platformCode);
-                                            }}
-                                            title="Click to copy Platform Code"
-                                        >
-                                            {player.platformCode} <FontAwesomeIcon icon={faCopy} />
-                                        </span>
-                                    )}
+                                    <span
+                                        className="ap-code-badge"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const codeToCopy = player.platformCode || `AF-USR-${player.id ? player.id.slice(0, 6).toUpperCase() : "PLAYER"}`;
+                                            copyCode(codeToCopy);
+                                        }}
+                                        title="Click to copy Platform Code"
+                                    >
+                                        {player.platformCode || `AF-USR-${player.id ? player.id.slice(0, 6).toUpperCase() : "PLAYER"}`} <FontAwesomeIcon icon={faCopy} />
+                                    </span>
 
                                     {player.institutionName && (
                                         <div className="ap-inst-text" title={player.institutionName}>

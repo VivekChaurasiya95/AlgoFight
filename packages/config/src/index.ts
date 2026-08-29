@@ -12,7 +12,7 @@ const envSchema = z.object({
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
     REDIS_HOST: z.string().default("localhost"),
     REDIS_PORT: z.coerce.number().int().min(1).max(65535).default(6379),
-    PISTON_URL: z.string().default("http://localhost:2000"),
+    PISTON_URL: z.string().default("http://127.0.0.1:2000"),
     ADMIN_SECRET_KEY: z.string().min(6, "ADMIN_SECRET_KEY must be at least 6 characters"),
     ALLOWED_ORIGINS: z.string().default("http://localhost:5173,http://localhost:3000"),
 });
