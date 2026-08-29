@@ -152,6 +152,12 @@ async function upsertProblem(row: any): Promise<"created" | "updated"> {
 
 
 async function main() {
+  const existingCount = await prisma.problem.count();
+  if (existingCount >= IMPORT_COUNT) {
+    console.log(`\n✅ Database already contains ${existingCount} problems. Skipping download.\n`);
+    return;
+  }
+
   console.log(`\n📥 Importing up to ${IMPORT_COUNT} problems from ${DATASET} (${SPLIT})`);
   console.log(`   Judge tests per problem: <=${MAX_PUBLIC} public + <=${MAX_HIDDEN} hidden\n`);
 
