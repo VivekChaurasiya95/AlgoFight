@@ -8,8 +8,16 @@ if (!DATABASE_URL) {
 	throw new Error("DATABASE_URL is not set");
 }
 
-const postgresPool  = new Pool({
+const isRemote =
+	DATABASE_URL.includes("render.com") ||
+	DATABASE_URL.includes("sslmode=require") ||
+	DATABASE_URL.includes("supabase.co") ||
+	DATABASE_URL.includes("neon.tech") ||
+	process.env.NODE_ENV === "production";
+
+const postgresPool = new Pool({
 	connectionString: DATABASE_URL,
+	ssl: isRemote ? { rejectUnauthorized: false } : undefined,
 });
 
 const adapter = new PrismaPg(postgresPool);
