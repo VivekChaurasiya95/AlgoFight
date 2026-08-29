@@ -8,7 +8,9 @@ import {
   faLaptopCode,
   faShieldHalved,
   faTerminal,
-  faServer
+  faServer,
+  faMicrochip,
+  faNetworkWired
 } from "@fortawesome/free-solid-svg-icons";
 import { faLinkedin, faGithub } from "@fortawesome/free-brands-svg-icons";
 import vivekPic from "../../assets/devs/vivek.png";
@@ -18,12 +20,24 @@ import "./Developer.css";
 
 const teamMembers = [
   {
+    name: "Arin Gupta",
+    role: "Full Stack Architect & Systems Lead",
+    bio: "Architects the core application edge, real-time distributed state machines, and cryptographic admission gateways. Obsessed with sub-millisecond execution, tamper-proof user trust contexts, and engineering a fluid, high-octane 1v1 battle experience.",
+    pic: arinPic,
+    stack: "Distributed Systems & Core Edge",
+    skills: ["Distributed State Machines", "Logical User Gateways", "Fastify & WebSockets", "Realtime Arenas"],
+    icon: faCodeMerge,
+    tone: "cyan",
+    linkedin: "https://www.linkedin.com/in/arin-gupta-2b94b032a/",
+    github: "https://github.com/arin-gupta06",
+  },
+  {
     name: "Vivek Chaurasiya",
-    role: "Full Stack Developer",
-    bio: "Focuses on backend systems, robust architecture, and smooth data flow. Ensures that the servers run efficiently under high load to support thousands of concurrent competitive programming sessions.",
+    role: "Backend & Sandbox Infrastructure Lead",
+    bio: "Engineers database architecture, Prisma query optimization, asynchronous job queues, and isolated code evaluation sandboxes. Ensures the backend executes arbitrary code with strict isolation, low latency, and infinite horizontal scalability.",
     pic: vivekPic,
-    stack: "Backend Systems",
-    skills: ["Node.js", "System Architecture", "Database Modeling"],
+    stack: "Backend & Sandbox Engines",
+    skills: ["PostgreSQL & Prisma", "Redis & BullMQ Queues", "Piston Sandbox Engine", "System Scalability"],
     icon: faServer,
     tone: "cyan",
     linkedin: "https://www.linkedin.com/in/vivek-chaurasiya-722037315",
@@ -31,52 +45,45 @@ const teamMembers = [
   },
   {
     name: "Krish Dargar",
-    role: "Full Stack Developer",
-    bio: "Specializes in UI tweaks and frontend design. Crafts intuitive product experiences and structures coding systems for long-term scale. Translates deep algorithmic ideas into interfaces that feel fast, clear, and reliable.",
+    role: "Frontend & UI/UX Systems Architect",
+    bio: "Crafts the cybernetic design language, glassmorphic interfaces, and micro-animations. Translates complex algorithmic mechanics into lightning-fast, intuitive, and visually stunning web applications that coders love to use.",
     pic: krishPic,
-    stack: "UI Design",
-    skills: ["UI/UX Systems", "React.js", "Design Language"],
+    stack: "UI/UX & Design Systems",
+    skills: ["Cyber Glassmorphic UI", "React.js & Framer Motion", "Interactive Telemetry", "Responsive Layouts"],
     icon: faLaptopCode,
     tone: "pink",
     linkedin: "https://www.linkedin.com/in/krish-dargar-101774324/",
     github: "https://github.com/KD2303",
   },
-  {
-    name: "Arin Gupta",
-    role: "Full Stack Developer",
-    bio: "Drives the main backend logic and oversees UI design. Builds high-impact interfaces and performance-first engineering flows for coders. Obsessed with realtime systems, smooth interactions, and a battle experience that feels sharp.",
-    pic: arinPic,
-    stack: "Core Logic & Design",
-    skills: ["Realtime Systems", "Full Stack Architecture", "Product Strategy"],
-    icon: faCodeMerge,
-    tone: "cyan",
-    linkedin: "https://www.linkedin.com/in/arin-gupta-2b94b032a/",
-    github: "https://github.com/arin-gupta06",
-  },
 ];
 
 const developerStats = [
-  { label: "Core Engineers", value: "3" },
-  { label: "Focus Areas", value: "6" },
-  { label: "Realtime Features", value: "10+" },
-  { label: "Iteration Speed", value: "Fast" },
+  { label: "Core Architects", value: "3" },
+  { label: "Monorepo Packages", value: "14" },
+  { label: "Gateway Ingress", value: "15k+ RPS" },
+  { label: "P99 Latency", value: "< 6ms" },
 ];
 
 const principles = [
   {
-    icon: faBolt,
-    title: "Performance First",
-    copy: "Every interaction is tuned for speed, from page transitions to live battle feedback.",
-  },
-  {
     icon: faShieldHalved,
-    title: "Competitive Integrity",
-    copy: "Battle systems prioritize fairness and secure test evaluation under pressure.",
+    title: "Cryptographic Edge Gateway",
+    copy: "Every request is vetted at the application edge with HMAC-SHA256 attestations, anti-abuse IP jails, and multi-dimensional token-bucket rate limiters.",
   },
   {
-    icon: faCodeBranch,
-    title: "Scalable Architecture",
-    copy: "Features are built with reusable patterns so the platform can expand cleanly.",
+    icon: faBolt,
+    title: "Deterministic State Machines",
+    copy: "Real-time duel lifecycles strictly enforce zero-race mathematical transitions from matchmaking countdowns to live code execution.",
+  },
+  {
+    icon: faMicrochip,
+    title: "Isolated Sandbox Execution",
+    copy: "Submissions run in hardware-isolated container sandboxes with strict CPU, memory, and timeout governance.",
+  },
+  {
+    icon: faNetworkWired,
+    title: "Zero-Leak Telemetry & Reliability",
+    copy: "Engineered with bounded circular memory buffers, live Prometheus scrapers, and fault-tolerant process shields to guarantee 99.99% uptime.",
   },
 ];
 
@@ -106,13 +113,12 @@ function Developer() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
       >
-        <div className="developer-pre-heading">Core Team</div>
+        <div className="developer-pre-heading">ENGINEERING & ARCHITECTURE</div>
         <h1>
           Built By <span>AlgoFight Architects</span>
         </h1>
         <p>
-          Meet the developers behind AlgoFight. This page highlights the people shaping the realtime coding arena,
-          from backend systems to interface clarity.
+          Meet the engineers building AlgoFight. Designed from the ground up as a high-throughput, real-time algorithmic combat arena, powered by modern distributed systems and cyber glassmorphic aesthetics.
         </p>
 
         <div className="developer-stat-grid">
@@ -142,7 +148,7 @@ function Developer() {
               {member.pic ? (
                  <img src={member.pic} alt={member.name} className="developer-avatar-img" />
               ) : (
-                 <div className="developer-avatar">{member.initials}</div>
+                 <div className="developer-avatar">{member.name.charAt(0)}</div>
               )}
               <div className="developer-icon-badge">
                 <FontAwesomeIcon icon={member.icon} />
@@ -193,8 +199,8 @@ function Developer() {
         transition={{ duration: 0.45, ease: "easeOut" }}
       >
         <div className="developer-panel-header">
-          <h2>Engineering Principles</h2>
-          <span className="developer-chip">Live Platform DNA</span>
+          <h2>Platform Architecture & Engineering DNA</h2>
+          <span className="developer-chip">Production Grade</span>
         </div>
 
         <div className="developer-principles-grid">

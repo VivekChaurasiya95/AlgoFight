@@ -12,6 +12,10 @@ import {
     faRotate,
     faRocket,
     faTicket,
+    faStopwatch,
+    faMicrochip,
+    faFire,
+    faShieldHalved
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { fetchUserProfile } from '../../services/api';
@@ -20,6 +24,7 @@ import {
     getRankProgressByRating,
     normalizeUserStats,
     RANK_TIERS,
+    UNIVERSAL_EFFICIENCY_RULES,
 } from '../../utils/playerMetrics';
 import './Rewards.css';
 
@@ -174,6 +179,7 @@ function Rewards() {
         () => [
             { label: 'Rating contribution', value: pointBreakdown.ratingPoints, icon: faMedal },
             { label: 'Battle wins contribution', value: pointBreakdown.battleWinPoints, icon: faBolt },
+            { label: 'Speed & Efficiency bonus', value: pointBreakdown.speedEfficiencyPoints, icon: faStopwatch },
             { label: 'Practice solved contribution', value: pointBreakdown.practiceSolvedPoints, icon: faCode },
             { label: 'Participation contribution', value: pointBreakdown.participationPoints, icon: faRotate },
         ],
@@ -196,13 +202,14 @@ function Rewards() {
 
     return (
         <div className="rewards-page">
+            {/* Hero Section */}
             <section className="rewards-hero">
-                <div className="pre-heading">REWARDS AND RECOGNITION</div>
+                <div className="pre-heading">REWARDS & UNIVERSAL MERIT SYSTEM</div>
                 <h1>
-                    Redeem <span className="text-cyan">Skills</span> Into Real Rewards
+                    Redeem <span className="text-cyan">Skills & Speed</span> Into Real Rewards
                 </h1>
                 <p>
-                    Rewards now read the same live profile stats used across the platform for transparent point and rank tracking.
+                    AlgoFight rewards algorithmic mastery, speed, and execution efficiency. Fast, optimal solutions universally unlock point surges across all battle arenas and practice tracks.
                 </p>
                 {profileError ? (
                     <div className="rewards-warning">
@@ -212,11 +219,12 @@ function Rewards() {
                 ) : null}
             </section>
 
+            {/* KPI Grid */}
             <section className="rewards-kpi-grid">
                 <article className="rewards-kpi-card">
                     <div className="kpi-label">Arena Points</div>
                     <div className="kpi-value">{numberFormatter.format(arenaPoints)}</div>
-                    <div className="kpi-footnote">Computed from your live profile stats</div>
+                    <div className="kpi-footnote">Includes speed & efficiency multipliers</div>
                 </article>
 
                 <article className="rewards-kpi-card">
@@ -230,12 +238,43 @@ function Rewards() {
                 </article>
 
                 <article className="rewards-kpi-card">
+                    <div className="kpi-label">Efficiency Bonus</div>
+                    <div className="kpi-value">+{numberFormatter.format(pointBreakdown.speedEfficiencyPoints)}</div>
+                    <div className="kpi-footnote">Earned from rapid & clean execution</div>
+                </article>
+
+                <article className="rewards-kpi-card">
                     <div className="kpi-label">Rewards Ready</div>
                     <div className="kpi-value">{redeemableCount}</div>
-                    <div className="kpi-footnote">Items available to redeem now</div>
+                    <div className="kpi-footnote">Items available to claim now</div>
                 </article>
             </section>
 
+            {/* Universal Speed & Efficiency Multiplier Banner */}
+            <section className="efficiency-protocol-banner">
+                <div className="protocol-header">
+                    <div className="protocol-badge">
+                        <FontAwesomeIcon icon={faFire} /> UNIVERSAL MERIT PROTOCOL
+                    </div>
+                    <h2>Fast & Optimal Execution Earns Extra Points Universally</h2>
+                    <p>
+                        Across all 1v1 duels, practice modes, and tournament rounds, developers who solve challenges faster than average or produce more computationally efficient (O(N) vs O(N²)) solutions receive universal bonus points.
+                    </p>
+                </div>
+
+                <div className="protocol-rules-grid">
+                    {UNIVERSAL_EFFICIENCY_RULES.map((rule) => (
+                        <div key={rule.title} className="protocol-rule-card">
+                            <div className="rule-badge">{rule.type} Multiplier</div>
+                            <h3>{rule.title}</h3>
+                            <p>{rule.description}</p>
+                            <div className="rule-multiplier">{rule.multiplier}</div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* Main Rewards Layout */}
             <div className="rewards-layout">
                 <section className="rewards-main-panel">
                     <div className="panel-headline-row">
@@ -326,7 +365,7 @@ function Rewards() {
                                         <FontAwesomeIcon icon={source.icon} />
                                         <span>{source.label}</span>
                                     </div>
-                                    <span className="earn-points">{numberFormatter.format(source.value)}</span>
+                                    <span className="earn-points">+{numberFormatter.format(source.value)}</span>
                                 </li>
                             ))}
                         </ul>

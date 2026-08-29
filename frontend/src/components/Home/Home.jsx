@@ -1,4 +1,4 @@
-﻿// frontend/src/components/Home/Home.jsx
+// frontend/src/components/Home/Home.jsx
 import React, { useState, useEffect } from 'react';
 import './Home.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -13,7 +13,10 @@ import {
     faShieldHalved,
     faCalendar,
     faCircle,
-    faCodeBranch
+    faCodeBranch,
+    faBuildingColumns,
+    faMicrochip,
+    faLock
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from 'react-router-dom';
 import BackgroundPaths from '../BackgroundPaths/BackgroundPaths';
@@ -22,34 +25,34 @@ import { fetchPracticeProblems } from '../../services/api';
 
 const featureCards = [
     {
-        title: 'Real-time Battles',
-        copy: 'Compete head-to-head with developers worldwide in timed algorithmic duels.',
+        title: 'Real-Time 1v1 Duels',
+        copy: 'Head-to-head algorithmic combat with synchronized room lifecycles and dynamic Elo ratings.',
         icon: faBolt,
     },
     {
-        title: 'Team Contests',
-        copy: 'Form squads and compete in collaborative coding championships.',
-        icon: faUsers,
+        title: 'Institutional Arenas',
+        copy: 'Dedicated tournament sub-batches for universities and student labs with custom leaderboards.',
+        icon: faBuildingColumns,
     },
     {
-        title: 'Global Rankings',
-        copy: 'Climb the leaderboard and earn your place among the elite.',
-        icon: faTrophy,
+        title: 'Cryptographic Edge Gateway',
+        copy: 'HMAC-SHA256 authenticated admission boundary preventing abusive traffic and bot manipulation.',
+        icon: faLock,
     },
     {
-        title: 'AI-Powered Learning',
-        copy: 'Personalized problem recommendations based on your skill gaps and growth trajectory.',
-        icon: faBrain,
+        title: 'Isolated Execution Sandbox',
+        copy: 'Fast, secure multi-language judging with strict CPU, memory, and timeout governance.',
+        icon: faMicrochip,
     },
     {
-        title: 'Speed Rounds',
-        copy: 'Five-minute sprints to test your instincts and sharpen your execution speed.',
-        icon: faClock,
-    },
-    {
-        title: 'Anti-Cheat System',
-        copy: 'Fair play guaranteed through robust detection and secure judging pipelines.',
+        title: 'Combatant ID & Badges',
+        copy: 'High-entropy alphanumeric platform codes (e.g. AF-USR-XXXXXXX) for verified competition.',
         icon: faShieldHalved,
+    },
+    {
+        title: 'Global Rank & Leaderboard',
+        copy: 'Climb through competitive tiers from Bronze to Grandmaster with live match analytics.',
+        icon: faTrophy,
     },
 ];
 
@@ -85,14 +88,14 @@ function Home() {
                             <span className="text-white" style={{ textShadow: '0 0 25px rgba(0, 229, 255, 0.7)' }}>DOMINATE</span>
                         </h1>
                         <p className="hero-description">
-                            Join 50,000+ developers competing in real-time algorithmic battles. Climb the ranks. Prove your skills.
+                            Join 50,000+ developers competing in real-time algorithmic battles. Sub-millisecond judging, cryptographic trust, and live multiplayer duels.
                         </p>
                         <div className="hero-buttons">
                             <button className="btn-primary" onClick={() => navigate("/battle")}>
                                 Start Competing <FontAwesomeIcon icon={faArrowRight} className="btn-icon" />
                             </button>
                             <button className="btn-secondary" onClick={() => navigate("/about")}>
-                                <FontAwesomeIcon icon={faUsers} className="btn-icon-left" /> About Us
+                                <FontAwesomeIcon icon={faUsers} className="btn-icon-left" /> About System
                             </button>
                         </div>
                     </div>
@@ -101,15 +104,15 @@ function Home() {
                         <div className="stat-card-glass">
                             <div className="stat-block">
                                 <h2 className="stat-number stat-pink">50K+</h2>
-                                <p className="stat-label">Active Coders</p>
+                                <p className="stat-label">Active Combatants</p>
                             </div>
                             <div className="stat-block">
                                 <h2 className="stat-number stat-cyan">2M+</h2>
-                                <p className="stat-label">Problems Solved</p>
+                                <p className="stat-label">Submissions Judged</p>
                             </div>
                             <div className="stat-block">
-                                <h2 className="stat-number stat-yellow">500+</h2>
-                                <p className="stat-label">Daily Contests</p>
+                                <h2 className="stat-number stat-yellow">&lt; 6ms</h2>
+                                <p className="stat-label">Gateway Latency</p>
                             </div>
                         </div>
                     </div>
@@ -162,8 +165,8 @@ function Home() {
 
                 {/* Features Section */}
                 <section className="features-section home-panel">
-                    <div className="pre-heading">PLATFORM FEATURES</div>
-                    <h2 className="home-section-title">Built For <span className="text-cyan-gradient">Champions</span></h2>
+                    <div className="pre-heading">PLATFORM CAPABILITIES</div>
+                    <h2 className="home-section-title">Engineered For <span className="text-cyan-gradient">Champions</span></h2>
 
                     <div className="features-grid">
                         {featureCards.map((feature) => (
@@ -180,12 +183,12 @@ function Home() {
                 <section className="cta-section">
                     <div className="cta-glass">
                         <h2 className="cta-heading">Ready to <span className="text-purple">Level Up?</span></h2>
-                        <p className="cta-description">Join thousands of developers who are sharpening their skills and climbing the ranks every day.</p>
+                        <p className="cta-description">Join thousands of developers sharpening their algorithmic instincts and climbing the ranks in real time.</p>
                         <div className="cta-buttons">
                             <button className="btn-primary" onClick={() => navigate('/signup')}>Create Free Account <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: "8px" }} /></button>
                             <button className="btn-dark" onClick={() => navigate('/practice')}>Explore Problems</button>
                         </div>
-                        <p className="cta-subtext">No credit card required. Start solving problems in minutes.</p>
+                        <p className="cta-subtext">Instant access. Start solving and dueling in seconds.</p>
                     </div>
                 </section>
 
@@ -196,26 +199,26 @@ function Home() {
                 <div className="footer-content">
                     <div className="footer-brand">
                         <h2>{'<'}/{'>'} AlgoFight</h2>
-                        <p>The ultimate platform for competitive programming and technical interviews.</p>
+                        <p>The ultimate real-time platform for competitive programming, institutional arenas, and technical duels.</p>
                     </div>
                     <div className="footer-links">
                         <div className="link-col">
                             <h4>Platform</h4>
                             <a href="/practice">Problems</a>
-                            <a href="/battle">Contests</a>
+                            <a href="/battle">1v1 Arenas</a>
                             <a href="/leaderboard">Leaderboard</a>
                         </div>
                         <div className="link-col">
-                            <h4>Resources</h4>
-                            <a href="/about">Learn</a>
-                            <a href="/rewards">Rewards</a>
-                            <a href="/profile">Profile</a>
+                            <h4>Architecture</h4>
+                            <a href="/about">About System</a>
+                            <a href="/developers">Architects</a>
+                            <a href="/admin">Control Hub</a>
                         </div>
                         <div className="link-col">
-                            <h4>Company</h4>
-                            <a href="/about">About</a>
-                            <a href="/leaderboard">Hall of Fame</a>
-                            <a href="/battle">Events</a>
+                            <h4>Community</h4>
+                            <a href="/about">Progression</a>
+                            <a href="/rewards">Rewards</a>
+                            <a href="/profile">Profile</a>
                         </div>
                         <div className="link-col">
                             <h4>Legal</h4>
@@ -226,10 +229,11 @@ function Home() {
                     </div>
                 </div>
                 <div className="footer-bottom">
-                    <p>&copy; 2024 AlgoFight. All rights reserved.</p>
+                    <p>&copy; 2026 AlgoFight. All rights reserved.</p>
                     <div className="social-icons">
-                        <a href="/developer">Krish</a>
-                        <a href="/developer">Arin</a>
+                        <a href="/developers">Arin Gupta</a>
+                        <a href="/developers">Vivek Chaurasiya</a>
+                        <a href="/developers">Krish Dargar</a>
                     </div>
                 </div>
             </footer>

@@ -46,20 +46,43 @@ export function normalizeUserStats(profile = {}) {
   };
 }
 
+export const UNIVERSAL_EFFICIENCY_RULES = [
+  {
+    title: "⚡ Rapid Solver Multiplier (< 50% Allotted Time)",
+    description: "Finishing a battle or challenge in less than half the time limit awards a +35% to +50% point surge.",
+    multiplier: "Up to +50 Pts / Match",
+    type: "Speed"
+  },
+  {
+    title: "🧠 Optimal Complexity & Memory Efficiency",
+    description: "Submissions that achieve sub-100ms sandboxed execution or top-tier memory percentiles receive an algorithmic efficiency bonus.",
+    multiplier: "+30 Pts Bonus",
+    type: "Efficiency"
+  },
+  {
+    title: "🎯 Flawless First-Attempt Pass",
+    description: "Passing 100% of test suites on the very first submission with zero runtime errors unlocks a perfection bonus.",
+    multiplier: "+25 Pts Bonus",
+    type: "Accuracy"
+  }
+];
+
 export function calculateArenaPointBreakdown(stats) {
   const safeStats = normalizeUserStats(stats);
 
   const ratingPoints = Math.max(0, safeStats.rating - 1000);
   const battleWinPoints = safeStats.matchesWon * 120;
+  const speedEfficiencyPoints = Math.round(safeStats.matchesWon * 35 + safeStats.practiceSolved * 15);
   const practiceSolvedPoints = safeStats.practiceSolved * 50;
   const participationPoints = safeStats.lossCount * 20;
 
-  const total = ratingPoints + battleWinPoints + practiceSolvedPoints + participationPoints;
+  const total = ratingPoints + battleWinPoints + speedEfficiencyPoints + practiceSolvedPoints + participationPoints;
 
   return {
     total,
     ratingPoints,
     battleWinPoints,
+    speedEfficiencyPoints,
     practiceSolvedPoints,
     participationPoints,
   };
