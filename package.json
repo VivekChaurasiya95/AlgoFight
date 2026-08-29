@@ -8,6 +8,8 @@
   "scripts": {
     "dev:api": "pnpm --filter @algofight/api exec tsx watch src/index.ts",
     "dev:worker": "pnpm --filter @algofight/worker exec tsx watch src/index.ts",
+    "build:api": "pnpm --filter @algofight/database exec prisma db push && pnpm --filter @algofight/database exec prisma generate && pnpm --filter @algofight/api run build",
+    "start:api": "pnpm --filter @algofight/api exec tsx src/index.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
