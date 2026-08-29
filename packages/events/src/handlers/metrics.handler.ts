@@ -1,7 +1,8 @@
 // packages/events/src/handlers/metrics.handler.ts
 import { DomainEvent } from "../contracts/domain-event";
 
-const TELEMETRY_URL = process.env.TELEMETRY_SERVICE_URL || "http://localhost:8000";
+const TELEMETRY_URL =
+    process.env.TELEMETRY_URL || process.env.TELEMETRY_SERVICE_URL || "http://localhost:8000";
 
 export class MetricsHandler {
     async handle(event: DomainEvent): Promise<void> {

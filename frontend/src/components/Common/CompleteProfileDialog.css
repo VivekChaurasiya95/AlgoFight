@@ -1,0 +1,280 @@
+/* ===== CYBER GLASSMORPHIC COMPLETE PROFILE DIALOG STYLES ===== */
+
+.complete-profile-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(2, 6, 12, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.complete-profile-card {
+    background: linear-gradient(160deg, rgba(6, 14, 26, 0.96) 0%, rgba(2, 7, 15, 0.98) 100%);
+    border: 1px solid rgba(0, 229, 255, 0.28);
+    border-radius: 24px;
+    padding: 42px 38px;
+    max-width: 490px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.9), 0 0 45px rgba(0, 229, 255, 0.12);
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+    color: #ffffff;
+}
+
+/* Subtle glowing accent bar at top */
+.complete-profile-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00e5ff, #ff007f, transparent);
+    box-shadow: 0 0 12px #00e5ff;
+}
+
+/* Header Section */
+.complete-profile-header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.complete-profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: #00e5ff;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.complete-profile-header h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 4px 0 0;
+    letter-spacing: 0.04em;
+    text-shadow: 0 0 25px rgba(0, 229, 255, 0.35);
+}
+
+.complete-profile-subtitle {
+    font-size: 0.84rem;
+    color: #88a0c0;
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* User Identity Preview Banner */
+.complete-profile-user-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(4, 18, 34, 0.6);
+    border: 1px solid rgba(0, 229, 255, 0.15);
+    border-radius: 14px;
+    padding: 10px 16px;
+}
+
+.complete-profile-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid #00e5ff;
+    object-fit: cover;
+    background: #020b14;
+}
+
+.complete-profile-avatar-fallback {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid #00e5ff;
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(255, 0, 127, 0.2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #00e5ff;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.complete-profile-user-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.complete-profile-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.complete-profile-email {
+    font-size: 0.78rem;
+    color: #647d9d;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Form inputs */
+.complete-profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.complete-profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.complete-profile-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #88a0c0;
+    letter-spacing: 0.04em;
+}
+
+.complete-profile-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.complete-profile-input-wrapper input {
+    width: 100%;
+    padding: 13px 16px;
+    background: rgba(4, 18, 34, 0.75);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 12px;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.92rem;
+    box-sizing: border-box;
+    transition: all 0.25s ease;
+}
+
+.complete-profile-input-wrapper input::placeholder {
+    color: #4a607a;
+    font-size: 0.88rem;
+}
+
+.complete-profile-input-wrapper input:focus {
+    outline: none;
+    border-color: #00e5ff;
+    background: rgba(0, 28, 52, 0.95);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.35), inset 0 0 10px rgba(0, 229, 255, 0.06);
+}
+
+/* Action Buttons */
+.complete-profile-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.complete-profile-btn-skip {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #88a0c0;
+    border-radius: 50px;
+    padding: 12px 22px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.complete-profile-btn-skip:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+
+.complete-profile-btn-save {
+    background: linear-gradient(90deg, #ff007f 0%, #ff2a7a 50%, #00e5ff 100%);
+    background-size: 200% auto;
+    color: #ffffff;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 26px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 20px rgba(255, 0, 127, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.complete-profile-btn-save:hover:not(:disabled) {
+    background-position: right center;
+    transform: translateY(-2px);
+    box-shadow: 0 0 28px rgba(0, 229, 255, 0.55), 0 0 15px rgba(255, 0, 127, 0.4);
+}
+
+.complete-profile-btn-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@media (max-width: 540px) {
+    .complete-profile-card {
+        padding: 28px 20px;
+        border-radius: 20px;
+    }
+
+    .complete-profile-actions {
+        flex-direction: column-reverse;
+        width: 100%;
+    }
+
+    .complete-profile-btn-skip,
+    .complete-profile-btn-save {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+}

@@ -126,13 +126,15 @@ export default function ControlHub() {
 
     const [activeTab, setActiveTab] = useState("overview"); // "overview" | "linux_telemetry"
     const [linuxStatus, setLinuxStatus] = useState("CHECKING");
-    const linuxTelemetryUrl = import.meta.env.VITE_LINUX_TELEMETRY_URL || "http://localhost:8000/dashboard";
+    const rawTelemetryUrl = import.meta.env.VITE_LINUX_TELEMETRY_URL || "http://localhost:8000";
+    const linuxBaseUrl = rawTelemetryUrl.replace(/\/dashboard\/?$/, "").replace(/\/$/, "");
+    const linuxTelemetryUrl = `${linuxBaseUrl}/dashboard`;
 
     useEffect(() => {
         // Quick health probe to check Linux Telemetry service status
         const checkLinux = async () => {
             try {
-                const res = await fetch("http://localhost:8000/healthz");
+                const res = await fetch(`${linuxBaseUrl}/healthz`);
                 if (res.ok) setLinuxStatus("ONLINE");
                 else setLinuxStatus("OFFLINE");
             } catch {
@@ -142,7 +144,7 @@ export default function ControlHub() {
         checkLinux();
         const interval = setInterval(checkLinux, 10000);
         return () => clearInterval(interval);
-    }, []);
+    }, [linuxBaseUrl]);
 
     // 🔒 Render Security Clearance Gate if locked
     if (!isUnlocked) {
