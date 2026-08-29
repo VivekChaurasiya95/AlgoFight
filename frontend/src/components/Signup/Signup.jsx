@@ -304,29 +304,29 @@ function Signup() {
       </form>
 
       {showOAuthModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
-            <h2 className="text-2xl font-bold text-white mb-2">Complete Profile</h2>
-            <p className="text-gray-400 text-sm mb-6">Add your social links (Optional)</p>
+        <div className="oauth-modal-overlay">
+          <div className="oauth-modal-card">
+            <div className="oauth-modal-header">
+              <h3>COMPLETE PROFILE</h3>
+              <span className="oauth-modal-subtitle">LINK YOUR DEVELOPER PROFILES (OPTIONAL)</span>
+            </div>
             
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-gray-400 text-sm mb-1" htmlFor="oauth-github">GitHub Profile</label>
+            <div className="oauth-modal-inputs">
+              <div className="input-group">
+                <label htmlFor="oauth-github" className="input-label">GitHub Profile</label>
                 <input
                   type="url"
                   id="oauth-github"
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                   placeholder="https://github.com/username"
                   value={githubUrl}
                   onChange={(e) => setGithubUrl(e.target.value)}
                 />
               </div>
-              <div>
-                <label className="block text-gray-400 text-sm mb-1" htmlFor="oauth-linkedin">LinkedIn Profile</label>
+              <div className="input-group">
+                <label htmlFor="oauth-linkedin" className="input-label">LinkedIn Profile</label>
                 <input
                   type="url"
                   id="oauth-linkedin"
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                   placeholder="https://linkedin.com/in/username"
                   value={linkedinUrl}
                   onChange={(e) => setLinkedinUrl(e.target.value)}
@@ -334,21 +334,21 @@ function Signup() {
               </div>
             </div>
 
-            <div className="flex gap-3 justify-end">
+            <div className="oauth-modal-actions">
               <button 
                 type="button" 
                 onClick={() => navigate("/home")}
-                className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                className="oauth-btn-skip"
               >
-                Skip
+                Skip For Now
               </button>
               <button 
                 type="button" 
                 onClick={submitOAuthProfile}
                 disabled={loading}
-                className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors"
+                className="oauth-btn-save"
               >
-                {loading ? "Saving..." : "Save & Continue"}
+                {loading ? "SAVING..." : "SAVE & ENTER"}
               </button>
             </div>
           </div>
