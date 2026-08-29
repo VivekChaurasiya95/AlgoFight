@@ -50,28 +50,40 @@ export class ProblemController {
             };
         }
 
-        const result = await this.executor.execute({
-            submissionId: `practice-${Date.now()}`,
-            language: payload.language,
-            code: payload.code,
-            testCases: testCases.map((tc) => ({
-                input: tc.input,
-                expectedOutput: tc.expectedOutput,
-            })),
-            timeLimit: problem.timeLimit,
-            memoryLimit: problem.memoryLimit,
-        });
+        try {
+            const result = await this.executor.execute({
+                submissionId: `practice-${Date.now()}`,
+                language: payload.language,
+                code: payload.code,
+                testCases: testCases.map((tc) => ({
+                    input: tc.input,
+                    expectedOutput: tc.expectedOutput,
+                })),
+                timeLimit: problem.timeLimit,
+                memoryLimit: problem.memoryLimit,
+            });
 
-        const passed = result.failedCount === 0;
+            const passed = result.failedCount === 0;
 
-        return {
-            passed,
-            output: result.stdout || (passed ? "All test cases passed successfully!" : result.stderr || "Output mismatch."),
-            passedTestCases: result.passedCount,
-            totalTestCases: result.passedCount + result.failedCount,
-            executionTime: result.executionTime,
-            verdict: result.verdict || (passed ? "ACCEPTED" : "WRONG_ANSWER"),
-            testCaseResults: result.individualExecutions || [],
-        };
+            return {
+                passed,
+                output: result.stdout || (passed ? "All test cases passed successfully!" : result.stderr || "Output mismatch."),
+                passedTestCases: result.passedCount,
+                totalTestCases: result.passedCount + result.failedCount,
+                executionTime: result.executionTime,
+                verdict: result.verdict || (passed ? "ACCEPTED" : "WRONG_ANSWER"),
+                testCaseResults: result.individualExecutions || [],
+            };
+        } catch (err: any) {
+            return {
+                passed: false,
+                output: `Execution error: ${err.message || "Failed to evaluate code"}`,
+                passedTestCases: 0,
+                totalTestCases: testCases.length,
+                executionTime: 0,
+                verdict: "SYSTEM_ERROR",
+                testCaseResults: [],
+            };
+        }
     }
 }

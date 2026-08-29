@@ -283,11 +283,22 @@ export class SandboxExecutor implements CodeExecutor {
                 cpuTime: Number(run.cpu_time || 0),
             };
         } catch (err: any) {
-            logger.error(
+            logger.warn(
                 { error: err.message, PISTON_URL, language: targetLang },
                 "Sandbox execution connection failed",
             );
-            throw new Error(`Execution sandbox unavailable: ${err.message}`);
+            return {
+                stdout: "",
+                stderr: `Sandbox execution engine unavailable (${err.message}). Please check PISTON_URL environment variable.`,
+                exitCode: 1,
+                signal: null,
+                timedOut: false,
+                memoryLimitExceeded: false,
+                outputLimitExceeded: false,
+                compilationError: false,
+                memoryUsed: 0,
+                cpuTime: 0,
+            };
         }
     }
 
