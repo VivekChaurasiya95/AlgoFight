@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faCrown,
@@ -11,7 +11,12 @@ import {
     faArrowLeft,
     faUsers,
     faShieldHalved,
-    faBolt
+    faBolt,
+    faUserSlash,
+    faUserCheck,
+    faTimes,
+    faBell,
+    faDoorOpen
 } from "@fortawesome/free-solid-svg-icons";
 import { requestJson } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -35,6 +40,8 @@ export default function RoomLobby() {
     const [loading, setLoading] = useState(true);
     const [starting, setStarting] = useState(false);
     const [countdown, setCountdown] = useState(null);
+    const [joinRequests, setJoinRequests] = useState([]);
+    const [kickingUserId, setKickingUserId] = useState(null);
 
     const socketRef = useRef(null);
 
@@ -104,6 +111,58 @@ export default function RoomLobby() {
                     const message = JSON.parse(event.data);
                     const { event: evt, payload } = message;
 
+                    if (evt === "join_request_received") {
+                        if (isHost && payload) {
+                            setJoinRequests((prev) => [
+                                ...prev.filter((r) => r.userId !== payload.userId),
+                                payload,
+                            ]);
+                            notify({
+                                type: "info",
+                                title: "Join Request",
+                                message: `${payload.username || "A player"} wants to enter your lobby.`
+                            });
+                        }
+                    }
+
+                    if (evt === "join_request_approved") {
+                        notify({
+                            type: "success",
+                            title: "Access Granted!",
+                            message: "The host admitted you into the lobby."
+                        });
+                        loadRoom(true);
+                    }
+
+                    if (evt === "join_request_rejected") {
+                        notify({
+                            type: "error",
+                            title: "Access Declined",
+                            message: payload?.message || "The host declined your join request."
+                        });
+                        navigate("/battle");
+                    }
+
+                    if (evt === "kicked_from_room") {
+                        notify({
+                            type: "error",
+                            title: "Removed from Lobby",
+                            message: payload?.message || "You were removed from the lobby by the host."
+                        });
+                        navigate("/battle");
+                    }
+
+                    if (evt === "player_kicked") {
+                        if (payload?.targetUserId !== currentUserId) {
+                            notify({
+                                type: "warning",
+                                title: "Combatant Evicted",
+                                message: `${payload?.targetUsername || "A player"} was removed by the host.`
+                            });
+                        }
+                        loadRoom(true);
+                    }
+
                     if (evt === "player_left") {
                         if (payload?.username && payload.userId !== currentUserId) {
                             notify({
@@ -153,7 +212,7 @@ export default function RoomLobby() {
                 ws.close();
             }
         };
-    }, [roomCode, currentUserId, currentUsername]);
+    }, [roomCode, currentUserId, currentUsername, isHost]);
 
     // Copy Room Code to Clipboard
     const copyCode = () => {
@@ -181,6 +240,91 @@ export default function RoomLobby() {
             }
         } finally {
             navigate("/battle");
+        }
+    };
+
+    // Host Approves Join Request
+    const handleApproveJoin = async (req) => {
+        try {
+            setJoinRequests((prev) => prev.filter((r) => r.userId !== req.userId));
+
+            await requestJson(`/api/battle/rooms/${room?.id || roomCode}/join`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: req.userId }),
+                includeAuth: true,
+            }).catch(() => {});
+
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({
+                    action: "approve_join_request",
+                    payload: {
+                        roomCode,
+                        hostId: currentUserId,
+                        targetUserId: req.userId,
+                        targetUsername: req.username,
+                    },
+                }));
+            }
+
+            notify({ type: "success", title: "Combatant Admitted", message: `${req.username} was allowed into the lobby.` });
+            loadRoom(true);
+        } catch (err) {
+            notify({ type: "error", title: "Approval Failed", message: err.message });
+        }
+    };
+
+    // Host Rejects Join Request
+    const handleRejectJoin = (req) => {
+        setJoinRequests((prev) => prev.filter((r) => r.userId !== req.userId));
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+            socketRef.current.send(JSON.stringify({
+                action: "reject_join_request",
+                payload: {
+                    roomCode,
+                    hostId: currentUserId,
+                    targetUserId: req.userId,
+                    reason: "Host declined your join request.",
+                },
+            }));
+        }
+        notify({ type: "info", title: "Request Declined", message: `Declined entry for ${req.username}.` });
+    };
+
+    // Host Kicks Player
+    const handleKickPlayer = async (targetUserId, targetUsername) => {
+        if (!window.confirm(`Are you sure you want to remove ${targetUsername} from the lobby?`)) {
+            return;
+        }
+
+        try {
+            setKickingUserId(targetUserId);
+
+            await requestJson(`/api/battle/rooms/${room?.id || roomCode}/kick`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ hostId: currentUserId, targetUserId }),
+                includeAuth: true,
+            });
+
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({
+                    action: "kick_player",
+                    payload: {
+                        roomCode,
+                        hostId: currentUserId,
+                        targetUserId,
+                        targetUsername,
+                    },
+                }));
+            }
+
+            notify({ type: "success", title: "Combatant Evicted", message: `${targetUsername} has been kicked.` });
+            loadRoom(true);
+        } catch (err) {
+            notify({ type: "error", title: "Kick Failed", message: err.message || "Failed to remove player." });
+        } finally {
+            setKickingUserId(null);
         }
     };
 
@@ -272,7 +416,7 @@ export default function RoomLobby() {
                         <FontAwesomeIcon icon={faArrowLeft} /> Leave Lobby
                     </button>
                     <div className="lobby-badge">
-                        <FontAwesomeIcon icon={faShieldHalved} /> SECURE PROTOCOL LOBBY
+                        <FontAwesomeIcon icon={faUsers} /> CUSTOM BATTLE LOBBY
                     </div>
                 </div>
 
@@ -283,8 +427,8 @@ export default function RoomLobby() {
                     animate={{ opacity: 1, y: 0 }}
                 >
                     <div className="room-meta-strip">
-                        <div className="room-code-display" onClick={copyCode} title="Click to copy code">
-                            <span className="code-label">ROOM PASSCODE</span>
+                        <div className="room-code-display" onClick={copyCode} title="Click to copy invite code">
+                            <span className="code-label">ROOM INVITE CODE</span>
                             <div className="code-value">
                                 {roomCode} <FontAwesomeIcon icon={faCopy} className="copy-icon" />
                             </div>
@@ -307,6 +451,65 @@ export default function RoomLobby() {
                     </div>
                 </motion.div>
 
+                {/* Host Join Requests Queue */}
+                <AnimatePresence>
+                    {isHost && joinRequests.length > 0 && (
+                        <motion.div
+                            className="host-join-requests-panel"
+                            initial={{ opacity: 0, y: -15 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                        >
+                            <div className="requests-header">
+                                <div className="requests-title">
+                                    <FontAwesomeIcon icon={faBell} className="request-bell pulse" />
+                                    <span>Incoming Join Requests ({joinRequests.length})</span>
+                                </div>
+                                <span className="requests-sub">As host, you control who enters this arena.</span>
+                            </div>
+
+                            <div className="requests-list">
+                                {joinRequests.map((req) => (
+                                    <motion.div
+                                        key={req.userId}
+                                        className="request-item-card"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                    >
+                                        <div className="req-user-info">
+                                            <div className="req-avatar">
+                                                {(req.username || "P")[0].toUpperCase()}
+                                            </div>
+                                            <div className="req-meta">
+                                                <div className="req-name">{req.username || "Anonymous"}</div>
+                                                <div className="req-rating">Combat Rating: {req.rating || 1200}</div>
+                                            </div>
+                                        </div>
+
+                                        <div className="req-actions">
+                                            <button
+                                                className="btn-req-allow"
+                                                onClick={() => handleApproveJoin(req)}
+                                                title="Admit player into lobby"
+                                            >
+                                                <FontAwesomeIcon icon={faUserCheck} /> Allow In
+                                            </button>
+                                            <button
+                                                className="btn-req-reject"
+                                                onClick={() => handleRejectJoin(req)}
+                                                title="Decline player"
+                                            >
+                                                <FontAwesomeIcon icon={faTimes} /> Decline
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 {/* Participants Grid */}
                 <div className="participants-section">
                     <h3 className="section-title-hud">
@@ -317,6 +520,7 @@ export default function RoomLobby() {
                         {participants.map((player, idx) => {
                             const isPlayerHost = player.userId === room?.hostId || player.userId === room?.host?.id;
                             const isMe = player.userId === currentUserId;
+                            const playerName = player.user?.username || player.username || `Player ${idx + 1}`;
 
                             return (
                                 <motion.div
@@ -326,12 +530,12 @@ export default function RoomLobby() {
                                     animate={{ opacity: 1, scale: 1 }}
                                 >
                                     <div className="participant-avatar">
-                                        {(player.user?.username || player.username || "P")[0].toUpperCase()}
+                                        {(playerName || "P")[0].toUpperCase()}
                                     </div>
 
                                     <div className="participant-info">
                                         <div className="participant-name">
-                                            {player.user?.username || player.username || `Player ${idx + 1}`}
+                                            {playerName}
                                             {isMe && <span className="me-badge">YOU</span>}
                                             {isPlayerHost && <span className="host-badge"><FontAwesomeIcon icon={faCrown} /> HOST</span>}
                                         </div>
@@ -340,15 +544,30 @@ export default function RoomLobby() {
                                         </div>
                                     </div>
 
-                                    <div className="participant-status">
-                                        {player.isReady || isPlayerHost ? (
-                                            <span className="status-pill ready">
-                                                <FontAwesomeIcon icon={faCheckCircle} /> READY
-                                            </span>
-                                        ) : (
-                                            <span className="status-pill waiting">
-                                                <FontAwesomeIcon icon={faHourglassHalf} /> WAITING
-                                            </span>
+                                    <div className="participant-status-group">
+                                        <div className="participant-status">
+                                            {player.isReady || isPlayerHost ? (
+                                                <span className="status-pill ready">
+                                                    <FontAwesomeIcon icon={faCheckCircle} /> READY
+                                                </span>
+                                            ) : (
+                                                <span className="status-pill waiting">
+                                                    <FontAwesomeIcon icon={faHourglassHalf} /> WAITING
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Host Kick Power */}
+                                        {isHost && !isPlayerHost && !isMe && (
+                                            <button
+                                                className="btn-card-kick"
+                                                onClick={() => handleKickPlayer(player.userId, playerName)}
+                                                disabled={kickingUserId === player.userId}
+                                                title={`Kick ${playerName} from lobby`}
+                                            >
+                                                <FontAwesomeIcon icon={faUserSlash} />
+                                                <span>{kickingUserId === player.userId ? "Kicking..." : "Kick"}</span>
+                                            </button>
                                         )}
                                     </div>
                                 </motion.div>

@@ -55,6 +55,12 @@ export class BattleController {
         return this.battleRoomService.leaveRoom(roomId, resolvedUserId);
     }
 
+    async kickPlayer(roomId: string, hostId: string, targetUserId: string) {
+        const resolvedHostId = await this.resolveUserId(hostId);
+        const resolvedTargetUserId = await this.resolveUserId(targetUserId);
+        return this.battleRoomService.kickPlayer(roomId, resolvedHostId, resolvedTargetUserId);
+    }
+
     async setPlayerReady(roomId: string, userId: string, isReady: boolean) {
         const resolvedUserId = await this.resolveUserId(userId);
         return this.battleRoomService.setPlayerReady(roomId, resolvedUserId, isReady);

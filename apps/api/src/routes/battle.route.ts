@@ -4,6 +4,7 @@ import {
     CreateBattleRoomSchema,
     JoinRoomSchema,
     LeaveRoomSchema,
+    KickPlayerSchema,
     ReadyRoomSchema,
     StartBattleSchema,
 } from "../validators/battle.validator";
@@ -45,6 +46,14 @@ export async function battleRoutes(app: FastifyInstance) {
         const body = LeaveRoomSchema.parse(req.body);
         const userId = req.user?.id || body.userId;
         return battleController.leaveRoom(id, userId);
+    });
+
+    // 4b. Kick player from room (Host only)
+    app.post("/battle/rooms/:id/kick", { preHandler: [requireAuth] }, async (req) => {
+        const { id } = req.params as { id: string };
+        const body = KickPlayerSchema.parse(req.body);
+        const hostId = req.user?.id || body.hostId;
+        return battleController.kickPlayer(id, hostId, body.targetUserId);
     });
 
     // 5. Toggle Ready status

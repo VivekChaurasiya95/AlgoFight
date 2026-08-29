@@ -256,6 +256,193 @@
     gap: 6px;
 }
 
+/* Host Join Requests Queue */
+.host-join-requests-panel {
+    background: linear-gradient(135deg, rgba(255, 170, 0, 0.08) 0%, rgba(255, 42, 122, 0.05) 100%);
+    border: 1px solid rgba(255, 170, 0, 0.35);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(255, 170, 0, 0.08);
+}
+
+.requests-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.requests-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #ffaa00;
+}
+
+.request-bell {
+    font-size: 1.1rem;
+    animation: pulse-glow 1.5s infinite alternate;
+}
+
+@keyframes pulse-glow {
+    0% { transform: scale(1); filter: drop-shadow(0 0 2px #ffaa00); }
+    100% { transform: scale(1.15); filter: drop-shadow(0 0 8px #ffaa00); }
+}
+
+.requests-sub {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-family: 'Inter', sans-serif;
+}
+
+.requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.request-item-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.req-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.req-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffaa00 0%, #ff5722 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #fff;
+}
+
+.req-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.req-name {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #fff;
+}
+
+.req-rating {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-family: 'Inter', sans-serif;
+}
+
+.req-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-req-allow {
+    background: rgba(0, 230, 118, 0.15);
+    border: 1px solid rgba(0, 230, 118, 0.5);
+    color: #00e676;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-req-allow:hover {
+    background: rgba(0, 230, 118, 0.3);
+    box-shadow: 0 0 12px rgba(0, 230, 118, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-req-reject {
+    background: rgba(255, 42, 122, 0.15);
+    border: 1px solid rgba(255, 42, 122, 0.5);
+    color: #ff2a7a;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-req-reject:hover {
+    background: rgba(255, 42, 122, 0.3);
+    box-shadow: 0 0 12px rgba(255, 42, 122, 0.3);
+    transform: translateY(-1px);
+}
+
+.participant-status-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-card-kick {
+    background: rgba(255, 42, 122, 0.1);
+    border: 1px solid rgba(255, 42, 122, 0.35);
+    color: #ff5c8a;
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+}
+
+.btn-card-kick:hover:not(:disabled) {
+    background: rgba(255, 42, 122, 0.25);
+    border-color: #ff2a7a;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 0 10px rgba(255, 42, 122, 0.3);
+}
+
+.btn-card-kick:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .status-pill.ready {
     background: rgba(0, 230, 118, 0.15);
     color: #00e676;

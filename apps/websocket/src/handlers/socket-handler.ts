@@ -572,6 +572,96 @@ export class SocketHandler {
                     break;
                 }
 
+                case "kick_player": {
+                    const { roomCode, hostId, targetUserId, targetUsername } = data;
+                    if (roomCode && hostId && targetUserId) {
+                        try {
+                            await this.battleRoomService.kickPlayer(roomCode, hostId, targetUserId);
+
+                            this.connectionManager.sendToUser(targetUserId, "kicked_from_room", {
+                                roomCode,
+                                message: "You were removed from the lobby by the room host.",
+                            });
+
+                            this.connectionManager.broadcastToRoom(roomCode, "player_kicked", {
+                                targetUserId,
+                                targetUsername: targetUsername || "A player",
+                            });
+                            this.connectionManager.broadcastToRoom(roomCode, "room_updated", {
+                                roomCode,
+                                action: "player_kicked",
+                                targetUserId,
+                            });
+                        } catch (err: any) {
+                            this.send(socket, "error", err.message || "Failed to kick player");
+                        }
+                    }
+                    break;
+                }
+
+                case "request_join_room": {
+                    const { roomCode, userId, username, rating } = data;
+                    if (roomCode && userId) {
+                        const room = await this.battleRoomRepo.getRoomByCode(roomCode)
+                            || await this.battleRoomRepo.getRoomById(roomCode);
+                        if (room && room.hostId) {
+                            this.connectionManager.sendToUser(room.hostId, "join_request_received", {
+                                roomCode,
+                                userId,
+                                username: username || "A player",
+                                rating: rating || 1200,
+                            });
+                        }
+                    }
+                    break;
+                }
+
+                case "approve_join_request": {
+                    const { roomCode, hostId, targetUserId, targetUsername } = data;
+                    if (roomCode && hostId && targetUserId) {
+                        try {
+                            const room = await this.battleRoomRepo.getRoomByCode(roomCode)
+                                || await this.battleRoomRepo.getRoomById(roomCode);
+                            if (room && room.hostId === hostId) {
+                                await this.battleRoomService.joinRoom(room.id, targetUserId);
+
+                                this.connectionManager.sendToUser(targetUserId, "join_request_approved", {
+                                    roomCode,
+                                    message: "Host approved your join request!",
+                                });
+
+                                this.connectionManager.broadcastToRoom(roomCode, "player_joined", {
+                                    userId: targetUserId,
+                                    username: targetUsername || "Player",
+                                });
+                                this.connectionManager.broadcastToRoom(roomCode, "room_updated", {
+                                    roomCode,
+                                    action: "player_joined",
+                                    userId: targetUserId,
+                                });
+                            }
+                        } catch (err: any) {
+                            this.send(socket, "error", err.message || "Failed to approve join request");
+                        }
+                    }
+                    break;
+                }
+
+                case "reject_join_request": {
+                    const { roomCode, hostId, targetUserId, reason } = data;
+                    if (roomCode && hostId && targetUserId) {
+                        const room = await this.battleRoomRepo.getRoomByCode(roomCode)
+                            || await this.battleRoomRepo.getRoomById(roomCode);
+                        if (room && room.hostId === hostId) {
+                            this.connectionManager.sendToUser(targetUserId, "join_request_rejected", {
+                                roomCode,
+                                message: reason || "Host declined your join request.",
+                            });
+                        }
+                    }
+                    break;
+                }
+
                 case "toggle_ready": {
                     const { roomCode, userId, isReady } = data;
                     if (roomCode) {

@@ -21,6 +21,21 @@ export const ReadyRoomSchema = z.object({
     isReady: z.boolean(),
 });
 
+export const KickPlayerSchema = z.object({
+    hostId: z.string(),
+    targetUserId: z.string(),
+});
+
+export const ApproveJoinSchema = z.object({
+    hostId: z.string(),
+    targetUserId: z.string(),
+});
+
+export const RejectJoinSchema = z.object({
+    hostId: z.string(),
+    targetUserId: z.string(),
+});
+
 export const StartBattleSchema = z.object({
     hostId: z.string(),
     problemId: z.string().uuid().optional(),

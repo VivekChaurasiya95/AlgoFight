@@ -93,6 +93,29 @@ export class BattleRoomService {
         return this.battleRoomRepository.leaveRoom(room.id, userId);
     }
 
+    async kickPlayer(roomIdOrCode: string, hostId: string, targetUserId: string): Promise<{ remainingCount: number }> {
+        const room = await this.getRoom(roomIdOrCode);
+        if (room.hostId !== hostId) {
+            throw new Error("Only the room host can remove players from the lobby");
+        }
+
+        if (hostId === targetUserId) {
+            throw new Error("Host cannot kick themselves from the lobby");
+        }
+
+        if (room.status !== "WAITING") {
+            throw new Error("Cannot kick players after battle has started");
+        }
+
+        const isTargetInRoom = room.participants.some(p => p.userId === targetUserId);
+        if (!isTargetInRoom) {
+            throw new Error("Target player is not in this lobby");
+        }
+
+        const result = await this.battleRoomRepository.leaveRoom(room.id, targetUserId);
+        return { remainingCount: result.remainingCount };
+    }
+
     async setPlayerReady(roomIdOrCode: string, userId: string, isReady: boolean): Promise<BattleRoomEntity> {
         const room = await this.getRoom(roomIdOrCode);
         return this.battleRoomRepository.setPlayerReady(room.id, userId, isReady);
