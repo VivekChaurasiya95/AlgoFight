@@ -29,4 +29,3 @@ Thumbs.db
 *.swp
 
 scripts/seed-problems.ts
-frontend/src/firebaseConfig.js
