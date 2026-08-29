@@ -12,13 +12,13 @@ import {
 } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDKDDmwFHNhLX3VEWOy-9pfosIX0JfMki4",
-  authDomain: "algo-fight.firebaseapp.com",
-  projectId: "algo-fight",
-  storageBucket: "algo-fight.firebasestorage.app",
-  messagingSenderId: "811777562185",
-  appId: "1:811777562185:web:210953e018470785aad198",
-  measurementId: "G-E1RY503D7K"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDKDDmwFHNhLX3VEWOy-9pfosIX0JfMki4",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "algo-fight.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "algo-fight",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "algo-fight.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "811777562185",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:811777562185:web:210953e018470785aad198",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-E1RY503D7K"
 };
 
 const app = initializeApp(firebaseConfig);
