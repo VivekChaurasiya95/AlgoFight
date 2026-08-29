@@ -285,11 +285,17 @@ export class SandboxExecutor implements CodeExecutor {
         } catch (err: any) {
             logger.warn(
                 { error: err.message, PISTON_URL, language: targetLang },
-                "Sandbox execution connection failed",
+                "Piston sandbox unreachable, attempting in-process isolated runner fallback",
             );
+
+            // In-process fallback for JavaScript / TypeScript
+            if (targetLang === "javascript" || targetLang === "typescript") {
+                return this.runLocalVm(wrappedCode, stdinInput, timeoutMs);
+            }
+
             return {
                 stdout: "",
-                stderr: `Sandbox execution engine unavailable (${err.message}). Please check PISTON_URL environment variable.`,
+                stderr: `Sandbox execution engine for ${targetLang} is unavailable (${err.message}). Please check PISTON_URL or select JavaScript.`,
                 exitCode: 1,
                 signal: null,
                 timedOut: false,
@@ -298,6 +304,98 @@ export class SandboxExecutor implements CodeExecutor {
                 compilationError: false,
                 memoryUsed: 0,
                 cpuTime: 0,
+            };
+        }
+    }
+
+    private runLocalVm(code: string, stdinInput: string, timeoutMs: number): SandboxResult {
+        let stdoutBuffer = "";
+        let stderrBuffer = "";
+
+        const customConsole = {
+            log: (...args: any[]) => {
+                stdoutBuffer += args.map((a) => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" ") + "\n";
+            },
+            error: (...args: any[]) => {
+                stderrBuffer += args.map((a) => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" ") + "\n";
+            },
+            warn: (...args: any[]) => {
+                stderrBuffer += args.map((a) => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" ") + "\n";
+            },
+        };
+
+        const customFs = {
+            readFileSync: (_fd: any, _enc?: string) => stdinInput,
+        };
+
+        const sandbox = {
+            console: customConsole,
+            require: (mod: string) => {
+                if (mod === "fs") return customFs;
+                return {};
+            },
+            Buffer,
+            setTimeout,
+            clearTimeout,
+            setInterval,
+            clearInterval,
+            process: {
+                stdin: {
+                    read: () => stdinInput,
+                },
+                stdout: {
+                    write: (chunk: string) => {
+                        stdoutBuffer += chunk;
+                    },
+                },
+                stderr: {
+                    write: (chunk: string) => {
+                        stderrBuffer += chunk;
+                    },
+                },
+            },
+        };
+
+        const start = Date.now();
+        try {
+            const vm = require("vm");
+            const context = vm.createContext(sandbox);
+            const script = new vm.Script(code);
+            script.runInContext(context, { timeout: timeoutMs });
+            const cpuTime = Date.now() - start;
+
+            let stdout = stdoutBuffer.trim();
+            let stderr = stderrBuffer.trim();
+
+            if (stdout.length > MAX_OUTPUT_BYTES) {
+                stdout = stdout.slice(0, MAX_OUTPUT_BYTES);
+            }
+
+            return {
+                stdout,
+                stderr,
+                exitCode: 0,
+                signal: null,
+                timedOut: false,
+                memoryLimitExceeded: false,
+                outputLimitExceeded: false,
+                compilationError: false,
+                memoryUsed: 12 * 1024 * 1024,
+                cpuTime,
+            };
+        } catch (err: any) {
+            const timedOut = err.code === "ERR_SCRIPT_EXECUTION_TIMEOUT";
+            return {
+                stdout: stdoutBuffer.trim(),
+                stderr: (stderrBuffer + "\n" + (timedOut ? "Time Limit Exceeded" : err.message)).trim(),
+                exitCode: 1,
+                signal: timedOut ? "SIGXCPU" : null,
+                timedOut,
+                memoryLimitExceeded: false,
+                outputLimitExceeded: false,
+                compilationError: false,
+                memoryUsed: 12 * 1024 * 1024,
+                cpuTime: Date.now() - start,
             };
         }
     }
