@@ -540,6 +540,38 @@ export class SocketHandler {
                     break;
                 }
 
+                case "leave_room_channel": {
+                    const { roomCode, userId, username } = data;
+                    if (roomCode) {
+                        const actualUserId = userId || currentUserId.value;
+                        if (actualUserId) {
+                            try {
+                                await this.battleRoomService.leaveRoom(roomCode, actualUserId);
+                            } catch {
+                                // Non-blocking if already left
+                            }
+                            this.connectionManager.updatePresenceStatus(actualUserId, "AVAILABLE");
+                        }
+
+                        this.connectionManager.leaveRoom(roomCode, socket);
+                        const session = this.socketUsers.get(socket);
+                        if (session && session.roomId === roomCode) {
+                            delete session.roomId;
+                        }
+
+                        this.connectionManager.broadcastToRoom(roomCode, "player_left", {
+                            userId: actualUserId,
+                            username: username || "Player",
+                        });
+                        this.connectionManager.broadcastToRoom(roomCode, "room_updated", {
+                            roomCode,
+                            action: "player_left",
+                            userId: actualUserId,
+                        });
+                    }
+                    break;
+                }
+
                 case "toggle_ready": {
                     const { roomCode, userId, isReady } = data;
                     if (roomCode) {
@@ -780,6 +812,26 @@ export class SocketHandler {
                     }, 60000);
                     
                     this.disconnectTimeouts.set(session.userId, timeout);
+                }
+            } else {
+                // Check if in a waiting lobby room
+                try {
+                    const room = await this.battleRoomRepo.getRoomByCode(session.roomId)
+                        || await this.battleRoomRepo.getRoomById(session.roomId);
+                    if (room && room.status === "WAITING") {
+                        await this.battleRoomService.leaveRoom(room.id, session.userId);
+                        this.connectionManager.broadcastToRoom(session.roomId, "player_left", {
+                            userId: session.userId,
+                            username: session.username,
+                        });
+                        this.connectionManager.broadcastToRoom(session.roomId, "room_updated", {
+                            roomCode: room.roomCode,
+                            action: "player_left",
+                            userId: session.userId,
+                        });
+                    }
+                } catch {
+                    // Non-fatal cleanup error
                 }
             }
             this.connectionManager.leaveRoom(session.roomId, socket);

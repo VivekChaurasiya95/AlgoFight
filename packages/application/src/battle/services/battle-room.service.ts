@@ -88,16 +88,18 @@ export class BattleRoomService {
         return this.battleRoomRepository.joinRoom(room.id, userId);
     }
 
-    async leaveRoom(roomId: string, userId: string): Promise<{ wasHost: boolean; remainingCount: number }> {
-        return this.battleRoomRepository.leaveRoom(roomId, userId);
+    async leaveRoom(roomIdOrCode: string, userId: string): Promise<{ wasHost: boolean; remainingCount: number }> {
+        const room = await this.getRoom(roomIdOrCode);
+        return this.battleRoomRepository.leaveRoom(room.id, userId);
     }
 
-    async setPlayerReady(roomId: string, userId: string, isReady: boolean): Promise<BattleRoomEntity> {
-        return this.battleRoomRepository.setPlayerReady(roomId, userId, isReady);
+    async setPlayerReady(roomIdOrCode: string, userId: string, isReady: boolean): Promise<BattleRoomEntity> {
+        const room = await this.getRoom(roomIdOrCode);
+        return this.battleRoomRepository.setPlayerReady(room.id, userId, isReady);
     }
 
-    async startBattle(roomId: string, hostId: string, problemId?: string): Promise<BattleRoomEntity> {
-        const room = await this.battleRoomRepository.getRoomById(roomId);
+    async startBattle(roomIdOrCode: string, hostId: string, problemId?: string): Promise<BattleRoomEntity> {
+        const room = await this.getRoom(roomIdOrCode);
         if (!room) {
             throw new Error("Room not found");
         }
@@ -114,7 +116,7 @@ export class BattleRoomService {
             throw new Error("Cannot start battle: All players must be ready");
         }
 
-        return this.battleRoomRepository.startBattle(roomId);
+        return this.battleRoomRepository.startBattle(room.id);
     }
 
     async finishBattle(roomId: string, forfeitedUserId?: string): Promise<{ room: BattleRoomEntity; eloResults?: Record<string, EloResult> }> {

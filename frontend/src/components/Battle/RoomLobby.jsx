@@ -18,7 +18,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext";
 import "./RoomLobby.css";
 
-const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8080";
+const rawWsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:4001";
+const WS_URL = rawWsUrl.startsWith("http")
+    ? rawWsUrl.replace(/^http/, "ws")
+    : rawWsUrl;
 
 export default function RoomLobby() {
     const { roomCode } = useParams();
@@ -40,75 +43,113 @@ export default function RoomLobby() {
     const isHost = room?.hostId === currentUserId || room?.host?.id === currentUserId;
 
     // 1. Fetch Room State from REST API
-    const loadRoom = async () => {
+    const loadRoom = async (isBackgroundSync = false) => {
         try {
-            setLoading(true);
+            if (!isBackgroundSync) setLoading(true);
             const data = await requestJson(`/api/battle/rooms/${encodeURIComponent(roomCode)}`);
-            setRoom(data.room || data);
-            setParticipants(data.participants || data.room?.participants || []);
+            const roomData = data.room || data;
 
-            const me = (data.participants || []).find((p) => p.userId === currentUserId);
+            if (roomData?.status === "CANCELLED") {
+                notify({ type: "info", title: "Lobby Closed", message: "The host left or the lobby was cancelled." });
+                navigate("/battle");
+                return;
+            }
+
+            setRoom(roomData);
+            setParticipants(data.participants || roomData?.participants || []);
+
+            const me = (data.participants || roomData?.participants || []).find((p) => p.userId === currentUserId);
             if (me) setIsReady(me.isReady);
         } catch (err) {
-            notify({ type: "error", title: "Lobby Error", message: err.message || "Failed to load lobby." });
-            navigate("/battle");
+            if (!isBackgroundSync) {
+                notify({ type: "error", title: "Lobby Error", message: err.message || "Failed to load lobby." });
+                navigate("/battle");
+            }
         } finally {
-            setLoading(false);
+            if (!isBackgroundSync) setLoading(false);
         }
     };
 
+    // Initial load + automatic 2.5s background sync fallback
     useEffect(() => {
         loadRoom();
-    }, [roomCode]);
+        const interval = setInterval(() => {
+            loadRoom(true);
+        }, 2500);
+        return () => clearInterval(interval);
+    }, [roomCode, currentUserId]);
 
-    // 2. Connect to WebSocket for Real-Time Lobby Sync
+    // 2. Connect to WebSocket for Instant Real-Time Lobby Sync
     useEffect(() => {
-        const ws = new WebSocket(WS_URL);
-        socketRef.current = ws;
+        let ws;
+        try {
+            ws = new WebSocket(WS_URL);
+            socketRef.current = ws;
 
-        ws.onopen = () => {
-            // Authenticate socket & join room channel
-            ws.send(JSON.stringify({
-                action: "identify",
-                payload: { userId: currentUserId, username: currentUsername },
-            }));
+            ws.onopen = () => {
+                // Authenticate socket & join room channel
+                ws.send(JSON.stringify({
+                    action: "identify",
+                    payload: { userId: currentUserId, username: currentUsername },
+                }));
 
-            ws.send(JSON.stringify({
-                action: "join_room_channel",
-                payload: { roomCode, userId: currentUserId, username: currentUsername },
-            }));
-        };
+                ws.send(JSON.stringify({
+                    action: "join_room_channel",
+                    payload: { roomCode, userId: currentUserId, username: currentUsername },
+                }));
+            };
 
-        ws.onmessage = (event) => {
-            try {
-                const message = JSON.parse(event.data);
-                const { event: evt, payload } = message;
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    const { event: evt, payload } = message;
 
-                if (evt === "room_updated" || evt === "player_joined" || evt === "player_ready_changed") {
-                    loadRoom();
-                }
-
-                if (evt === "battle_started" || evt === "match_found") {
-                    setStarting(true);
-                    setCountdown(3);
-
-                    let count = 3;
-                    const timer = setInterval(() => {
-                        count -= 1;
-                        setCountdown(count);
-                        if (count <= 0) {
-                            clearInterval(timer);
-                            navigate("/battle/live", { state: { matchData: payload, roomCode } });
+                    if (evt === "player_left") {
+                        if (payload?.username && payload.userId !== currentUserId) {
+                            notify({
+                                type: "warning",
+                                title: "Combatant Departed",
+                                message: `${payload.username} has left the lobby.`
+                            });
                         }
-                    }, 1000);
+                        loadRoom(true);
+                    }
+
+                    if (evt === "room_updated" || evt === "player_joined" || evt === "player_ready_changed") {
+                        if (evt === "player_joined" && payload?.username && payload.userId !== currentUserId) {
+                            notify({
+                                type: "info",
+                                title: "Combatant Joined",
+                                message: `${payload.username} joined the lobby.`
+                            });
+                        }
+                        loadRoom(true);
+                    }
+
+                    if (evt === "battle_started" || evt === "match_found") {
+                        setStarting(true);
+                        setCountdown(3);
+
+                        let count = 3;
+                        const timer = setInterval(() => {
+                            count -= 1;
+                            setCountdown(count);
+                            if (count <= 0) {
+                                clearInterval(timer);
+                                navigate("/battle/live", { state: { matchData: payload, roomCode } });
+                            }
+                        }, 1000);
+                    }
+                } catch (err) {
+                    console.error("Socket error in lobby:", err);
                 }
-            } catch (err) {
-                console.error("Socket error in lobby:", err);
-            }
-        };
+            };
+        } catch (err) {
+            console.warn("Could not initiate WebSocket in lobby:", err);
+        }
 
         return () => {
-            if (ws.readyState === WebSocket.OPEN) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.close();
             }
         };
@@ -118,6 +159,29 @@ export default function RoomLobby() {
     const copyCode = () => {
         navigator.clipboard.writeText(roomCode);
         notify({ type: "success", title: "Copied!", message: `Room Code ${roomCode} copied to clipboard.` });
+    };
+
+    // Leave Lobby
+    const handleLeaveLobby = async () => {
+        try {
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({
+                    action: "leave_room_channel",
+                    payload: { roomCode, userId: currentUserId, username: currentUsername },
+                }));
+            }
+
+            if (room?.id || roomCode) {
+                await requestJson(`/api/battle/rooms/${room?.id || roomCode}/leave`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId: currentUserId }),
+                    includeAuth: true,
+                }).catch(() => {});
+            }
+        } finally {
+            navigate("/battle");
+        }
     };
 
     // Toggle Ready Status
@@ -204,7 +268,7 @@ export default function RoomLobby() {
             <div className="lobby-container">
                 {/* Header Bar */}
                 <div className="lobby-header">
-                    <button className="btn-hud-back" onClick={() => navigate("/battle")}>
+                    <button className="btn-hud-back" onClick={handleLeaveLobby}>
                         <FontAwesomeIcon icon={faArrowLeft} /> Leave Lobby
                     </button>
                     <div className="lobby-badge">
