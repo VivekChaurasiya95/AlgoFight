@@ -10,7 +10,7 @@ import {
     SubmissionNotFoundError,
     ProblemNotFoundError,
 } from "@algofight/error-handling";
-import { createRedisClient } from "@algofight/queue";
+import { createRedisClient } from "../utils/redis.client";
 import { PipelineProgressEvent } from "../judge/models/execute-request";
 
 export class ExecutionService {

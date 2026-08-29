@@ -1,4 +1,4 @@
-import { createRedisClient } from "@algofight/queue";
+import { createRedisClient } from "../../utils/redis.client";
 import { logger } from "@algofight/logger";
 import { BattleRoomRepository } from "@algofight/database";
 import { BattleRoomService } from "./battle-room.service";
