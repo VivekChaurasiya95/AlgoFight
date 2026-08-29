@@ -1,6 +1,7 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "frontend"
 allowBuilds:
   '@firebase/util': set this to true or false
   '@prisma/engines': true
