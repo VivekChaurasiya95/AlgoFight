@@ -1,8 +1,9 @@
 import IORedis from "ioredis";
 
-const redisUrl = process.env.REDIS_URL;
-export const redisConnection = redisUrl
-    ? new IORedis(redisUrl, {
+const rawUrl = process.env.REDIS_URL || (process.env.REDIS_HOST?.startsWith("redis://") || process.env.REDIS_HOST?.startsWith("valkey://") || process.env.REDIS_HOST?.startsWith("rediss://") ? process.env.REDIS_HOST : null);
+
+export const redisConnection = rawUrl
+    ? new IORedis(rawUrl, {
           maxRetriesPerRequest: null,
           retryStrategy(time) {
               return Math.min(time * 50, 2000);
