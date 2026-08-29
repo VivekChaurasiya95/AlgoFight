@@ -6,6 +6,7 @@ import { GoogleIcon, GithubIcon } from "../Common/Icons";
 import { emailPasswordSignUp, googleSignIn, githubSignIn } from "../../firebaseConfig.js";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext.jsx";
+import { toApiUrl } from "../../services/api.js";
 
 function Signup() {
   const [userType, setUserType] = useState("STUDENT"); // "STUDENT" | "FACULTY" | "INDIVIDUAL"
@@ -126,7 +127,7 @@ function Signup() {
     try {
       if (user && oauthToken) {
         // We do a direct PUT or POST to /api/users to update the social links
-        await fetch("/api/users", {
+        await fetch(toApiUrl("/api/users"), {
           method: "POST", // sync endpoint acts as upsert
           headers: {
             "Content-Type": "application/json",

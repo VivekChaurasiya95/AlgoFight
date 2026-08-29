@@ -2,9 +2,9 @@ import { auth } from "../firebaseConfig";
 
 const rawApiUrl = (import.meta.env.VITE_API_URL || "").trim();
 // Strip trailing /api to avoid /api/api calls
-const API_URL = rawApiUrl.replace(/\/api\/?$/, "").replace(/\/$/, "");
+export const API_URL = rawApiUrl.replace(/\/api\/?$/, "").replace(/\/$/, "");
 
-function toApiUrl(path) {
+export function toApiUrl(path) {
   return API_URL ? `${API_URL}${path}` : path;
 }
 
@@ -204,6 +204,4 @@ export async function clearUserNotifications(userId) {
     body: JSON.stringify({ userId }),
   });
 }
-
-export { API_URL };
 

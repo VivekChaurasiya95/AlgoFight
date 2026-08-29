@@ -6,6 +6,7 @@ import { GoogleIcon, GithubIcon } from "../Common/Icons";
 import { emailPasswordSignIn, googleSignIn, githubSignIn } from "../../firebaseConfig.js";
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import { useNotification } from "../../contexts/NotificationContext.jsx";
+import { toApiUrl } from "../../services/api.js";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -85,7 +86,7 @@ function Login() {
     setLoading(true);
     try {
       if (user && oauthToken) {
-        await fetch("/api/users", {
+        await fetch(toApiUrl("/api/users"), {
           method: "POST", 
           headers: {
             "Content-Type": "application/json",

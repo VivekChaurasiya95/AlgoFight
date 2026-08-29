@@ -8,7 +8,7 @@ import {
   faChevronLeft,
   faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
-import { fetchPracticeProblems, fetchUserProfile } from "../../services/api";
+import { fetchPracticeProblems, fetchUserProfile, toApiUrl } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import "./Practice.css";
 
@@ -228,7 +228,7 @@ export default function Practice() {
         ? `${totalProblems} Problems`
         : "Practice Problems";
   useEffect(() => {
-    fetch("/api/problems/categories")
+    fetch(toApiUrl("/api/problems/categories"))
       .then((res) => res.json())
       .then((cats) => {
         if (Array.isArray(cats) && cats.length > 0) {

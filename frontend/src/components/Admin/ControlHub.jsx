@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./ControlHub.css";
 import { motion } from "framer-motion";
 import { useNotification } from "../../contexts/NotificationContext.jsx";
+import { toApiUrl } from "../../services/api.js";
 
 const SERVICE_NAMES = {
     apiGateway: "API Gateway",
@@ -39,7 +40,7 @@ export default function ControlHub() {
         setAuthError("");
 
         try {
-            const res = await fetch("/api/admin/auth/verify", {
+            const res = await fetch(toApiUrl("/api/admin/auth/verify"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ key: passInput.trim() }),
@@ -69,7 +70,7 @@ export default function ControlHub() {
     const fetchTelemetry = async () => {
         if (!adminKey) return;
         try {
-            const res = await fetch("/api/admin/metrics", {
+            const res = await fetch(toApiUrl("/api/admin/metrics"), {
                 headers: { "x-admin-key": adminKey },
             });
             if (res.ok) {
@@ -84,8 +85,8 @@ export default function ControlHub() {
     const fetchUsers = async (query = "") => {
         if (!adminKey) return;
         try {
-            const url = query ? `/api/admin/users?search=${encodeURIComponent(query)}` : "/api/admin/users";
-            const res = await fetch(url, {
+            const path = query ? `/api/admin/users?search=${encodeURIComponent(query)}` : "/api/admin/users";
+            const res = await fetch(toApiUrl(path), {
                 headers: { "x-admin-key": adminKey },
             });
             if (res.ok) {
