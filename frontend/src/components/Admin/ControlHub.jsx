@@ -134,7 +134,7 @@ export default function ControlHub() {
         // Quick health probe to check Linux Telemetry service status
         const checkLinux = async () => {
             try {
-                const res = await fetch(`${linuxBaseUrl}/healthz`);
+                const res = await fetch(toApiUrl("/api/admin/linux-status"));
                 if (res.ok) setLinuxStatus("ONLINE");
                 else setLinuxStatus("OFFLINE");
             } catch {
