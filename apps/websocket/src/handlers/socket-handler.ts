@@ -1,4 +1,5 @@
 // apps/websocket/src/handlers/socket-handler.ts
+import crypto from "crypto";
 import { WebSocket } from "ws";
 import { syncBattleToTelemetry } from "../events/battle.events";
 import { ConnectionManager } from "../server/connection-manager";
@@ -49,9 +50,70 @@ export class SocketHandler {
         roomId?: string;
     }>();
     private readonly disconnectTimeouts = new Map<string, NodeJS.Timeout>();
+    private readonly violations = new Map<string, number>();
+    private cachedCerts: Record<string, string> = {};
+    private certsExpiry = 0;
 
     constructor(private readonly connectionManager: ConnectionManager) { 
         this.setupRedisSubscriptions();
+    }
+
+    private async refreshPublicKeys(): Promise<Record<string, string>> {
+        const now = Date.now();
+        if (now < this.certsExpiry && Object.keys(this.cachedCerts).length > 0) {
+            return this.cachedCerts;
+        }
+
+        try {
+            const res = await fetch(
+                "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com",
+                { signal: AbortSignal.timeout(3000) }
+            );
+            if (res.ok) {
+                this.cachedCerts = await res.json();
+                this.certsExpiry = now + 6 * 60 * 60 * 1000;
+            }
+        } catch (err: any) {
+            logger.warn({ error: err.message }, "Failed to fetch Google Firebase certificates in WebSocket server");
+        }
+
+        return this.cachedCerts;
+    }
+
+    private verifyToken(token: string, certs: Record<string, string>): { uid: string; email?: string; name?: string; role?: string } | null {
+        try {
+            const parts = token.split(".");
+            if (parts.length !== 3) return null;
+
+            const [headerB64, payloadB64, sigB64] = parts;
+            const header = JSON.parse(Buffer.from(headerB64, "base64url").toString("utf-8"));
+            const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf-8"));
+
+            if (header.alg === "RS256" && header.kid && certs[header.kid]) {
+                const now = Math.floor(Date.now() / 1000);
+                if (payload.exp && payload.exp < now) return null;
+
+                const verifier = crypto.createVerify("RSA-SHA256");
+                verifier.update(`${headerB64}.${payloadB64}`);
+                const sig = Buffer.from(sigB64, "base64url");
+
+                if (verifier.verify(certs[header.kid], sig)) {
+                    const uid = payload.user_id || payload.uid || payload.sub;
+                    return { uid: String(uid), email: payload.email, name: payload.name, role: payload.admin ? "ADMIN" : "USER" };
+                }
+            }
+
+            // Dev fallback for local tests / development
+            if (process.env.NODE_ENV !== "production") {
+                const uid = payload.user_id || payload.uid || payload.sub || payload.id;
+                if (uid) {
+                    return { uid: String(uid), email: payload.email, name: payload.name, role: payload.role };
+                }
+            }
+        } catch {
+            return null;
+        }
+        return null;
     }
 
     private setupRedisSubscriptions() {
@@ -92,56 +154,77 @@ export class SocketHandler {
             switch (action) {
                 case "auth":
                 case "identify": {
-                    const userId = data.userId || data.uid;
-                    const username = data.username || "Player";
-                    if (userId) {
-                        currentUserId.value = userId;
+                    // 🛡️ AF-003: Cryptographic Firebase Token Verification
+                    let verifiedUid: string | null = null;
+                    let verifiedEmail: string | undefined = undefined;
+                    let verifiedUsername: string | undefined = undefined;
 
-                        let user = await this.userRepo.getUserById(userId).catch(() => null);
-                        if (!user && (data.email || data.username)) {
-                            user = await this.userRepo.upsertUser({
-                                id: userId,
-                                email: data.email || `${username.toLowerCase().replace(/\s+/g, "_")}@algofight.local`,
-                                username: username,
-                            }).catch(() => null);
+                    const rawToken = data.token || data.rawToken || (typeof data.auth === "object" ? data.auth.token : undefined);
+                    if (rawToken) {
+                        const certs = await this.refreshPublicKeys();
+                        const verified = this.verifyToken(rawToken, certs);
+                        if (verified) {
+                            verifiedUid = verified.uid;
+                            verifiedEmail = verified.email;
+                            verifiedUsername = verified.name;
                         }
-
-                        const userRating = user?.rating || 1200;
-                        const platformCode = user?.platformCode || "";
-                        const userType = user?.userType || "INDIVIDUAL";
-                        const institutionName = user?.institutionName || undefined;
-
-                        this.connectionManager.registerUser(userId, socket, {
-                            username: user?.username || username,
-                            rating: userRating,
-                            platformCode,
-                            userType,
-                            institutionName,
-                            status: "AVAILABLE",
-                        });
-
-                        this.socketUsers.set(socket, {
-                            userId,
-                            username: user?.username || username,
-                            rating: userRating,
-                            platformCode,
-                        });
-
-                        this.send(socket, "authenticated", {
-                            userId,
-                            username: user?.username || username,
-                            rating: userRating,
-                            platformCode,
-                        });
-
-                        const presence = this.connectionManager.getPresence(userId);
-                        if (presence) {
-                            this.connectionManager.broadcastToAll("player_presence_update", presence);
-                        }
-
-                        const onlineList = this.connectionManager.getAllOnlinePresences();
-                        this.send(socket, "presence_sync", { onlinePlayers: onlineList });
                     }
+
+                    // Fallback to client data in non-production environments if no token was passed
+                    const userId = verifiedUid || (process.env.NODE_ENV !== "production" ? (data.userId || data.uid) : null);
+                    const username = verifiedUsername || data.username || "Player";
+
+                    if (!userId) {
+                        this.send(socket, "error", "Authentication failed: valid Firebase token required.");
+                        break;
+                    }
+
+                    currentUserId.value = userId;
+
+                    let user = await this.userRepo.getUserById(userId).catch(() => null);
+                    if (!user && (verifiedEmail || data.email || username)) {
+                        user = await this.userRepo.upsertUser({
+                            id: userId,
+                            email: verifiedEmail || data.email || `${username.toLowerCase().replace(/\s+/g, "_")}@algofight.local`,
+                            username: username,
+                        }).catch(() => null);
+                    }
+
+                    const userRating = user?.rating || 1200;
+                    const platformCode = user?.platformCode || "";
+                    const userType = user?.userType || "INDIVIDUAL";
+                    const institutionName = user?.institutionName || undefined;
+
+                    this.connectionManager.registerUser(userId, socket, {
+                        username: user?.username || username,
+                        rating: userRating,
+                        platformCode,
+                        userType,
+                        institutionName,
+                        status: "AVAILABLE",
+                    });
+
+                    this.socketUsers.set(socket, {
+                        userId,
+                        username: user?.username || username,
+                        rating: userRating,
+                        platformCode,
+                    });
+
+                    this.send(socket, "authenticated", {
+                        userId,
+                        username: user?.username || username,
+                        rating: userRating,
+                        platformCode,
+                    });
+
+                    const presence = this.connectionManager.getPresence(userId);
+                    if (presence) {
+                        this.connectionManager.broadcastToAll("player_presence_update", presence);
+                    }
+
+                    const onlineList = this.connectionManager.getAllOnlinePresences();
+                    this.send(socket, "presence_sync", { onlinePlayers: onlineList });
                     break;
                 }
 
@@ -161,6 +244,11 @@ export class SocketHandler {
 
                     if (!fromUserId) {
                         this.send(socket, "error", "Authentication required before sending challenges.");
+                        break;
+                    }
+
+                    if (fromUserId === targetUserId) {
+                        this.send(socket, "error", "Cannot challenge yourself to a duel.");
                         break;
                     }
 
@@ -271,6 +359,14 @@ export class SocketHandler {
                         break;
                     }
 
+                    // 🛡️ AF-004: Only target recipient can accept challenge
+                    const session = this.socketUsers.get(socket);
+                    const activeUserId = session?.userId || currentUserId.value;
+                    if (!activeUserId || activeUserId !== challenge.targetUserId) {
+                        this.send(socket, "error", "Unauthorized: only the challenged player may accept this duel.");
+                        break;
+                    }
+
                     challenge.status = "ACCEPTED";
                     this.connectionManager.removeChallenge(challengeId);
 
@@ -351,6 +447,14 @@ export class SocketHandler {
                     const { challengeId } = data;
                     const challenge = this.connectionManager.getChallenge(challengeId);
                     if (challenge) {
+                        // 🛡️ AF-004: Only target recipient can decline challenge
+                        const session = this.socketUsers.get(socket);
+                        const activeUserId = session?.userId || currentUserId.value;
+                        if (!activeUserId || activeUserId !== challenge.targetUserId) {
+                            this.send(socket, "error", "Unauthorized: only the challenged player may decline this duel.");
+                            break;
+                        }
+
                         challenge.status = "DECLINED";
                         this.connectionManager.removeChallenge(challengeId);
                         this.connectionManager.sendToUser(challenge.fromUserId, "challenge_declined", {
@@ -373,6 +477,14 @@ export class SocketHandler {
                     const { challengeId } = data;
                     const challenge = this.connectionManager.getChallenge(challengeId);
                     if (challenge) {
+                        // 🛡️ AF-004: Only challenger can cancel challenge
+                        const session = this.socketUsers.get(socket);
+                        const activeUserId = session?.userId || currentUserId.value;
+                        if (!activeUserId || activeUserId !== challenge.fromUserId) {
+                            this.send(socket, "error", "Unauthorized: only the challenger may cancel this duel.");
+                            break;
+                        }
+
                         challenge.status = "CANCELLED";
                         this.connectionManager.removeChallenge(challengeId);
                         this.connectionManager.sendToUser(challenge.targetUserId, "challenge_cancelled", {
@@ -807,6 +919,51 @@ export class SocketHandler {
                     if (isAccepted && roomId && userId) {
                         await this.battleService.processEvaluationResult(roomId, userId, problemId, true, 100);
                     }
+                    break;
+                }
+
+                // 🛡️ AF-022: Server-Authoritative Anti-Cheat & Forfeit Handler
+                case "anti_cheat_violation": {
+                    const { roomId, type } = data;
+                    const session = this.socketUsers.get(socket);
+                    const userId = session?.userId || currentUserId.value;
+                    if (!roomId || !userId) break;
+
+                    const violationKey = `${roomId}:${userId}`;
+                    const count = (this.violations.get(violationKey) || 0) + 1;
+                    this.violations.set(violationKey, count);
+
+                    logger.warn({ roomId, userId, type, count }, "Anti-cheat violation detected");
+
+                    this.send(socket, "anti_cheat_warning", {
+                        warning: `Anti-cheat warning (${count}/3): Window blur / tab switch detected.`,
+                        violationsCount: count,
+                        maxViolations: 3,
+                    });
+
+                    if (count >= 3) {
+                        await this.battleService.finishBattle(roomId, "FORFEIT_ANTI_CHEAT", undefined, userId);
+                        this.connectionManager.broadcastToRoom(roomId, "battle_forfeited", {
+                            roomId,
+                            forfeitedUserId: userId,
+                            reason: "Disqualified due to repeated anti-cheat violations (tab switching).",
+                        });
+                    }
+                    break;
+                }
+
+                case "forfeit_battle": {
+                    const { roomId } = data;
+                    const session = this.socketUsers.get(socket);
+                    const userId = session?.userId || currentUserId.value;
+                    if (!roomId || !userId) break;
+
+                    await this.battleService.finishBattle(roomId, "FORFEIT_SURRENDER", undefined, userId);
+                    this.connectionManager.broadcastToRoom(roomId, "battle_forfeited", {
+                        roomId,
+                        forfeitedUserId: userId,
+                        reason: "Player surrendered the match.",
+                    });
                     break;
                 }
 

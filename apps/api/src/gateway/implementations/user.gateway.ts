@@ -16,7 +16,7 @@ export class UserGateway implements Gateway {
     private certsExpiry = 0;
 
     // Metrics counters
-    private activeUsers = new Set<string>();
+    private activeUsers = new Map<string, number>(); // userId -> lastSeenTimestamp (AF-007)
     private activeConnections = 0;
     private totalRequests = 0;
     private totalAdmissions = 0;
@@ -28,6 +28,15 @@ export class UserGateway implements Gateway {
         this.id = context.gatewayId;
         this.context = context;
         this.stateMachine = new GatewayStateMachine(this.id, GatewayState.CREATED);
+    }
+
+    private pruneInactiveUsers(now = Date.now()): void {
+        const ttlMs = (this.context.policy.sessionTtlSeconds || 300) * 1000;
+        for (const [userId, lastSeen] of this.activeUsers.entries()) {
+            if (now - lastSeen > ttlMs) {
+                this.activeUsers.delete(userId);
+            }
+        }
     }
 
     public async initialize(context: GatewayContext): Promise<void> {
@@ -159,7 +168,10 @@ export class UserGateway implements Gateway {
     }
 
     public async admit(identity: UserIdentity, request: GatewayRequest): Promise<AdmissionResult> {
-        // Enforce capacity limits per gateway/context
+        const now = Date.now();
+        this.pruneInactiveUsers(now);
+
+        // Enforce capacity limits per gateway/context (AF-007)
         if (this.activeUsers.size >= this.context.capacity && !this.activeUsers.has(identity.id)) {
             this.totalRejections++;
             return {
@@ -170,7 +182,7 @@ export class UserGateway implements Gateway {
             };
         }
 
-        this.activeUsers.add(identity.id);
+        this.activeUsers.set(identity.id, now);
         this.totalAdmissions++;
         return {
             admitted: true,
@@ -179,6 +191,7 @@ export class UserGateway implements Gateway {
     }
 
     public getMetrics(): GatewayMetrics {
+        this.pruneInactiveUsers();
         const capacity = Math.max(1, this.context.capacity);
         const activeCount = this.activeUsers.size;
         return {
@@ -231,6 +244,14 @@ export class UserGateway implements Gateway {
 
         const now = Math.floor(Date.now() / 1000);
         if (payload.exp && payload.exp < now) return null;
+
+        // 🛡️ AF-008: Validate Firebase token claims
+        const projectId = process.env.FIREBASE_PROJECT_ID;
+        if (projectId) {
+            if (payload.aud !== projectId) return null;
+            if (payload.iss !== `https://securetoken.google.com/${projectId}`) return null;
+        }
+        if (payload.auth_time && payload.auth_time > now + 300) return null;
 
         const cert = certs[header.kid];
         if (!cert) return null;

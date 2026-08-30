@@ -22,3 +22,12 @@ export const testRunSchema = z.object({
 });
 
 export type TestRunInput = z.infer<typeof testRunSchema>;
+
+export const practiceEvaluateSchema = z.object({
+    problemId: z.string().min(1, "problemId is required"),
+    code: z.string().min(1, "code is required").max(65536, "Code exceeds maximum allowed size of 64KB"),
+    language: z.string().min(1, "language is required"),
+    mode: z.enum(["test", "submit"]).default("test"),
+});
+
+export type PracticeEvaluateInput = z.infer<typeof practiceEvaluateSchema>;

@@ -17,12 +17,20 @@ export interface UserTrustContext {
     readonly signature?: string;
 }
 
-const GATEWAY_SECRET = process.env.GATEWAY_CLUSTER_SECRET || "algofight-internal-gateway-secret-key-change-in-prod";
+const getGatewaySecret = (): string => {
+    const secret = process.env.GATEWAY_CLUSTER_SECRET;
+    if (process.env.NODE_ENV === "production") {
+        if (!secret || secret === "algofight-internal-gateway-secret-key-change-in-prod") {
+            throw new Error("FATAL: GATEWAY_CLUSTER_SECRET must be explicitly configured in production environment.");
+        }
+    }
+    return secret || "algofight-internal-gateway-secret-key-change-in-prod";
+};
 
 export class TrustContextSigner {
     public static sign(context: Omit<UserTrustContext, "signature">): string {
         const payload = `${context.userId}:${context.sessionId}:${context.gatewayId}:${context.contextId}:${context.issuedAt}:${context.expiresAt}:${context.role}:${context.assignedTier}`;
-        return crypto.createHmac("sha256", GATEWAY_SECRET).update(payload).digest("hex");
+        return crypto.createHmac("sha256", getGatewaySecret()).update(payload).digest("hex");
     }
 
     public static verify(context: UserTrustContext): boolean {

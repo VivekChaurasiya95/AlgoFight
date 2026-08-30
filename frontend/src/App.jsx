@@ -7,6 +7,7 @@ import NavBar from './components/NavBar/NavBar.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 // 🚀 Code-split secondary route components with React.lazy
+const LandingPage = lazy(() => import('./components/LandingPage/LandingPage.jsx'));
 const Home = lazy(() => import('./components/Home/Home.jsx'));
 const Rewards = lazy(() => import('./components/Rewards/Rewards.jsx'));
 const Signup = lazy(() => import('./components/Signup/Signup.jsx'));
@@ -41,7 +42,7 @@ function PageLoader() {
   );
 }
 
-// 📌 Auth layout (no NavBar)
+// 📌 Auth & Landing layout (no NavBar)
 function AuthLayout() {
   return (
     <Suspense fallback={<PageLoader />}>
@@ -68,9 +69,10 @@ function App() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        {/* ================= Auth Routes ================= */}
+        {/* ================= Landing & Auth Routes ================= */}
         <Route element={<AuthLayout />}>
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Route>
 

@@ -1,0 +1,95 @@
+/* ==========================================================================
+   Compact Circular 3D Testimonials Styles (Automated without buttons)
+   ========================================================================== */
+
+.circular-testimonial-container {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  position: relative;
+}
+
+.circular-testimonial-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .circular-testimonial-grid {
+    grid-template-columns: 280px 1fr;
+    gap: 3.5rem;
+  }
+}
+
+/* Compact Profile Photo Stage */
+.circular-image-container {
+  position: relative;
+  width: 100%;
+  max-width: 260px;
+  height: 15rem;
+  perspective: 1000px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.circular-testimonial-image {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 229, 255, 0.15);
+}
+
+.circular-testimonial-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 160px;
+  text-align: left;
+}
+
+.circular-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 800;
+  margin-bottom: 0.2rem;
+  letter-spacing: -0.01em;
+}
+
+.circular-designation {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  margin-bottom: 1.2rem;
+}
+
+.circular-quote {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.7;
+}
+
+/* Minimal Automated Progress Dots */
+.circular-auto-indicators {
+  display: flex;
+  gap: 8px;
+  margin-top: 1.8rem;
+}
+
+.circular-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.4s ease;
+}
+
+.circular-dot.active {
+  width: 24px;
+  background: #00e5ff;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+}

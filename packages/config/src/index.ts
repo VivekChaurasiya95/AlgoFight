@@ -15,6 +15,7 @@ const envSchema = z.object({
     PISTON_URL: z.string().default("http://127.0.0.1:2000"),
     ADMIN_SECRET_KEY: z.string().min(6, "ADMIN_SECRET_KEY must be at least 6 characters"),
     ALLOWED_ORIGINS: z.string().default("http://localhost:5173,http://localhost:3000"),
+    WS_PORT: z.coerce.number().int().min(1).max(65535).default(4001),
 });
 
 const env = envSchema.parse({
@@ -26,12 +27,14 @@ const env = envSchema.parse({
     PISTON_URL: process.env.PISTON_URL,
     ADMIN_SECRET_KEY: process.env.ADMIN_SECRET_KEY || (process.env.NODE_ENV === "production" ? undefined : "AF_DEV_SECRET_KEY"),
     ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
+    WS_PORT: process.env.WS_PORT,
 });
 
 export const config = {
     environment: env.NODE_ENV,
     isProduction: env.NODE_ENV === "production",
     port: Number(env.PORT),
+    wsPort: Number(env.WS_PORT),
     databaseUrl: env.DATABASE_URL,
     pistonUrl: env.PISTON_URL,
     adminSecretKey: env.ADMIN_SECRET_KEY,

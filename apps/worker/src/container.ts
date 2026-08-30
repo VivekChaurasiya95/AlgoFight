@@ -1,4 +1,4 @@
-import { ExecutionService, DockerExecutor } from "@algofight/application";
+import { ExecutionService, EvaluationService } from "@algofight/application";
 import {
     PrismaSubmissionRepository,
     PrismaProblemRepository,
@@ -11,7 +11,9 @@ const battleRoomRepository = new PrismaBattleRoomRepository();
 
 export const executionService = new ExecutionService(
     submissionRepository,
-    new DockerExecutor(),
+    new EvaluationService(),
     problemRepository,
     battleRoomRepository,
 );
+
+

@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: algofight-postgres
     restart: unless-stopped
     environment:
@@ -11,17 +11,28 @@ services:
       POSTGRES_DB: algofight
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d algofight"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - algofight-network
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
     container_name: algofight-redis
     restart: unless-stopped
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - redis_data:/data
     networks:
@@ -36,7 +47,6 @@ services:
       - "2000:2000"
     volumes:
       - piston_packages:/piston/packages
-      - ./package.js:/piston_api/src/package.js
     tmpfs:
       - /tmp
     networks:
@@ -50,3 +60,4 @@ volumes:
 networks:
   algofight-network:
     driver: bridge
+

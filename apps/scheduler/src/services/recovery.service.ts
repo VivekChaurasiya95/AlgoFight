@@ -51,38 +51,26 @@ export class RecoveryService {
             submission.retryCount >=
             RECOVERY_POLICY.MAX_RETRIES
         ) {
-            await this.submissionRepository.
-                updateStatus(
-                    submissionId,
-                    SubmissionStatus.FINALIZED,
-                );
+            await this.submissionRepository.updateStatus(
+                submissionId,
+                SubmissionStatus.FINALIZED,
+            );
 
             logger.warn({
                 submissionId,
-            }, "Recovery limit exceeded");
+            }, "Recovery limit exceeded - marked as FINALIZED with SYSTEM_ERROR");
 
             return;
         }
 
         await this.submissionRepository.incrementRetryCount(
             submissionId,
-        )
+        );
 
         await this.submissionRepository.updateStatus(
             submissionId,
             SubmissionStatus.QUEUED,
         );
-
-        logger.info(
-            {
-                submissionId,
-            },
-            "Submission moved to RETRYING",
-        )
-        await this.submissionRepository.updateStatus(
-            submissionId,
-            SubmissionStatus.QUEUED,
-        )
 
         await enqueueSubmissionJob({
             submissionId,
@@ -92,7 +80,7 @@ export class RecoveryService {
             {
                 submissionId,
             },
-            "Recovered submission requeued",
+            "Recovered submission requeued with status QUEUED",
         );
     }
 

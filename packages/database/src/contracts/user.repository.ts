@@ -23,4 +23,5 @@ export interface UserRepository {
     updateRating(userId: string, newRating: number, isWin: boolean): Promise<UserEntity>;
     getAvailablePlayers(excludeUserId?: string, limit?: number, search?: string): Promise<UserEntity[]>;
     getTopUsers(limit?: number): Promise<UserEntity[]>;
+    getPracticeProgress(userId: string): Promise<{ practiceSubmissionCount: number; practiceSolvedProblemIds: string[] }>;
 }

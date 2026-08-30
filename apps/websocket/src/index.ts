@@ -1,13 +1,13 @@
-import "@algofight/config";
+import { config } from "@algofight/config";
 import { createRedisClient } from "@algofight/queue";
 import { WebSocketServer, WebSocket } from "ws";
 import { ConnectionManager } from "./server/connection-manager";
 import { SocketHandler } from "./handlers/socket-handler";
 import { logger } from "@algofight/logger";
 
-const WS_PORT = process.env.WS_PORT ? parseInt(process.env.WS_PORT, 10) : 4001;
+const WS_PORT = config.wsPort || (process.env.WS_PORT ? parseInt(process.env.WS_PORT, 10) : 4001);
 
-const wss = new WebSocketServer({ port: WS_PORT });
+const wss = new WebSocketServer({ port: WS_PORT, host: "0.0.0.0" });
 const connectionManager = new ConnectionManager();
 const socketHandler = new SocketHandler(connectionManager);
 

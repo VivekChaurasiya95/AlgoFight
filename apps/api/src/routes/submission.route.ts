@@ -57,6 +57,24 @@ export async function submissionRoutes(app: FastifyInstance) {
         },
     );
 
+    // 3. Practice Evaluate (Rate limit: 15 req/min, Authenticated) - AF-001 & AF-005
+    app.post(
+        "/practice/evaluate",
+        {
+            preHandler: [requireAuth],
+            config: {
+                rateLimit: {
+                    max: 15,
+                    timeWindow: "1 minute",
+                },
+            },
+        },
+        async (request) => {
+            const body = request.body as any;
+            return submissionController.evaluatePractice(body);
+        },
+    );
+
 
     // 4. Submissions List (Public Summary DTOs)
     app.get(

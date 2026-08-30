@@ -6,11 +6,15 @@
   "packageManager": "pnpm@11.4.0",
   "main": "index.js",
   "scripts": {
+    "dev": "turbo dev",
     "dev:api": "pnpm --filter @algofight/api exec tsx watch src/index.ts",
+    "dev:ws": "pnpm --filter @algofight/websocket exec tsx watch src/index.ts",
+    "dev:websocket": "pnpm --filter @algofight/websocket exec tsx watch src/index.ts",
     "dev:worker": "pnpm --filter @algofight/worker exec tsx watch src/index.ts",
     "build:api": "pnpm --filter @algofight/database exec prisma db push --accept-data-loss && pnpm --filter @algofight/database exec prisma generate && pnpm --filter @algofight/api run build",
     "import:problems": "pnpm exec tsx scripts/import-problems.ts",
     "start:api": "pnpm --filter @algofight/api exec tsx src/index.ts",
+    "start:ws": "pnpm --filter @algofight/websocket exec tsx src/index.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

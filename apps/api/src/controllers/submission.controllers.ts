@@ -1,11 +1,14 @@
 import { ProblemNotFoundError } from "@algofight/error-handling";
 import { enqueueSubmissionJob } from "@algofight/queue";
-import { SubmissionInput, TestRunInput } from "../schema/submission.schema";
+import { SubmissionInput, TestRunInput, PracticeEvaluateInput } from "../schema/submission.schema";
 import { SubmissionRepository, ProblemRepository } from "@algofight/database";
 import { SubmissionStatus } from "@algofight/types";
-import { EvaluationService } from "@algofight/application";
+import { EvaluationService, SandboxExecutor } from "@algofight/application";
+import { logger } from "@algofight/logger";
 
 export class SubmissionController {
+    private readonly sandboxExecutor = new SandboxExecutor();
+
     constructor(
         private readonly submissionRepository: SubmissionRepository,
         private readonly problemRepository: ProblemRepository,
@@ -26,17 +29,84 @@ export class SubmissionController {
             code: body.code,
         });
 
-        await enqueueSubmissionJob({
-            submissionId: submission.id,
-            mode: "SUBMIT"
-        } as any);
-
+        // 🛡️ AF-002: Transition state to QUEUED *before* enqueuing into BullMQ
         await this.submissionRepository.updateStatus(
             submission.id,
             SubmissionStatus.QUEUED,
         );
 
+        try {
+            await enqueueSubmissionJob({
+                submissionId: submission.id,
+                mode: "SUBMIT"
+            } as any);
+        } catch (enqueueError: any) {
+            logger.error({ error: enqueueError.message, submissionId: submission.id }, "Failed to enqueue submission to BullMQ");
+            await this.submissionRepository.updateStatus(
+                submission.id,
+                SubmissionStatus.FINALIZED,
+            ).catch(() => {});
+            throw new Error(`Failed to enqueue submission: ${enqueueError.message}`);
+        }
+
         return submission;
+    }
+
+    async evaluatePractice(body: PracticeEvaluateInput) {
+        const problem = body.mode === "test"
+            ? await this.problemRepository.getProblemById(body.problemId)
+            : await this.problemRepository.getProblemWithAllTestCases(body.problemId);
+
+        if (!problem) throw new ProblemNotFoundError(body.problemId);
+
+        const testCases = problem.testCases || [];
+        if (testCases.length === 0) {
+            return {
+                passed: false,
+                output: "This problem has no test cases available to judge against yet.",
+                passedTestCases: 0,
+                totalTestCases: 0,
+                executionTime: 0,
+                verdict: "INTERNAL_ERROR",
+                testCaseResults: [],
+            };
+        }
+
+        try {
+            const result = await this.sandboxExecutor.execute({
+                submissionId: `practice-${Date.now()}`,
+                language: body.language,
+                code: body.code,
+                testCases: testCases.map((tc) => ({
+                    input: tc.input,
+                    expectedOutput: tc.expectedOutput,
+                })),
+                timeLimit: problem.timeLimit,
+                memoryLimit: problem.memoryLimit,
+            });
+
+            const passed = result.failedCount === 0;
+
+            return {
+                passed,
+                output: result.stdout || (passed ? "All test cases passed successfully!" : result.stderr || "Output mismatch."),
+                passedTestCases: result.passedCount,
+                totalTestCases: result.passedCount + result.failedCount,
+                executionTime: result.executionTime,
+                verdict: result.verdict || (passed ? "ACCEPTED" : "WRONG_ANSWER"),
+                testCaseResults: result.individualExecutions || [],
+            };
+        } catch (err: any) {
+            return {
+                passed: false,
+                output: `Execution error: ${err.message || "Failed to evaluate code"}`,
+                passedTestCases: 0,
+                totalTestCases: testCases.length,
+                executionTime: 0,
+                verdict: "SYSTEM_ERROR",
+                testCaseResults: [],
+            };
+        }
     }
 
     async getAllSubmission(requestingUserId?: string) {

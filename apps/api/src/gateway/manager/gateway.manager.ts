@@ -36,14 +36,19 @@ export class GatewayManager {
 
         let gateway = await this.registry.findByContextId(requestedContextId);
 
+        // 🛡️ AF-006: Prevent arbitrary in-memory gateway creation from unverified client headers
         if (!gateway) {
-            // Auto-provision contest/lab gateway on-demand if contextId is specified
+            gateway = await this.registry.findById(this.defaultGatewayId);
+        }
+
+        if (!gateway) {
+            // Failsafe: ensure default gateway exists
             gateway = await this.getOrCreateGateway({
-                gatewayId: `gw-${requestedContextId}`,
-                contextId: requestedContextId,
+                gatewayId: this.defaultGatewayId,
+                contextId: "ctx-default-global",
                 type: GatewayType.USER,
-                name: `Dynamic Gateway for ${requestedContextId}`,
-                capacity: 100,
+                name: "Default Public Gateway",
+                capacity: 1000,
                 policy: DEFAULT_GATEWAY_POLICY,
             });
         }

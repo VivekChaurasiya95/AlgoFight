@@ -13,11 +13,16 @@ export class BattleService {
     ) { }
 
     async createBattle(roomId: string): Promise<void> {
-        throw new Error("Not implemented");
+        if (this.battleRoomService) {
+            // Already created via battleRoomService
+            return;
+        }
     }
 
-    async startBattle(roomId: string): Promise<void> {
-        throw new Error("Not implemented");
+    async startBattle(roomId: string, hostId?: string): Promise<void> {
+        if (this.battleRoomService && hostId) {
+            await this.battleRoomService.startBattle(roomId, hostId);
+        }
     }
 
     async finishBattle(roomId: string, reason: string, winnerId?: string,

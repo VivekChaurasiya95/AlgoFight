@@ -141,6 +141,7 @@ function Signup() {
           >
             <form className="Signup-Container" onSubmit={handleSignUpSubmit}>
               <div className="Signup-Header">
+                <Link to="/" style={{ color: '#00f0ff', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '8px', display: 'inline-block' }}>← Back to Overview</Link>
                 <h1>CREATE ACCOUNT</h1>
                 <span className="auth-subtitle">SELECT YOUR IDENTITY & ENTER THE ARENA</span>
               </div>

@@ -165,4 +165,24 @@ export class PrismaUserRepository implements UserRepository {
             orderBy: { rating: "desc" },
         });
     }
+
+    async getPracticeProgress(userId: string): Promise<{ practiceSubmissionCount: number; practiceSolvedProblemIds: string[] }> {
+        const submissions = await prisma.submission.findMany({
+            where: { userId },
+            select: { problemId: true, verdict: true },
+        });
+
+        const solvedProblemIds = Array.from(
+            new Set(
+                submissions
+                    .filter((s) => s.verdict === "ACCEPTED")
+                    .map((s) => s.problemId)
+            )
+        );
+
+        return {
+            practiceSubmissionCount: submissions.length,
+            practiceSolvedProblemIds: solvedProblemIds,
+        };
+    }
 }

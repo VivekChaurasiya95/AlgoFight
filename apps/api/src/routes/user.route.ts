@@ -1,18 +1,19 @@
-// apps/api/src/routes/user.route.ts
 import { FastifyInstance } from "fastify";
 import { UserController } from "../controllers/user.controller";
 import { AvailablePlayersQuerySchema } from "../validators/user.validator";
+import { requireAuth } from "../plugins/auth.plugin";
 
 const userController = new UserController();
 
 export async function userRoutes(app: FastifyInstance) {
-    // 1. Sync / Create user
-    app.post("/users", async (req) => {
+    // 1. Sync / Create user (Authenticated)
+    app.post("/users", { preHandler: [requireAuth] }, async (req) => {
         const body = req.body as any;
+        const authenticatedId = req.user!.id;
         return userController.syncUser({
-            id: body.uid || body.id,
-            email: body.email,
-            username: body.username,
+            id: authenticatedId,
+            email: req.user?.email || body.email,
+            username: req.user?.username || body.username,
             displayName: body.displayName,
             githubUrl: body.githubUrl,
             linkedinUrl: body.linkedinUrl,

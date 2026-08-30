@@ -99,6 +99,7 @@ function Login() {
           >
             <form className="Login-Container" onSubmit={handleSubmit}>
               <div className="Login-Header">
+                <Link to="/" style={{ color: '#00f0ff', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '8px', display: 'inline-block' }}>← Back to Overview</Link>
                 <h2>LOGIN TO ALGOFIGHT</h2>
                 <span className="auth-subtitle">ENTER THE ARENA WITH YOUR CREDENTIALS</span>
               </div>

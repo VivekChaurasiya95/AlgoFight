@@ -1,0 +1,76 @@
+name: AlgoFight CI / CD Verification
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  verify:
+    name: Typecheck, Test & Security Audit
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: algofight
+          POSTGRES_PASSWORD: algofightpassword
+          POSTGRES_DB: algofight
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 11.4.0
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @algofight/database exec prisma generate
+
+      - name: Push Database Schema
+        run: pnpm --filter @algofight/database exec prisma db push --accept-data-loss
+        env:
+          DATABASE_URL: "postgresql://algofight:algofightpassword@localhost:5432/algofight?schema=public"
+
+      - name: Monorepo Typecheck
+        run: pnpm --filter=!frontend -r exec tsc --noEmit
+
+      - name: Security & Regression Audit Suite
+        run: node security-audit/test-suite.mjs
+        env:
+          DATABASE_URL: "postgresql://algofight:algofightpassword@localhost:5432/algofight?schema=public"
+          REDIS_URL: "redis://localhost:6379"
+          PORT: 3000
+          WS_PORT: 4001
+          JWT_SECRET: "test-secret-key-at-least-32-chars-long"
+          GATEWAY_CLUSTER_SECRET: "test-cluster-secret-key"
+          ADMIN_SECRET_KEY: "test-admin-secret-key"

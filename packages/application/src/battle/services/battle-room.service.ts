@@ -148,14 +148,23 @@ export class BattleRoomService {
             throw new Error("Room not found");
         }
 
-        // Rank participants: Solved first (fastest solve), then highest score
+        // 🛡️ AF-015: Deterministic battle ranking
+        // 1. Solved first (earliest solve timestamp)
+        // 2. Highest score/points
+        // 3. Lowest user ID tiebreak (deterministic)
         let sorted = [...room.participants].sort((a, b) => {
             if (a.solvedAt && b.solvedAt) {
-                return a.solvedAt.getTime() - b.solvedAt.getTime();
+                const timeDiff = a.solvedAt.getTime() - b.solvedAt.getTime();
+                if (timeDiff !== 0) return timeDiff;
             }
-            if (a.solvedAt) return -1;
-            if (b.solvedAt) return 1;
-            return b.score - a.score;
+            if (a.solvedAt && !b.solvedAt) return -1;
+            if (!a.solvedAt && b.solvedAt) return 1;
+
+            if (b.score !== a.score) {
+                return b.score - a.score;
+            }
+
+            return a.userId.localeCompare(b.userId);
         });
         
         if (forfeitedUserId) {
@@ -166,7 +175,7 @@ export class BattleRoomService {
             }
         }
 
-        // Persist ranks (1st, 2nd, ...)
+        // Persist authoritative ranks in PostgreSQL
         for (let i = 0; i < sorted.length; i++) {
             await this.battleRoomRepository.updateParticipantRank(roomId, sorted[i].userId, i + 1);
         }

@@ -16,6 +16,7 @@ export interface GatewayPolicy {
     readonly enableIpJail: boolean;
     readonly maxFailedAuthBeforeJail: number; // e.g. 10 attempts
     readonly jailDurationSeconds: number; // e.g. 60 seconds
+    readonly sessionTtlSeconds?: number;
 }
 
 export const DEFAULT_GATEWAY_POLICY: GatewayPolicy = {
@@ -35,4 +36,5 @@ export const DEFAULT_GATEWAY_POLICY: GatewayPolicy = {
     enableIpJail: true,
     maxFailedAuthBeforeJail: 10,
     jailDurationSeconds: 60,
+    sessionTtlSeconds: 300,
 };

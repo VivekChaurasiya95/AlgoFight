@@ -16,7 +16,7 @@ export async function battleRoutes(app: FastifyInstance) {
     // 1. Create room
     app.post("/battle/rooms", { preHandler: [requireAuth] }, async (req) => {
         const body = CreateBattleRoomSchema.parse(req.body);
-        const hostId = req.user?.id || body.hostId;
+        const hostId = req.user!.id;
         return battleController.createRoom(
             hostId,
             body.maxPlayers,
@@ -32,19 +32,17 @@ export async function battleRoutes(app: FastifyInstance) {
         return battleController.getRoom(idOrCode);
     });
 
-    // 3. Join room
+    // 3. Join room (Authenticated)
     app.post("/battle/rooms/:idOrCode/join", { preHandler: [requireAuth] }, async (req) => {
         const { idOrCode } = req.params as { idOrCode: string };
-        const body = JoinRoomSchema.parse(req.body);
-        const userId = req.user?.id || body.userId;
+        const userId = req.user!.id;
         return battleController.joinRoom(idOrCode, userId);
     });
 
-    // 4. Leave room
+    // 4. Leave room (Authenticated)
     app.post("/battle/rooms/:id/leave", { preHandler: [requireAuth] }, async (req) => {
         const { id } = req.params as { id: string };
-        const body = LeaveRoomSchema.parse(req.body);
-        const userId = req.user?.id || body.userId;
+        const userId = req.user!.id;
         return battleController.leaveRoom(id, userId);
     });
 
@@ -52,15 +50,15 @@ export async function battleRoutes(app: FastifyInstance) {
     app.post("/battle/rooms/:id/kick", { preHandler: [requireAuth] }, async (req) => {
         const { id } = req.params as { id: string };
         const body = KickPlayerSchema.parse(req.body);
-        const hostId = req.user?.id || body.hostId;
+        const hostId = req.user!.id;
         return battleController.kickPlayer(id, hostId, body.targetUserId);
     });
 
-    // 5. Toggle Ready status
+    // 5. Toggle Ready status (Authenticated)
     app.post("/battle/rooms/:id/ready", { preHandler: [requireAuth] }, async (req) => {
         const { id } = req.params as { id: string };
         const body = ReadyRoomSchema.parse(req.body);
-        const userId = req.user?.id || body.userId;
+        const userId = req.user!.id;
         return battleController.setPlayerReady(id, userId, body.isReady);
     });
 
@@ -68,11 +66,11 @@ export async function battleRoutes(app: FastifyInstance) {
     app.post("/battle/rooms/:id/start", { preHandler: [requireAuth] }, async (req) => {
         const { id } = req.params as { id: string };
         const body = StartBattleSchema.parse(req.body);
-        const hostId = req.user?.id || body.hostId;
+        const hostId = req.user!.id;
         return battleController.startBattle(id, hostId, body.problemId);
     });
 
-    // 7. Finish Battle
+    // 7. Finish Battle (Authenticated participant / host / admin)
     app.post("/battle/rooms/:id/finish", { preHandler: [requireAuth] }, async (req) => {
         const { id } = req.params as { id: string };
         return battleController.finishBattle(id);
