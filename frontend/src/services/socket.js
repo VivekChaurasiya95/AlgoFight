@@ -1,5 +1,20 @@
 // frontend/src/services/socket.js
-const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:4001";
+const getWsUrl = () => {
+  if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL;
+  if (typeof window !== "undefined") {
+    if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+      const apiUrl = import.meta.env.VITE_API_URL || "";
+      if (apiUrl) {
+        return apiUrl.replace(/^http/, "ws");
+      }
+      return window.location.protocol === "https:"
+        ? `wss://${window.location.host}`
+        : `ws://${window.location.host}`;
+    }
+  }
+  return "ws://localhost:4001";
+};
+const WS_URL = getWsUrl();
 
 class BrowserSocketClient {
   constructor() {

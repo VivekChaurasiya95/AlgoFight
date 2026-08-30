@@ -39,4 +39,19 @@ export async function adminRoutes(app: FastifyInstance) {
             limit: query.limit ? parseInt(query.limit, 10) : 50,
         });
     });
+    // 4. Proxy for Linux Telemetry Health (Bypasses Ad-Blockers)
+    app.get("/admin/linux-status", async (request, reply) => {
+        const rawTelemetryUrl = process.env.LINUX_TELEMETRY_URL || "http://localhost:8000";
+        const linuxBaseUrl = rawTelemetryUrl.replace(/\/dashboard\/?$/, "").replace(/\/$/, "");
+        
+        try {
+            const res = await fetch(`${linuxBaseUrl}/healthz`);
+            if (res.ok) {
+                return { status: "ONLINE" };
+            }
+            return reply.status(502).send({ status: "OFFLINE" });
+        } catch (err) {
+            return reply.status(502).send({ status: "OFFLINE" });
+        }
+    });
 }

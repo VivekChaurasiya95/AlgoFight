@@ -175,7 +175,7 @@ export async function fetchAvailablePlayers({ search = "", status = "", limit = 
 
 export async function fetchUserNotifications(userId) {
   if (!userId) return { notifications: [], unreadCount: 0, total: 0 };
-  return requestJson(`/api/notifications?userId=${encodeURIComponent(userId)}`);
+  return requestJson(`/api/notifications?userId=${encodeURIComponent(userId)}`, { includeAuth: true });
 }
 
 export async function markNotificationAsRead(userId, notificationId) {
@@ -184,6 +184,7 @@ export async function markNotificationAsRead(userId, notificationId) {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId }),
+    includeAuth: true
   });
 }
 
@@ -193,6 +194,7 @@ export async function markAllNotificationsAsRead(userId) {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId }),
+    includeAuth: true
   });
 }
 
@@ -202,6 +204,7 @@ export async function clearUserNotifications(userId) {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId }),
+    includeAuth: true
   });
 }
 
