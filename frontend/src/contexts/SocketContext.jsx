@@ -3,6 +3,7 @@ import { useAuth } from "./AuthContext";
 import { useUserStore } from "../store/useUserStore";
 import { useGameStore } from "../store/useGameStore";
 import { useGlobalStore } from "../store/useGlobalStore";
+import { WS_URL } from "../services/socket";
 
 const SocketContext = createContext(null);
 
@@ -30,7 +31,7 @@ export function SocketProvider({ children }) {
       return;
     }
 
-    const socketUrl = import.meta.env.VITE_WS_URL || "ws://localhost:4001";
+    const socketUrl = WS_URL;
 
     function connect() {
       if (isUnmountedRef.current) return;

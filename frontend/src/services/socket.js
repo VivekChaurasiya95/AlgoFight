@@ -1,20 +1,30 @@
 // frontend/src/services/socket.js
-const getWsUrl = () => {
-  if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL;
-  if (typeof window !== "undefined") {
-    if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-      const apiUrl = import.meta.env.VITE_API_URL || "";
-      if (apiUrl) {
-        return apiUrl.replace(/^http/, "ws");
-      }
-      return window.location.protocol === "https:"
-        ? `wss://${window.location.host}`
-        : `ws://${window.location.host}`;
+export const getWsUrl = () => {
+  const envWs = import.meta.env.VITE_WS_URL;
+  const isLocal = typeof window !== "undefined" && 
+      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+  if (envWs) {
+    if (!isLocal && (envWs.includes("localhost") || envWs.includes("127.0.0.1"))) {
+      // Ignore local env var in production
+    } else {
+      return envWs;
     }
+  }
+
+  if (typeof window !== "undefined" && !isLocal) {
+    const apiUrl = import.meta.env.VITE_API_URL || "";
+    if (apiUrl && !apiUrl.includes("localhost") && !apiUrl.includes("127.0.0.1")) {
+      return apiUrl.replace(/^http/, "ws");
+    }
+    return window.location.protocol === "https:"
+      ? `wss://${window.location.host}`
+      : `ws://${window.location.host}`;
   }
   return "ws://localhost:4001";
 };
-const WS_URL = getWsUrl();
+
+export const WS_URL = getWsUrl();
 
 class BrowserSocketClient {
   constructor() {
