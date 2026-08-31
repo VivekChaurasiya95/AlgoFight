@@ -21,12 +21,8 @@ import {
 import { requestJson } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext";
+import { WS_URL } from "../../services/socket";
 import "./RoomLobby.css";
-
-const rawWsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:4001";
-const WS_URL = rawWsUrl.startsWith("http")
-    ? rawWsUrl.replace(/^http/, "ws")
-    : rawWsUrl;
 
 export default function RoomLobby() {
     const { roomCode } = useParams();
