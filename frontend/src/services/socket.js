@@ -15,13 +15,14 @@ export const getWsUrl = () => {
   if (typeof window !== "undefined" && !isLocal) {
     const apiUrl = import.meta.env.VITE_API_URL || "";
     if (apiUrl && !apiUrl.includes("localhost") && !apiUrl.includes("127.0.0.1")) {
-      return apiUrl.replace(/^http/, "ws");
+      const baseWsUrl = apiUrl.replace(/^http/, "ws");
+      return baseWsUrl.endsWith("/ws") ? baseWsUrl : `${baseWsUrl}/ws`;
     }
     return window.location.protocol === "https:"
-      ? `wss://${window.location.host}`
-      : `ws://${window.location.host}`;
+      ? `wss://${window.location.host}/ws`
+      : `ws://${window.location.host}/ws`;
   }
-  return "ws://localhost:4001";
+  return "ws://localhost:3000/ws";
 };
 
 export const WS_URL = getWsUrl();
@@ -32,9 +33,20 @@ class BrowserSocketClient {
     this.listeners = new Map();
     this.connected = false;
     this.auth = {};
+    
+    // Reconnection State
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 6; // Max 30s roughly
+    this.reconnectTimeout = null;
+    this.intentionalDisconnect = false;
+
+    // Heartbeat State
+    this.pingInterval = null;
   }
 
   connect() {
+    this.intentionalDisconnect = false;
+    
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       if (this.ws.readyState === WebSocket.OPEN && (this.auth?.uid || this.auth?.userId)) {
         this.emit("auth", {
@@ -50,6 +62,8 @@ class BrowserSocketClient {
 
       this.ws.onopen = () => {
         this.connected = true;
+        this.reconnectAttempts = 0; // Reset on successful connection
+        this.startHeartbeat();
         this.trigger("connect");
 
         if (this.auth?.uid || this.auth?.userId) {
@@ -62,6 +76,9 @@ class BrowserSocketClient {
 
       this.ws.onmessage = (event) => {
         try {
+          // Backend sends pong, we just ignore it as it means the connection is alive
+          if (event.data === "pong") return;
+          
           const raw = JSON.parse(event.data);
           const eventName = raw.event || raw.action || raw.type;
           if (eventName) {
@@ -77,7 +94,9 @@ class BrowserSocketClient {
 
       this.ws.onclose = () => {
         this.connected = false;
+        this.stopHeartbeat();
         this.trigger("disconnect");
+        this.handleReconnect();
       };
 
       this.ws.onerror = (err) => {
@@ -85,6 +104,51 @@ class BrowserSocketClient {
       };
     } catch (err) {
       this.trigger("connect_error", err);
+      this.handleReconnect();
+    }
+  }
+
+  handleReconnect() {
+    if (this.intentionalDisconnect) return;
+    
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error("[WebSocket] Max reconnect attempts reached. Please refresh the page.");
+      return;
+    }
+
+    // Exponential backoff: 1s, 2s, 4s, 8s, 16s, 30s
+    const baseDelay = Math.pow(2, this.reconnectAttempts) * 1000;
+    // Cap at 30 seconds
+    const cappedDelay = Math.min(baseDelay, 30000);
+    // Add 0-500ms jitter to prevent thundering herd
+    const jitter = Math.floor(Math.random() * 500);
+    const delay = cappedDelay + jitter;
+
+    this.reconnectAttempts++;
+
+    console.log(`[WebSocket] Disconnected. Reconnecting in ${delay}ms (Attempt ${this.reconnectAttempts})...`);
+    
+    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+    this.reconnectTimeout = setTimeout(() => {
+      this.connect();
+    }, delay);
+  }
+
+  startHeartbeat() {
+    this.stopHeartbeat();
+    this.pingInterval = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        // We can just send a simple ping message. Fastify/ws allows custom ping payload or standard frame.
+        // We will just send a JSON stringified ping event.
+        this.ws.send(JSON.stringify({ action: "ping", type: "ping" }));
+      }
+    }, 25000); // 25s ping
+  }
+
+  stopHeartbeat() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
     }
   }
 
@@ -107,7 +171,8 @@ class BrowserSocketClient {
   }
 
   emit(action, data = {}) {
-    const payload = JSON.stringify({ action, ...data });
+    // Ensure all emitted messages wrap data in standard format
+    const payload = JSON.stringify({ action, type: action, ...data });
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(payload);
     } else {
@@ -136,6 +201,10 @@ class BrowserSocketClient {
   }
 
   disconnect() {
+    this.intentionalDisconnect = true;
+    this.stopHeartbeat();
+    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+    
     if (this.ws) {
       this.ws.close();
       this.ws = null;
