@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { PrismaProblemRepository } from "@algofight/database";
 import { ProblemController } from "../controllers/problem.controller";
 import { problemSchema, ProblemInput } from "../schema/problem.schema";
-import { requireRole } from "../plugins/auth.plugin";
+import { requireRole, requireAuth } from "../plugins/auth.plugin";
 
 const repository = new PrismaProblemRepository();
 const controller = new ProblemController(repository);
@@ -54,20 +54,30 @@ export async function problemRoutes(app: FastifyInstance) {
     });
 
     // 5. Practice Progress Record (Persisted in PostgreSQL - AF-021)
-    app.post("/users/:uid/practice-progress", async (request) => {
-        const { uid } = request.params as { uid: string };
-        const body = request.body as any;
-        const userRepo = new (await import("@algofight/database")).PrismaUserRepository();
-        const progress = await userRepo.getPracticeProgress(uid);
+    app.post(
+        "/users/:uid/practice-progress",
+        { preHandler: [requireAuth] },
+        async (request, reply) => {
+            const { uid } = request.params as { uid: string };
+            if (request.user?.id !== uid && request.user?.role !== "ADMIN") {
+                return reply.status(403).send({
+                    error: "FORBIDDEN",
+                    message: "Cannot modify practice progress of another user.",
+                });
+            }
+            const body = request.body as any;
+            const userRepo = new (await import("@algofight/database")).PrismaUserRepository();
+            const progress = await userRepo.getPracticeProgress(uid);
 
-        return {
-            newlySolved: Boolean(body.passed),
-            progress: {
-                practiceSubmissionCount: progress.practiceSubmissionCount + (body.passed ? 1 : 0),
-                practiceSolvedProblemIds: body.passed && !progress.practiceSolvedProblemIds.includes(body.problemId)
-                    ? [...progress.practiceSolvedProblemIds, body.problemId]
-                    : progress.practiceSolvedProblemIds,
-            },
-        };
-    });
+            return {
+                newlySolved: Boolean(body.passed),
+                progress: {
+                    practiceSubmissionCount: progress.practiceSubmissionCount + (body.passed ? 1 : 0),
+                    practiceSolvedProblemIds: body.passed && !progress.practiceSolvedProblemIds.includes(body.problemId)
+                        ? [...progress.practiceSolvedProblemIds, body.problemId]
+                        : progress.practiceSolvedProblemIds,
+                },
+            };
+        },
+    );
 }

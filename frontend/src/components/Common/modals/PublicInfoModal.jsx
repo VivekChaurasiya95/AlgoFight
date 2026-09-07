@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -12,14 +12,15 @@ import {
   faFileContract
 } from '@fortawesome/free-solid-svg-icons';
 import logoIcon from '../../../assets/algofight-logo.png';
-import AboutContent from '../../About/AboutContent';
-import BlogContent from '../../Blog/BlogContent';
-import CareersContent from '../../Careers/CareersContent';
-import HelpContent from '../../Help/HelpContent';
-import ContactContent from '../../Contact/ContactContent';
-import PrivacyContent from '../../Legal/PrivacyContent';
-import TermsContent from '../../Legal/TermsContent';
 import './PublicInfoModal.css';
+
+const AboutContent = lazy(() => import('../../About/AboutContent'));
+const BlogContent = lazy(() => import('../../Blog/BlogContent'));
+const CareersContent = lazy(() => import('../../Careers/CareersContent'));
+const HelpContent = lazy(() => import('../../Help/HelpContent'));
+const ContactContent = lazy(() => import('../../Contact/ContactContent'));
+const PrivacyContent = lazy(() => import('../../Legal/PrivacyContent'));
+const TermsContent = lazy(() => import('../../Legal/TermsContent'));
 
 const TABS_CONFIG = {
   about: {
@@ -219,7 +220,11 @@ export default function PublicInfoModal({
           </div>
 
           {/* Scrollable Body Content */}
-          <div className="public-modal-body">{renderContent()}</div>
+          <div className="public-modal-body">
+            <Suspense fallback={<div style={{ padding: '48px 24px', textAlign: 'center', color: '#00e5ff', letterSpacing: '0.12em', fontSize: '0.85rem' }}>LOADING MODULE DATA...</div>}>
+              {renderContent()}
+            </Suspense>
+          </div>
 
           {/* Modal Footer Status Bar */}
           <div className="public-modal-footer">

@@ -7,8 +7,9 @@ const notificationController = new NotificationController();
 
 export async function notificationRoutes(app: FastifyInstance) {
     // 0. Get active system broadcast announcements (Public/Auth for Flash Banner)
-    app.get("/notifications/active-broadcasts", async () => {
+    app.get("/notifications/active-broadcasts", async (_req, reply) => {
         const broadcasts = await SystemBroadcastService.getActiveBroadcasts();
+        reply.header("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
         return { broadcasts };
     });
 

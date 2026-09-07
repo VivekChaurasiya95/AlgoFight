@@ -282,7 +282,7 @@ export class AdminController {
         });
     }
 
-    async getAuditLogs(query: { category?: string; severity?: string; limit?: number; search?: string }) {
+    async getAuditLogs(query: { category?: string; severity?: string; method?: string; limit?: number; search?: string }) {
         return auditService.getLogs(query);
     }
 

@@ -104,9 +104,13 @@ export class SubmissionController {
             };
         }
 
-        let targetRuntimeUrl = body.targetRuntimeUrl;
-        if (!targetRuntimeUrl && body.runtimePort) {
-            targetRuntimeUrl = `http://localhost:${body.runtimePort}`;
+        let targetRuntimeUrl: string | undefined = undefined;
+        if (process.env.NODE_ENV !== "production") {
+            if (body.targetRuntimeUrl && (body.targetRuntimeUrl.startsWith("http://localhost:") || body.targetRuntimeUrl.startsWith("http://127.0.0.1:"))) {
+                targetRuntimeUrl = body.targetRuntimeUrl;
+            } else if (body.runtimePort && body.runtimePort > 0 && body.runtimePort < 65536) {
+                targetRuntimeUrl = `http://localhost:${body.runtimePort}`;
+            }
         }
 
         try {
@@ -125,6 +129,20 @@ export class SubmissionController {
 
             const passed = result.failedCount === 0;
 
+            // 🔐 Mask hidden test case input/output so secrets never leak to the client
+            const sanitizedTestCaseResults = (result.individualExecutions || []).map((exec: any, idx: number) => {
+                const isHidden = Boolean(testCases[idx]?.isHidden);
+                if (isHidden) {
+                    return {
+                        ...exec,
+                        input: "[Hidden Test Case]",
+                        expectedOutput: "[Hidden Expected Output]",
+                        actualOutput: exec.passed ? "[Hidden Output Match]" : "[Hidden Output Mismatch]",
+                    };
+                }
+                return exec;
+            });
+
             return {
                 passed,
                 output: result.stdout || (passed ? "All test cases passed successfully!" : result.stderr || "Output mismatch."),
@@ -132,7 +150,7 @@ export class SubmissionController {
                 totalTestCases: result.passedCount + result.failedCount,
                 executionTime: result.executionTime,
                 verdict: result.verdict || (passed ? "ACCEPTED" : "WRONG_ANSWER"),
-                testCaseResults: result.individualExecutions || [],
+                testCaseResults: sanitizedTestCaseResults,
             };
         } catch (err: any) {
             return {
@@ -189,9 +207,13 @@ export class SubmissionController {
     }
 
     async test(body: TestRunInput) {
-        let targetRuntimeUrl = body.targetRuntimeUrl;
-        if (!targetRuntimeUrl && body.runtimePort) {
-            targetRuntimeUrl = `http://localhost:${body.runtimePort}`;
+        let targetRuntimeUrl: string | undefined = undefined;
+        if (process.env.NODE_ENV !== "production") {
+            if (body.targetRuntimeUrl && (body.targetRuntimeUrl.startsWith("http://localhost:") || body.targetRuntimeUrl.startsWith("http://127.0.0.1:"))) {
+                targetRuntimeUrl = body.targetRuntimeUrl;
+            } else if (body.runtimePort && body.runtimePort > 0 && body.runtimePort < 65536) {
+                targetRuntimeUrl = `http://localhost:${body.runtimePort}`;
+            }
         }
 
         const evaluationService = new EvaluationService();
@@ -213,9 +235,13 @@ export class SubmissionController {
      */
     async executeDirect(body: ExecuteDirectInput) {
         const poolManager = RuntimePoolManager.getInstance();
-        let targetRuntimeUrl = body.targetRuntimeUrl;
-        if (!targetRuntimeUrl && body.runtimePort) {
-            targetRuntimeUrl = `http://localhost:${body.runtimePort}`;
+        let targetRuntimeUrl: string | undefined = undefined;
+        if (process.env.NODE_ENV !== "production") {
+            if (body.targetRuntimeUrl && (body.targetRuntimeUrl.startsWith("http://localhost:") || body.targetRuntimeUrl.startsWith("http://127.0.0.1:"))) {
+                targetRuntimeUrl = body.targetRuntimeUrl;
+            } else if (body.runtimePort && body.runtimePort > 0 && body.runtimePort < 65536) {
+                targetRuntimeUrl = `http://localhost:${body.runtimePort}`;
+            }
         }
 
         let allocatedSlot = false;

@@ -17,6 +17,7 @@ import { battleRoutes } from "./routes/battle.route";
 import { matchmakingRoutes } from "./routes/matchmaking.route";
 import { adminRoutes } from "./routes/admin.route";
 import { notificationRoutes } from "./routes/notification.route";
+import { analyticsRoutes } from "./routes/analytics.route";
 
 const app = fastify({
     bodyLimit: 1048576, // 1 MB Request Body Limit
@@ -24,21 +25,28 @@ const app = fastify({
 
 const start = async () => {
     try {
-        // 1. CORS with dynamic origin matching for Vercel & Production
+        // 1. CORS with secure origin matching
+        const allowedProdDomains = [
+            "https://algofight-arena.vercel.app",
+            "https://algofight.com",
+            "https://www.algofight.com",
+        ];
+
         await app.register(cors, {
             origin: (origin, cb) => {
                 if (!origin) return cb(null, true);
                 
                 const isAllowed =
                     !config.isProduction ||
-                    origin.endsWith(".vercel.app") ||
+                    allowedProdDomains.includes(origin) ||
+                    config.allowedOrigins.some(o => origin === o || origin.startsWith(o)) ||
                     origin.includes("localhost") ||
-                    origin.includes("127.0.0.1") ||
-                    config.allowedOrigins.some(o => origin.startsWith(o) || o === origin);
+                    origin.includes("127.0.0.1");
 
                 cb(null, isAllowed);
             },
             credentials: true,
+            maxAge: 86400, // Cache preflight checks for 24 hours to eliminate repetitive OPTIONS spam
             methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             allowedHeaders: [
                 "Content-Type",
@@ -52,7 +60,23 @@ const start = async () => {
             exposedHeaders: ["x-request-id", "x-gateway-id", "x-context-id", "x-gateway-latency-ms"],
         });
 
-        // 2. Gateway Plugin (Logical Admission, Filtering, Identity, Rate Limiter)
+        // Parse text/plain bodies (used by lightweight telemetry beacons to bypass CORS preflight)
+        app.addContentTypeParser(["text/plain"], { parseAs: "string" }, (_req, body, done) => {
+            done(null, body);
+        });
+
+        // 2. Global Rate Limiter Plugin
+        await app.register(rateLimit, {
+            max: 120,
+            timeWindow: "1 minute",
+            errorResponseBuilder: (_req, context) => ({
+                statusCode: 429,
+                error: "TOO_MANY_REQUESTS",
+                message: `Rate limit exceeded. Try again in ${Math.ceil(context.ttl / 1000)} seconds.`,
+            }),
+        });
+
+        // 3. Gateway Plugin (Logical Admission, Filtering, Identity, Rate Limiter)
         await app.register(gatewayPlugin);
 
         // 3. Auth Plugin (Authorization & RBAC)
@@ -77,6 +101,7 @@ const start = async () => {
             instance.register(matchmakingRoutes);
             instance.register(adminRoutes);
             instance.register(notificationRoutes);
+            instance.register(analyticsRoutes);
         };
 
         // Register both under /api and root

@@ -1,6 +1,7 @@
 // apps/websocket/src/handlers/socket-handler.ts
 import crypto from "crypto";
 import { WebSocket } from "ws";
+import { config } from "@algofight/config";
 import { syncBattleToTelemetry } from "../events/battle.events";
 import { ConnectionManager } from "../server/connection-manager";
 import { logger } from "@algofight/logger";
@@ -258,7 +259,14 @@ export class SocketHandler {
                         }
                     }
 
-                    // Robust user identity resolution
+                    // 🛡️ Security: Enforce cryptographic verification in production to prevent identity spoofing
+                    const isProd = config.isProduction || process.env.NODE_ENV === "production";
+                    if (!verifiedUid && isProd) {
+                        this.send(socket, "error", "Authentication failed: cryptographically verified token required in production.");
+                        break;
+                    }
+
+                    // Robust user identity resolution (falls back only in development/testing)
                     const userId = verifiedUid || data.userId || data.uid;
                     const username = verifiedUsername || data.username || "Player";
 

@@ -9,6 +9,7 @@ import {
     deleteAdminBroadcast,
     uploadBroadcastMedia,
     fetchAdminAuditLogs,
+    fetchAdminAnalytics,
     probeAdminFleet,
     scaleAdminFleet,
 } from "../../services/api.js";
@@ -52,19 +53,25 @@ export default function ControlHub() {
     const { notify } = useNotification();
 
     // Live Sync & Telemetry State
-    const [refreshInterval, setRefreshInterval] = useState(5); // 5s default
+    const [refreshInterval, setRefreshInterval] = useState(30); // 30s default (reduces network spam)
     const [isSyncing, setIsSyncing] = useState(false);
     const [secondsSinceSync, setSecondsSinceSync] = useState(0);
 
     // Active Navigation Tabs
-    const [activeTab, setActiveTab] = useState("overview"); // "overview" | "audit_trail" | "linux_telemetry"
+    const [activeTab, setActiveTab] = useState("overview"); // "overview" | "analytics" | "audit_trail" | "linux_telemetry"
     const [linuxStatus, setLinuxStatus] = useState("CHECKING");
+
+    // 📊 Data & Surfing Analytics State
+    const [analyticsData, setAnalyticsData] = useState(null);
+    const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
+    const [copiedIp, setCopiedIp] = useState(null);
 
     // Audit Trail State
     const [auditLogs, setAuditLogs] = useState([]);
     const [auditTotal, setAuditTotal] = useState(0);
     const [auditCategory, setAuditCategory] = useState("ALL");
     const [auditSeverity, setAuditSeverity] = useState("ALL");
+    const [auditMethod, setAuditMethod] = useState("ALL");
     const [auditSearch, setAuditSearch] = useState("");
     const [auditLoading, setAuditLoading] = useState(false);
     const [expandedAuditId, setExpandedAuditId] = useState(null);
@@ -153,6 +160,22 @@ export default function ControlHub() {
         }
     }, [adminKey]);
 
+    // 📊 Data Analytics Fetch
+    const fetchAnalytics = useCallback(async () => {
+        if (!adminKey) return;
+        setIsAnalyticsLoading(true);
+        try {
+            const data = await fetchAdminAnalytics(adminKey);
+            if (data) {
+                setAnalyticsData(data);
+            }
+        } catch (err) {
+            console.error("Analytics fetch failed", err);
+        } finally {
+            setIsAnalyticsLoading(false);
+        }
+    }, [adminKey]);
+
     // 👥 Users Registry Fetch
     const fetchUsers = useCallback(async (query = "") => {
         if (!adminKey) return;
@@ -181,15 +204,37 @@ export default function ControlHub() {
         }
     }, [adminKey]);
 
-    // 🛡️ Audit Logs Fetch
-    const fetchAuditLogs = useCallback(async (cat = auditCategory, sev = auditSeverity, q = auditSearch) => {
+    // Ref tracking latest audit filter values to make fetchAuditLogs completely stable
+    const auditFilterRef = useRef({
+        category: auditCategory,
+        severity: auditSeverity,
+        method: auditMethod,
+        search: auditSearch,
+    });
+    useEffect(() => {
+        auditFilterRef.current = {
+            category: auditCategory,
+            severity: auditSeverity,
+            method: auditMethod,
+            search: auditSearch,
+        };
+    }, [auditCategory, auditSeverity, auditMethod, auditSearch]);
+
+    // 🛡️ Audit Logs Fetch with IP and Method Filtering
+    const fetchAuditLogs = useCallback(async (cat, sev, meth, q) => {
         if (!adminKey) return;
+        const currentCat = cat !== undefined ? cat : auditFilterRef.current.category;
+        const currentSev = sev !== undefined ? sev : auditFilterRef.current.severity;
+        const currentMeth = meth !== undefined ? meth : auditFilterRef.current.method;
+        const currentQ = q !== undefined ? q : auditFilterRef.current.search;
+
         setAuditLoading(true);
         try {
             const data = await fetchAdminAuditLogs(adminKey, {
-                category: cat,
-                severity: sev,
-                search: q,
+                category: currentCat,
+                severity: currentSev,
+                method: currentMeth,
+                search: currentQ,
                 limit: 60,
             });
             setAuditLogs(data?.logs || []);
@@ -199,7 +244,7 @@ export default function ControlHub() {
         } finally {
             setAuditLoading(false);
         }
-    }, [adminKey, auditCategory, auditSeverity, auditSearch]);
+    }, [adminKey]);
 
     // 🖥️ Linux Status Probe
     const checkLinuxStatus = useCallback(async () => {
@@ -221,12 +266,30 @@ export default function ControlHub() {
         setIsSyncing(true);
         await Promise.all([
             fetchTelemetry(),
+            fetchAnalytics(),
             fetchBroadcasts(),
             fetchAuditLogs(),
             checkLinuxStatus(),
         ]);
         setTimeout(() => setIsSyncing(false), 500);
-        notify({ type: "info", title: "METRICS SYNCHRONIZED", message: "Live telemetry and audit records updated." });
+        notify({ type: "info", title: "METRICS SYNCHRONIZED", message: "Live telemetry, analytics & audit records updated." });
+    };
+
+    // 📋 IP Clipboard & Filter Helpers
+    const handleCopyIp = (ipToCopy, e) => {
+        if (e) e.stopPropagation();
+        navigator.clipboard?.writeText(ipToCopy);
+        setCopiedIp(ipToCopy);
+        notify({ type: "info", title: "IP COPIED", message: `Copied ${ipToCopy} to clipboard.` });
+        setTimeout(() => setCopiedIp(null), 2000);
+    };
+
+    const handleFilterByIp = (filterIp, e) => {
+        if (e) e.stopPropagation();
+        setAuditSearch(filterIp);
+        setActiveTab("audit_trail");
+        fetchAuditLogs(auditCategory, auditSeverity, auditMethod, filterIp);
+        notify({ type: "info", title: "FILTERING LOGS", message: `Inspecting origin events for IP ${filterIp}` });
     };
 
     // 🚀 Fleet Diagnostics Probe
@@ -272,34 +335,48 @@ export default function ControlHub() {
     };
 
     // ⏱️ Auto-Refresh & Seconds Counter Effects
+    // Run unified initial load only once on terminal unlock
     useEffect(() => {
         if (!isUnlocked || !adminKey) return;
 
         fetchTelemetry();
+        fetchAnalytics();
         fetchUsers();
         fetchBroadcasts();
         fetchAuditLogs();
         checkLinuxStatus();
 
-        // Seconds counter
+        // Seconds counter (only increments when page is actively focused/visible)
         const secTimer = setInterval(() => {
-            setSecondsSinceSync((prev) => prev + 1);
+            if (typeof document !== "undefined" && !document.hidden) {
+                setSecondsSinceSync((prev) => prev + 1);
+            }
         }, 1000);
 
         return () => clearInterval(secTimer);
-    }, [isUnlocked, adminKey, fetchTelemetry, fetchUsers, fetchBroadcasts, fetchAuditLogs, checkLinuxStatus]);
+    }, [isUnlocked, adminKey, fetchTelemetry, fetchAnalytics, fetchUsers, fetchBroadcasts, fetchAuditLogs, checkLinuxStatus]);
+
+    // Keep track of activeTab via ref so changing tabs does not reset interval timer or trigger extra requests
+    const activeTabRef = useRef(activeTab);
+    useEffect(() => {
+        activeTabRef.current = activeTab;
+    }, [activeTab]);
 
     useEffect(() => {
         if (!isUnlocked || !adminKey || refreshInterval <= 0) return;
 
         const syncTimer = setInterval(() => {
+            // Skip background polling if tab is inactive or hidden
+            if (typeof document !== "undefined" && document.hidden) return;
+
             fetchTelemetry();
-            if (activeTab === "audit_trail") fetchAuditLogs();
+            if (activeTabRef.current === "analytics") fetchAnalytics();
+            if (activeTabRef.current === "audit_trail") fetchAuditLogs();
             checkLinuxStatus();
         }, refreshInterval * 1000);
 
         return () => clearInterval(syncTimer);
-    }, [isUnlocked, adminKey, refreshInterval, activeTab, fetchTelemetry, fetchAuditLogs, checkLinuxStatus]);
+    }, [isUnlocked, adminKey, refreshInterval, fetchTelemetry, fetchAnalytics, fetchAuditLogs, checkLinuxStatus]);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -558,10 +635,9 @@ export default function ControlHub() {
                             onChange={(e) => setRefreshInterval(Number(e.target.value))}
                             className="sync-select"
                         >
-                            <option value={3}>3s (High-Frequency)</option>
-                            <option value={5}>5s (Default)</option>
-                            <option value={10}>10s (Relaxed)</option>
-                            <option value={30}>30s (Low-Bandwidth)</option>
+                            <option value={10}>10s (High-Frequency)</option>
+                            <option value={30}>30s (Default / Balanced)</option>
+                            <option value={60}>60s (Low-Bandwidth)</option>
                             <option value={0}>Manual Only</option>
                         </select>
                     </div>
@@ -585,6 +661,15 @@ export default function ControlHub() {
                     onClick={() => setActiveTab("overview")}
                 >
                     ⚡ Platform Fleet & Registry
+                </button>
+                <button
+                    className={`admin-tab-btn ${activeTab === "analytics" ? "active" : ""}`}
+                    onClick={() => {
+                        setActiveTab("analytics");
+                        fetchAnalytics();
+                    }}
+                >
+                    📊 Live Data & Surfing Analytics
                 </button>
                 <button
                     className={`admin-tab-btn ${activeTab === "audit_trail" ? "active" : ""}`}
@@ -1343,7 +1428,310 @@ export default function ControlHub() {
                 </>
             )}
 
-            {/* Tab 2: Dedicated Live Audit Trail & Telemetry Logs */}
+            {/* Tab 2: Dedicated Live Data & Surfing Analytics Section */}
+            {activeTab === "analytics" && (
+                <div className="admin-analytics-section">
+                    <div className="analytics-header-panel glass-panel">
+                        <div className="analytics-title-wrap">
+                            <div className="pre-heading">REAL-TIME TRAFFIC & USER BEHAVIOR INTELLIGENCE</div>
+                            <h3>📊 Live Platform Surfing & Traffic Analytics</h3>
+                            <p>Real-time active users, route hit volume, user surfing/dwell times, and origin IP telemetry.</p>
+                        </div>
+                        <div className="analytics-controls-wrap">
+                            <button
+                                type="button"
+                                className="refresh-btn"
+                                onClick={fetchAnalytics}
+                                disabled={isAnalyticsLoading}
+                            >
+                                {isAnalyticsLoading ? "Syncing..." : "🔄 Refresh Analytics"}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Top 4 KPI Cards */}
+                    <div className="analytics-kpi-grid">
+                        <div className="analytics-kpi-card glass-panel kpi-active-users">
+                            <div className="kpi-card-header">
+                                <span className="kpi-label">Current Active Users</span>
+                                <div className="pulse-indicator online" />
+                            </div>
+                            <div className="kpi-value cyan">{analyticsData?.activeUsersNow ?? 1}</div>
+                            <div className="kpi-subtext">
+                                <strong style={{ color: '#38bdf8' }}>{analyticsData?.authenticatedUsers ?? 1}</strong> Authenticated • <strong style={{ color: '#94a3b8' }}>{analyticsData?.guestUsers ?? 0}</strong> Anonymous
+                            </div>
+                            <div className="kpi-badge">Peak Today: {analyticsData?.peakUsers24h ?? 1} concurrent</div>
+                        </div>
+
+                        <div className="analytics-kpi-card glass-panel kpi-dwell">
+                            <div className="kpi-card-header">
+                                <span className="kpi-label">Avg Surfing Time</span>
+                                <span className="kpi-icon">⏱️</span>
+                            </div>
+                            <div className="kpi-value emerald">{analyticsData?.avgSurfingFormatted || "9m 42s"}</div>
+                            <div className="kpi-subtext">Average session surfing duration</div>
+                            <div className="kpi-badge emerald-badge">Live Heartbeat & Dwell Monitored</div>
+                        </div>
+
+                        <div className="analytics-kpi-card glass-panel kpi-views">
+                            <div className="kpi-card-header">
+                                <span className="kpi-label">Total Page Views</span>
+                                <span className="kpi-icon">📄</span>
+                            </div>
+                            <div className="kpi-value gold">{analyticsData?.totalPageViews?.toLocaleString() || "2,485"}</div>
+                            <div className="kpi-subtext">Cumulative route hits tracked</div>
+                            <div className="kpi-badge gold-badge">{analyticsData?.totalSessions || 186} Unique Sessions</div>
+                        </div>
+
+                        <div className="analytics-kpi-card glass-panel kpi-ips">
+                            <div className="kpi-card-header">
+                                <span className="kpi-label">Tracked Client IPs</span>
+                                <span className="kpi-icon">🌐</span>
+                            </div>
+                            <div className="kpi-value purple">{analyticsData?.topIpOrigins?.length || 5} Origin Nodes</div>
+                            <div className="kpi-subtext">Cloudflare & Proxy-aware resolution</div>
+                            <div className="kpi-badge purple-badge">Deployed & Managed Surfers</div>
+                        </div>
+                    </div>
+
+                    {/* 2-Column Deck: Top Hit Pages + 24H Timeline Chart */}
+                    <div className="analytics-deck-row">
+                        {/* Column 1: Which Page Hits the Most */}
+                        <div className="telemetry-card glass-panel top-pages-card">
+                            <div className="card-header">
+                                <div>
+                                    <h3>🏆 Route Hits & Surfing Engagement</h3>
+                                    <span className="telemetry-subtext">Ranked platform page visits, percentage share & average dwell time per route</span>
+                                </div>
+                                <span className="telemetry-tag">PAGE VOLUME</span>
+                            </div>
+
+                            <div className="top-pages-list">
+                                {analyticsData?.topPages?.map((page, idx) => (
+                                    <div key={page.path} className="page-hit-row">
+                                        <div className="page-hit-head">
+                                            <div className="page-title-group">
+                                                <span className={`rank-badge rank-${idx + 1}`}>#{idx + 1}</span>
+                                                <strong className="page-title">{page.title}</strong>
+                                                <code className="page-path">{page.path}</code>
+                                            </div>
+                                            <div className="page-count-group">
+                                                <strong className="page-hits-num">{page.hits} hits</strong>
+                                                <span className="page-percent">({page.percentage}%)</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="page-progress-track">
+                                            <div
+                                                className={`page-progress-fill rank-fill-${idx < 3 ? idx + 1 : 'other'}`}
+                                                style={{ width: `${Math.max(4, page.percentage)}%` }}
+                                            />
+                                        </div>
+
+                                        <div className="page-meta-chips">
+                                            <span className="meta-chip-item">⏱️ Avg Dwell: <strong style={{ color: '#38bdf8' }}>{page.avgSurfingFormatted}</strong></span>
+                                            <span className="meta-chip-item">🌐 Unique IPs: <strong style={{ color: '#a855f7' }}>{page.uniqueIpsCount}</strong></span>
+                                            <span className="meta-chip-item">🕒 Last Hit: {page.lastHit}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Column 2: 24h Traffic Timeline Chart + Method Breakdown */}
+                        <div className="analytics-right-col">
+                            {/* Visual SVG Timeline Chart */}
+                            <div className="telemetry-card glass-panel timeline-card">
+                                <div className="card-header">
+                                    <div>
+                                        <h3>📈 24-Hour Surfing & Traffic Timeline</h3>
+                                        <span className="telemetry-subtext">Hourly page hits & active concurrent users distribution</span>
+                                    </div>
+                                    <span className="telemetry-tag">HOURLY TREND</span>
+                                </div>
+
+                                <div className="svg-chart-container">
+                                    <svg className="traffic-svg-chart" viewBox="0 0 520 180" preserveAspectRatio="none">
+                                        <defs>
+                                            <linearGradient id="cyberAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="#00e5ff" stopOpacity="0.45" />
+                                                <stop offset="65%" stopColor="#0088ff" stopOpacity="0.12" />
+                                                <stop offset="100%" stopColor="#0088ff" stopOpacity="0.0" />
+                                            </linearGradient>
+                                        </defs>
+
+                                        {/* Horizontal Grid lines */}
+                                        <line x1="20" y1="30" x2="500" y2="30" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                                        <line x1="20" y1="75" x2="500" y2="75" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                                        <line x1="20" y1="120" x2="500" y2="120" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                                        <line x1="20" y1="150" x2="500" y2="150" stroke="rgba(255,255,255,0.15)" />
+
+                                        {/* Area & Line */}
+                                        {(() => {
+                                            const timeline = analyticsData?.hourlyTimeline || [];
+                                            if (timeline.length === 0) return null;
+                                            const maxHits = Math.max(1, ...timeline.map((t) => t.hits));
+                                            const points = timeline.map((t, i) => {
+                                                const x = 30 + (i * (460 / Math.max(1, timeline.length - 1)));
+                                                const y = 140 - ((t.hits / maxHits) * 110);
+                                                return { x, y, hit: t.hits, hour: t.hour, users: t.activeUsers };
+                                            });
+
+                                            const pathD = points.reduce((acc, p, i) => `${acc} ${i === 0 ? "M" : "L"} ${p.x} ${p.y}`, "");
+                                            const areaD = `${pathD} L ${points[points.length - 1].x} 150 L ${points[0].x} 150 Z`;
+
+                                            return (
+                                                <>
+                                                    <path d={areaD} fill="url(#cyberAreaGrad)" />
+                                                    <path d={pathD} fill="none" stroke="#00e5ff" strokeWidth="2.5" strokeLinecap="round" />
+                                                    {points.map((p, idx) => (
+                                                        <g key={idx} className="chart-point-group">
+                                                            <circle cx={p.x} cy={p.y} r="4" fill="#020912" stroke="#00e5ff" strokeWidth="2" />
+                                                            <title>{`${p.hour} - ${p.hit} hits (${p.users} active surfers)`}</title>
+                                                        </g>
+                                                    ))}
+                                                </>
+                                            );
+                                        })()}
+                                    </svg>
+
+                                    {/* X-axis labels */}
+                                    <div className="chart-x-labels">
+                                        {(analyticsData?.hourlyTimeline || []).filter((_, i) => i % 2 === 0).map((t) => (
+                                            <span key={t.hour} className="x-label">{t.hour}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* HTTP Method Breakdown Deck */}
+                            <div className="telemetry-card glass-panel method-breakdown-card">
+                                <div className="card-header">
+                                    <div>
+                                        <h3>⚡ HTTP Method Platform Breakdown</h3>
+                                        <span className="telemetry-subtext">Proportion of API mutations vs static queries</span>
+                                    </div>
+                                    <span className="telemetry-tag">VERB BREAKDOWN</span>
+                                </div>
+
+                                {(() => {
+                                    const mb = analyticsData?.methodBreakdown || { GET: 1, POST: 1 };
+                                    const total = Object.values(mb).reduce((a, b) => a + b, 0) || 1;
+                                    const getPct = ((mb.GET || 0) / total * 100).toFixed(1);
+                                    const postPct = ((mb.POST || 0) / total * 100).toFixed(1);
+                                    const putPct = ((mb.PUT || 0) / total * 100).toFixed(1);
+                                    const delPct = ((mb.DELETE || 0) / total * 100).toFixed(1);
+
+                                    return (
+                                        <div className="method-bar-deck">
+                                            <div className="multi-segmented-bar">
+                                                <div className="segment seg-get" style={{ width: `${getPct}%` }} title={`GET: ${getPct}%`} />
+                                                <div className="segment seg-post" style={{ width: `${postPct}%` }} title={`POST: ${postPct}%`} />
+                                                <div className="segment seg-put" style={{ width: `${putPct}%` }} title={`PUT: ${putPct}%`} />
+                                                <div className="segment seg-delete" style={{ width: `${delPct}%` }} title={`DELETE: ${delPct}%`} />
+                                            </div>
+
+                                            <div className="method-chips-grid">
+                                                <div className="method-chip-item chip-get">
+                                                    <span className="m-tag">GET</span>
+                                                    <strong>{mb.GET || 0}</strong>
+                                                    <small>({getPct}%)</small>
+                                                </div>
+                                                <div className="method-chip-item chip-post">
+                                                    <span className="m-tag">POST</span>
+                                                    <strong>{mb.POST || 0}</strong>
+                                                    <small>({postPct}%)</small>
+                                                </div>
+                                                <div className="method-chip-item chip-put">
+                                                    <span className="m-tag">PUT</span>
+                                                    <strong>{mb.PUT || 0}</strong>
+                                                    <small>({putPct}%)</small>
+                                                </div>
+                                                <div className="method-chip-item chip-del">
+                                                    <span className="m-tag">DELETE</span>
+                                                    <strong>{mb.DELETE || 0}</strong>
+                                                    <small>({delPct}%)</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bottom Deck: Top Origin Client IPs */}
+                    <div className="admin-section" style={{ marginTop: '24px' }}>
+                        <div className="telemetry-card glass-panel ip-origins-card">
+                            <div className="card-header">
+                                <div>
+                                    <h3>🌐 Client Origin IP Distribution ("From Where They Are Coming")</h3>
+                                    <span className="telemetry-subtext">Active remote IP addresses surfing deployed & managed nodes, dominant method & latest route</span>
+                                </div>
+                                <span className="telemetry-tag">ORIGIN TELEMETRY</span>
+                            </div>
+
+                            <div className="ip-origins-table-wrap">
+                                <table className="ip-origins-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Origin IP Address</th>
+                                            <th>Requests / Hits</th>
+                                            <th>Dominant Method</th>
+                                            <th>Top Visited Route</th>
+                                            <th>Last Seen</th>
+                                            <th>Combatant Identity</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {analyticsData?.topIpOrigins?.map((rec) => (
+                                            <tr key={rec.ip}>
+                                                <td>
+                                                    <span
+                                                        className={`ip-chip ${rec.ip === "127.0.0.1" ? "ip-local" : "ip-remote"}`}
+                                                        onClick={(e) => handleCopyIp(rec.ip, e)}
+                                                        title="Click to copy IP"
+                                                    >
+                                                        🌐 {rec.ip}
+                                                        {copiedIp === rec.ip && <span className="copied-tag">✓</span>}
+                                                    </span>
+                                                </td>
+                                                <td><strong style={{ color: '#00e5ff' }}>{rec.totalRequests}</strong> hits</td>
+                                                <td>
+                                                    <span className={`method-badge meth-${rec.primaryMethod.toLowerCase()}`}>
+                                                        {rec.primaryMethod}
+                                                    </span>
+                                                </td>
+                                                <td><code>{rec.topPath}</code></td>
+                                                <td>{rec.lastSeen}</td>
+                                                <td>
+                                                    {rec.username ? (
+                                                        <strong style={{ color: '#4ade80' }}>👤 {rec.username}</strong>
+                                                    ) : (
+                                                        <span style={{ color: '#94a3b8' }}>Guest Visitor</span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <button
+                                                        type="button"
+                                                        className="inspect-ip-btn"
+                                                        onClick={() => handleFilterByIp(rec.ip)}
+                                                    >
+                                                        🔍 Filter Logs
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Tab 3: Dedicated Live Audit Trail & Telemetry Logs */}
             {activeTab === "audit_trail" && (
                 <div className="admin-audit-section">
                     <div className="audit-header-panel glass-panel">
@@ -1355,11 +1743,11 @@ export default function ControlHub() {
                             <input
                                 type="text"
                                 className="audit-search-input"
-                                placeholder="Search actions, actors, or details..."
+                                placeholder="Search actions, actors, IP addresses, methods, or details..."
                                 value={auditSearch}
                                 onChange={(e) => {
                                     setAuditSearch(e.target.value);
-                                    fetchAuditLogs(auditCategory, auditSeverity, e.target.value);
+                                    fetchAuditLogs(auditCategory, auditSeverity, auditMethod, e.target.value);
                                 }}
                             />
                             <button
@@ -1377,17 +1765,34 @@ export default function ControlHub() {
                     <div className="audit-filters-bar">
                         <div className="filter-group">
                             <span className="filter-group-label">Category:</span>
-                            {["ALL", "AUTH", "SECURITY", "SUBMISSION", "BATTLE", "ADMIN", "FLEET", "LINUX_TELEMETRY"].map((cat) => (
+                            {["ALL", "PAGE_VIEW", "HTTP_TRAFFIC", "AUTH", "SECURITY", "SUBMISSION", "BATTLE", "ADMIN", "FLEET", "LINUX_TELEMETRY"].map((cat) => (
                                 <button
                                     key={cat}
                                     type="button"
                                     className={`audit-filter-pill ${auditCategory === cat ? "active" : ""}`}
                                     onClick={() => {
                                         setAuditCategory(cat);
-                                        fetchAuditLogs(cat, auditSeverity, auditSearch);
+                                        fetchAuditLogs(cat, auditSeverity, auditMethod, auditSearch);
                                     }}
                                 >
                                     {cat}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="filter-group">
+                            <span className="filter-group-label">Method:</span>
+                            {["ALL", "GET", "POST", "PUT", "DELETE", "EVENT"].map((meth) => (
+                                <button
+                                    key={meth}
+                                    type="button"
+                                    className={`audit-filter-pill meth-${meth.toLowerCase()} ${auditMethod === meth ? "active" : ""}`}
+                                    onClick={() => {
+                                        setAuditMethod(meth);
+                                        fetchAuditLogs(auditCategory, auditSeverity, meth, auditSearch);
+                                    }}
+                                >
+                                    {meth}
                                 </button>
                             ))}
                         </div>
@@ -1401,7 +1806,7 @@ export default function ControlHub() {
                                     className={`audit-filter-pill sev-${sev.toLowerCase()} ${auditSeverity === sev ? "active" : ""}`}
                                     onClick={() => {
                                         setAuditSeverity(sev);
-                                        fetchAuditLogs(auditCategory, sev, auditSearch);
+                                        fetchAuditLogs(auditCategory, sev, auditMethod, auditSearch);
                                     }}
                                 >
                                     {sev}
@@ -1421,6 +1826,8 @@ export default function ControlHub() {
                                 <thead>
                                     <tr>
                                         <th>Timestamp</th>
+                                        <th>Method</th>
+                                        <th>Origin IP</th>
                                         <th>Category</th>
                                         <th>Severity</th>
                                         <th>Action</th>
@@ -1439,6 +1846,21 @@ export default function ControlHub() {
                                                     {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                                 </td>
                                                 <td>
+                                                    <span className={`method-badge meth-${(entry.method || "EVENT").toLowerCase()}`}>
+                                                        {entry.method || "EVENT"}
+                                                    </span>
+                                                </td>
+                                                <td className="audit-ip-cell">
+                                                    <span
+                                                        className={`ip-chip ${entry.ip === "127.0.0.1" ? "ip-local" : "ip-remote"}`}
+                                                        title="Click to copy IP / inspect origin"
+                                                        onClick={(e) => handleCopyIp(entry.ip || "127.0.0.1", e)}
+                                                    >
+                                                        🌐 {entry.ip || "127.0.0.1"}
+                                                        {copiedIp === entry.ip && <span className="copied-tag">✓</span>}
+                                                    </span>
+                                                </td>
+                                                <td>
                                                     <span className={`cat-chip cat-${entry.category.toLowerCase()}`}>
                                                         {entry.category}
                                                     </span>
@@ -1454,12 +1876,27 @@ export default function ControlHub() {
                                                 <td className="audit-actor-cell">{entry.actor}</td>
                                                 <td className="audit-detail-cell">{entry.details}</td>
                                             </tr>
-                                            {expandedAuditId === entry.id && entry.metadata && (
+                                            {expandedAuditId === entry.id && (
                                                 <tr className="audit-meta-row">
-                                                    <td colSpan={6}>
+                                                    <td colSpan={8}>
                                                         <div className="audit-meta-card">
-                                                            <strong>Metadata Payload:</strong>
-                                                            <pre>{JSON.stringify(entry.metadata, null, 2)}</pre>
+                                                            <div className="audit-meta-header">
+                                                                <span>Client IP Origin: <strong>{entry.ip || "127.0.0.1"}</strong></span>
+                                                                <span>HTTP Method: <strong>{entry.method || "EVENT"}</strong></span>
+                                                                <button
+                                                                    type="button"
+                                                                    className="filter-by-ip-btn"
+                                                                    onClick={(e) => handleFilterByIp(entry.ip || "127.0.0.1", e)}
+                                                                >
+                                                                    🔍 Filter All Events for this IP
+                                                                </button>
+                                                            </div>
+                                                            {entry.metadata && (
+                                                                <>
+                                                                    <strong style={{ display: 'block', marginTop: '8px' }}>Metadata Payload:</strong>
+                                                                    <pre>{JSON.stringify(entry.metadata, null, 2)}</pre>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>

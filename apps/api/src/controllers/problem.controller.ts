@@ -65,6 +65,20 @@ export class ProblemController {
 
             const passed = result.failedCount === 0;
 
+            // 🔐 Mask hidden test case input/output so secrets never leak to the client
+            const sanitizedTestCaseResults = (result.individualExecutions || []).map((exec: any, idx: number) => {
+                const isHidden = Boolean(testCases[idx]?.isHidden);
+                if (isHidden) {
+                    return {
+                        ...exec,
+                        input: "[Hidden Test Case]",
+                        expectedOutput: "[Hidden Expected Output]",
+                        actualOutput: exec.passed ? "[Hidden Output Match]" : "[Hidden Output Mismatch]",
+                    };
+                }
+                return exec;
+            });
+
             return {
                 passed,
                 output: result.stdout || (passed ? "All test cases passed successfully!" : result.stderr || "Output mismatch."),
@@ -72,7 +86,7 @@ export class ProblemController {
                 totalTestCases: result.passedCount + result.failedCount,
                 executionTime: result.executionTime,
                 verdict: result.verdict || (passed ? "ACCEPTED" : "WRONG_ANSWER"),
-                testCaseResults: result.individualExecutions || [],
+                testCaseResults: sanitizedTestCaseResults,
             };
         } catch (err: any) {
             return {

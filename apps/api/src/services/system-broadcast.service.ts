@@ -298,6 +298,15 @@ export class SystemBroadcastService {
                     ? "EXPIRED"
                     : "ACTIVE";
 
+                let content = r.content as BroadcastContent | null;
+                // Performance Optimization: Never transmit hundreds of kilobytes of raw base64 data in list views
+                if (content && content.url && content.url.startsWith("data:") && content.url.length > 300) {
+                    content = {
+                        ...content,
+                        url: `[embedded_attachment:${content.type}]`,
+                    };
+                }
+
                 return {
                     id: r.id,
                     title: r.title,
@@ -308,7 +317,7 @@ export class SystemBroadcastService {
                     createdAt: r.createdAt.toISOString(),
                     createdBy: r.createdBy,
                     revokedAt: r.revokedAt ? r.revokedAt.toISOString() : null,
-                    content: r.content as BroadcastContent | null,
+                    content,
                     action: r.action as BroadcastAction | null,
                     status,
                     remainingMs: Math.max(0, expiryTime - now),

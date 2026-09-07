@@ -9,6 +9,8 @@ import { GatewayRequest } from "../gateway/contracts/gateway";
 import { ipJail } from "../gateway/policies/ip-jail";
 import { gatewayTelemetryCollector } from "@algofight/telemetry";
 import { logger } from "@algofight/logger";
+import { extractClientIp } from "../utils/ip.util";
+import { analyticsService } from "../services/analytics.service";
 
 declare module "fastify" {
     interface FastifyRequest {
@@ -50,11 +52,8 @@ async function gatewayPlugin(app: FastifyInstance) {
             request.requestId = requestId;
             reply.header("x-request-id", requestId);
 
-            // 2. Extract reliable client IP (with trusted proxy support)
-            const ip =
-                (request.headers["x-forwarded-for"] as string)?.split(",")[0].trim() ||
-                request.socket.remoteAddress ||
-                "127.0.0.1";
+            // 2. Extract reliable client IP (with proxy & Cloudflare support)
+            const ip = extractClientIp(request);
 
             // 3. Build GatewayRequest
             const gwRequest: GatewayRequest = {
@@ -116,6 +115,15 @@ async function gatewayPlugin(app: FastifyInstance) {
             reply.header("x-gateway-latency-ms", durationMs.toFixed(2));
             gatewayTelemetryCollector.recordLatency(gateway.id, durationMs);
             gatewayTelemetryCollector.recordRequest(gateway.id, gateway.context.contextId, request.method, 200);
+
+            // Record into live analytics service
+            analyticsService.recordHttpRequest({
+                ip,
+                method: request.method,
+                path: request.url,
+                userAgent: request.headers["user-agent"],
+                username: request.user?.username,
+            });
         } catch (error: any) {
             logger.error({ error: error.message, stack: error.stack, url: request.url }, "Unhandled error in Gateway processing pipeline");
             return reply.status(500).send({

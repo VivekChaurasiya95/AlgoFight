@@ -3,8 +3,8 @@
  * are callable through the public and admin REST APIs.
  */
 
-const API_BASE = "http://localhost:3000/api";
-const ADMIN_KEY = "7BCG2H";
+const API_BASE = process.env.API_BASE || "http://localhost:3000/api";
+const ADMIN_KEY = process.env.ADMIN_SECRET_KEY || "AF_DEV_SECRET_KEY";
 
 let passed = 0;
 let total = 0;

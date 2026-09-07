@@ -3,6 +3,7 @@ import { AdminController } from "../controllers/admin.controller";
 import { SystemBroadcastService } from "../services/system-broadcast.service";
 import { linuxTelemetryBridge } from "../services/linux-telemetry-bridge.service";
 import { auditService } from "../services/audit.service";
+import { extractClientIp } from "../utils/ip.util";
 import { config } from "@algofight/config";
 
 const controller = new AdminController();
@@ -12,11 +13,14 @@ const ADMIN_SECRET = config.adminSecretKey || process.env.ADMIN_SECRET_KEY;
 const verifyAdminAccess = async (request: FastifyRequest, reply: FastifyReply) => {
     const adminKey = request.headers["x-admin-key"];
     if (adminKey !== ADMIN_SECRET) {
+        const clientIp = extractClientIp(request);
         auditService.recordEvent({
             category: "SECURITY",
             severity: "WARN",
             action: "UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT",
-            actor: request.ip || "Unknown IP",
+            actor: clientIp,
+            ip: clientIp,
+            method: request.method,
             details: `Failed admin access attempt on ${request.url}`,
         });
 
@@ -31,13 +35,16 @@ export async function adminRoutes(app: FastifyInstance) {
     // 1. Verify Passkey Endpoint (used by frontend login gate)
     app.post("/admin/auth/verify", async (request, reply) => {
         const { key } = (request.body as any) || {};
+        const clientIp = extractClientIp(request);
         if (key === ADMIN_SECRET) {
             auditService.recordEvent({
                 category: "AUTH",
                 severity: "INFO",
                 action: "ADMIN_CLEARANCE_GRANTED",
                 actor: "SuperAdmin",
-                details: `SuperAdmin successfully authenticated from ${request.ip}`,
+                ip: clientIp,
+                method: "POST",
+                details: `SuperAdmin successfully authenticated from ${clientIp}`,
             });
             return { success: true, message: "SuperAdmin clearance granted." };
         }
@@ -46,7 +53,9 @@ export async function adminRoutes(app: FastifyInstance) {
             category: "SECURITY",
             severity: "WARN",
             action: "INVALID_PASSKEY_SUBMITTED",
-            actor: request.ip || "Unknown IP",
+            actor: clientIp,
+            ip: clientIp,
+            method: "POST",
             details: "Invalid administrative passkey submitted",
         });
 
@@ -73,6 +82,7 @@ export async function adminRoutes(app: FastifyInstance) {
         return controller.getAuditLogs({
             category: query.category,
             severity: query.severity,
+            method: query.method,
             limit: query.limit ? parseInt(query.limit, 10) : 50,
             search: query.search,
         });
@@ -83,6 +93,7 @@ export async function adminRoutes(app: FastifyInstance) {
     app.post("/admin/broadcast", { preHandler: [verifyAdminAccess] }, async (request, reply) => {
         try {
             const body = (request.body as any) || {};
+            const clientIp = extractClientIp(request);
             const broadcast = await SystemBroadcastService.createBroadcast({
                 title: body.title,
                 message: body.message,
@@ -99,6 +110,8 @@ export async function adminRoutes(app: FastifyInstance) {
                 severity: "INFO",
                 action: "BROADCAST_DISPATCHED",
                 actor: "SuperAdmin",
+                ip: clientIp,
+                method: "POST",
                 details: `"${broadcast.title}" [${broadcast.type}] flash=${broadcast.flashBanner}`,
                 metadata: { broadcastId: broadcast.id, expiresAt: broadcast.expiresAt },
             });
@@ -124,6 +137,7 @@ export async function adminRoutes(app: FastifyInstance) {
         if (!id) {
             return reply.status(400).send({ error: "MISSING_ID", message: "Broadcast ID is required." });
         }
+        const clientIp = extractClientIp(request);
         const success = await SystemBroadcastService.revokeBroadcast(id);
 
         if (success) {
@@ -132,6 +146,8 @@ export async function adminRoutes(app: FastifyInstance) {
                 severity: "WARN",
                 action: "BROADCAST_REVOKED",
                 actor: "SuperAdmin",
+                ip: clientIp,
+                method: "DELETE",
                 details: `Revoked broadcast ${id}`,
                 metadata: { broadcastId: id },
             });

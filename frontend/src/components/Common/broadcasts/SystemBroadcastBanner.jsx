@@ -38,15 +38,6 @@ export default function SystemBroadcastBanner() {
         if (!dismissed) {
           setActiveBroadcast(valid);
           setIsDismissed(false);
-
-          // Schedule auto-expiry timer
-          const remainingMs = new Date(valid.expiresAt).getTime() - now;
-          if (remainingMs > 0 && remainingMs < 2147483647) {
-            const timer = setTimeout(() => {
-              setActiveBroadcast(null);
-            }, remainingMs);
-            return () => clearTimeout(timer);
-          }
         }
       } else {
         setActiveBroadcast(null);
@@ -59,8 +50,15 @@ export default function SystemBroadcastBanner() {
   useEffect(() => {
     syncActiveBroadcast();
 
-    // Periodic client-side expiry check every 10 seconds
-    const interval = setInterval(syncActiveBroadcast, 10000);
+    // In-memory client-side expiry check (purely local state, zero network requests)
+    const interval = setInterval(() => {
+      setActiveBroadcast((current) => {
+        if (current && new Date(current.expiresAt).getTime() <= Date.now()) {
+          return null;
+        }
+        return current;
+      });
+    }, 5000);
 
     // Live WebSocket listener
     const socket = getSocket();

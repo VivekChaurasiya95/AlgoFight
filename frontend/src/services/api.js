@@ -307,15 +307,22 @@ export async function uploadBroadcastMedia(adminKey, mediaPayload) {
   });
 }
 
-export async function fetchAdminAuditLogs(adminKey, { category = "ALL", severity = "ALL", search = "", limit = 50 } = {}) {
+export async function fetchAdminAuditLogs(adminKey, { category = "ALL", severity = "ALL", method = "ALL", search = "", limit = 50 } = {}) {
   const params = new URLSearchParams();
   if (category && category !== "ALL") params.set("category", category);
   if (severity && severity !== "ALL") params.set("severity", severity);
+  if (method && method !== "ALL") params.set("method", method);
   if (search) params.set("search", search);
   if (limit) params.set("limit", String(limit));
 
   const query = params.toString() ? `?${params.toString()}` : "";
   return requestJson(`/api/admin/audit-logs${query}`, {
+    headers: { "x-admin-key": adminKey },
+  });
+}
+
+export async function fetchAdminAnalytics(adminKey) {
+  return requestJson(`/api/admin/analytics`, {
     headers: { "x-admin-key": adminKey },
   });
 }

@@ -21,7 +21,7 @@ const getGatewaySecret = (): string => {
     const secret = process.env.GATEWAY_CLUSTER_SECRET;
     if (process.env.NODE_ENV === "production") {
         if (!secret || secret === "algofight-internal-gateway-secret-key-change-in-prod") {
-            console.warn("WARNING: GATEWAY_CLUSTER_SECRET is not explicitly configured in production environment. Using default.");
+            throw new Error("FATAL CONFIG ERROR: GATEWAY_CLUSTER_SECRET must be explicitly set to a strong secret in production.");
         }
     }
     return secret || "algofight-internal-gateway-secret-key-change-in-prod";
