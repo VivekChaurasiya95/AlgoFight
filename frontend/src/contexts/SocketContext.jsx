@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { useUserStore } from "../store/useUserStore";
 import { useGameStore } from "../store/useGameStore";
@@ -7,7 +8,38 @@ import { getSocket, connectSocket, disconnectSocket } from "../services/socket";
 
 export const SocketContext = createContext(null);
 
+const INACTIVE_SOCKET_ROUTES = new Set([
+  "/",
+  "/login",
+  "/signup",
+  "/student-login",
+  "/about",
+  "/blog",
+  "/careers",
+  "/help",
+  "/contact",
+  "/developer",
+  "/terms",
+  "/privacy",
+  "/cookies",
+]);
+
+function shouldConnectSocket(pathname) {
+  if (INACTIVE_SOCKET_ROUTES.has(pathname)) return false;
+  if (
+    pathname.startsWith("/about") ||
+    pathname.startsWith("/blog") ||
+    pathname.startsWith("/terms") ||
+    pathname.startsWith("/privacy") ||
+    pathname.startsWith("/cookies")
+  ) {
+    return false;
+  }
+  return true;
+}
+
 export function SocketProvider({ children }) {
+  const location = useLocation();
   const { user, loading } = useAuth();
 
   // Zustand Store integrations
@@ -17,11 +49,12 @@ export function SocketProvider({ children }) {
 
   const userId = user?.uid;
   const username = user?.displayName || user?.email?.split("@")[0] || "Player";
+  const shouldConnect = Boolean(userId) && shouldConnectSocket(location.pathname);
 
   useEffect(() => {
     if (loading) return;
 
-    if (!userId) {
+    if (!shouldConnect) {
       disconnectSocket();
       return;
     }
@@ -76,7 +109,7 @@ export function SocketProvider({ children }) {
       socketClient.off("battle_state_sync", handleBattleStateSync);
       socketClient.off("battle_stats_update", handleBattleStateSync);
     };
-  }, [userId, username, loading, setMatchState, setLeaderboard, setProfileData]);
+  }, [userId, username, loading, shouldConnect, setMatchState, setLeaderboard, setProfileData]);
 
   const socketWrapper = useMemo(() => {
     const socketClient = getSocket();

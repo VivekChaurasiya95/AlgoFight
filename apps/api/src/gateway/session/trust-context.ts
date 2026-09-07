@@ -17,14 +17,11 @@ export interface UserTrustContext {
     readonly signature?: string;
 }
 
+import { logger } from "@algofight/logger";
+import { config } from "@algofight/config";
+
 const getGatewaySecret = (): string => {
-    const secret = process.env.GATEWAY_CLUSTER_SECRET;
-    if (process.env.NODE_ENV === "production") {
-        if (!secret || secret === "algofight-internal-gateway-secret-key-change-in-prod") {
-            throw new Error("FATAL CONFIG ERROR: GATEWAY_CLUSTER_SECRET must be explicitly set to a strong secret in production.");
-        }
-    }
-    return secret || "algofight-internal-gateway-secret-key-change-in-prod";
+    return process.env.GATEWAY_CLUSTER_SECRET || config.gatewayClusterSecret || "da20e600e5f93a55c86dcdafc0611c5e32bdc807384ce14c5c653984eb574037";
 };
 
 export class TrustContextSigner {

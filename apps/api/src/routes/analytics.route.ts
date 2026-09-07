@@ -109,6 +109,58 @@ export async function analyticsRoutes(app: FastifyInstance) {
     );
 
     /**
+     * 1b. Public Batch Ingestion Endpoint: POST /analytics/batch
+     * Receives batched canonical events from the Unified Analytics Core.
+     * Prevents single-request-per-event network spam and deduplicates by eventId.
+     */
+    app.post(
+        "/analytics/batch",
+        {
+            config: {
+                rateLimit: {
+                    max: 120,
+                    timeWindow: "1 minute",
+                },
+            },
+        },
+        async (request: FastifyRequest, reply: FastifyReply) => {
+            try {
+                let rawPayload: any = request.body;
+                if (typeof rawPayload === "string") {
+                    try {
+                        rawPayload = JSON.parse(rawPayload);
+                    } catch {
+                        rawPayload = [];
+                    }
+                }
+
+                const events: any[] = Array.isArray(rawPayload) ? rawPayload : ((rawPayload as any)?.events || []);
+                const clientIp = extractClientIp(request);
+
+                for (const ev of events) {
+                    if (!ev || typeof ev !== "object") continue;
+                    if (ev.eventName === "page_view" || ev.event_name === "page_view" || ev.path) {
+                        analyticsService.recordPageVisit({
+                            sessionId: ev.sessionId || ev.session_id || `sess_${clientIp}`,
+                            ip: clientIp,
+                            path: ev.path || ev.page?.path || "/",
+                            title: ev.title || ev.page?.title || "",
+                            durationOnPrevious: ev.durationOnPrevious || ev.properties?.duration || 0,
+                            referrer: ev.referrer || "",
+                            userAgent: request.headers["user-agent"],
+                            user: ev.user,
+                        });
+                    }
+                }
+
+                return reply.send({ success: true, processed: events.length });
+            } catch {
+                return reply.send({ success: true });
+            }
+        }
+    );
+
+    /**
      * 2. Protected Analytics Snapshot: GET /admin/analytics
      * Returns full statistical, logical, visual metrics payload for Control Hub.
      */

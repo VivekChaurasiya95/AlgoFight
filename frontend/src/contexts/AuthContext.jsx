@@ -3,6 +3,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../firebaseConfig";
 import { syncUserToBackend } from "../services/api";
 import { useUserStore } from "../store/useUserStore";
+import { unifiedAnalytics } from "../services/analytics";
 
 const AuthContext = createContext(null);
 
@@ -24,6 +25,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        unifiedAnalytics.setUserId(firebaseUser.uid);
         // Sync to backend on every auth state change
         const syncPayload = {
           uid: firebaseUser.uid,
@@ -57,6 +59,7 @@ export function AuthProvider({ children }) {
           accessToken: firebaseUser.accessToken
         });
       } else {
+        unifiedAnalytics.setUserId(null);
         setUser(null);
         clearGlobalUser();
       }

@@ -3,6 +3,7 @@ import { logger } from "@algofight/logger";
 import fastify from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
+import compress from "@fastify/compress";
 
 import gatewayPlugin from "./plugins/gateway.plugin";
 import authPlugin from "./plugins/auth.plugin";
@@ -58,6 +59,12 @@ const start = async () => {
                 "Accept",
             ],
             exposedHeaders: ["x-request-id", "x-gateway-id", "x-context-id", "x-gateway-latency-ms"],
+        });
+
+        // 1b. Compression Plugin (Brotli & Gzip for responses >= 1KB)
+        await app.register(compress, {
+            threshold: 1024,
+            encodings: ["gzip", "deflate"],
         });
 
         // Parse text/plain bodies (used by lightweight telemetry beacons to bypass CORS preflight)

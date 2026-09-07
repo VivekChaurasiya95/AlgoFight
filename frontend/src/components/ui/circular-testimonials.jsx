@@ -113,6 +113,18 @@ export const CircularTestimonials = ({
     };
   }
 
+  // Progressive next-image preload strategy (Opportunity #11):
+  // Display current image immediately; preload only the immediate next candidate in the background
+  useEffect(() => {
+    if (!testimonials || testimonials.length <= 1) return;
+    const nextIndex = (activeIndex + 1) % testimonials.length;
+    const nextSrc = testimonials[nextIndex]?.src;
+    if (nextSrc) {
+      const preloadImg = new Image();
+      preloadImg.src = nextSrc;
+    }
+  }, [activeIndex, testimonials]);
+
   const quoteVariants = {
     initial: { opacity: 0, y: 15 },
     animate: { opacity: 1, y: 0 },
@@ -124,18 +136,15 @@ export const CircularTestimonials = ({
   return (
     <div className="circular-testimonial-container">
       <div className="circular-testimonial-grid">
-        {/* Compact 3D Profile Photo Stage */}
+        {/* Single Persistent Testimonial Image Container (Opportunity #9 & #10) */}
         <div className="circular-image-container" ref={imageContainerRef}>
-          {testimonials.map((testimonial, index) => (
-            <img
-              key={testimonial.src || index}
-              src={testimonial.src}
-              alt={testimonial.name}
-              className="circular-testimonial-image"
-              data-index={index}
-              style={getImageStyle(index)}
-            />
-          ))}
+          <img
+            key={activeTestimonial.src || activeIndex}
+            src={activeTestimonial.src}
+            alt={activeTestimonial.name}
+            className="circular-testimonial-image active-single-testimonial"
+            style={getImageStyle(activeIndex)}
+          />
         </div>
 
         {/* Dynamic Auto-Shifting Testimonial Copy */}

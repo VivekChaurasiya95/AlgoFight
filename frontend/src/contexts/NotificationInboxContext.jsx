@@ -7,7 +7,7 @@ import {
     markAllNotificationsAsRead,
     clearUserNotifications,
 } from '../services/api';
-import { connectSocket } from '../services/socket';
+import { getSocket } from '../services/socket';
 
 const NotificationInboxContext = createContext();
 
@@ -90,9 +90,7 @@ export function NotificationInboxProvider({ children }) {
             const token = await user.getIdToken().catch(() => null);
             if (!active) return;
 
-            const currentUserId = user?.uid || user?.email || "Guest";
-            const currentUsername = user?.displayName || user?.email?.split("@")[0] || "Player";
-            const socket = connectSocket(token, currentUserId, currentUsername);
+            const socket = getSocket();
 
             const handleInboxNotification = (newNotif) => {
                 if (!newNotif) return;

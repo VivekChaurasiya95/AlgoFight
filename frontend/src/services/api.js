@@ -45,45 +45,107 @@ function extractErrorMessage(parsedBody, status) {
   return `Request failed (${status})`;
 }
 
+// In-flight request deduplication map (coalesces identical concurrent GETs)
+const inFlightRequests = new Map();
+
+// Short TTL response cache for safe GET requests
+const responseCache = new Map();
+
+export function invalidateApiCache(pattern) {
+  if (!pattern) {
+    responseCache.clear();
+    return;
+  }
+  for (const key of responseCache.keys()) {
+    if (key.includes(pattern)) {
+      responseCache.delete(key);
+    }
+  }
+}
+
 export async function requestJson(path, options = {}) {
   const {
     includeAuth = false,
     headers,
+    ttlMs = 0,
+    skipCache = false,
     ...restOptions
   } = options;
 
-  const requestHeaders = {
-    ...(headers || {}),
-  };
+  const method = (restOptions.method || "GET").toUpperCase();
+  const isGet = method === "GET";
+  const userUid = auth.currentUser?.uid || "";
+  const cacheKey = isGet ? `${path}:${includeAuth ? userUid : "anon"}` : null;
 
-  if (includeAuth && auth.currentUser) {
-    try {
-      const token = await auth.currentUser.getIdToken();
-      if (token) {
-        requestHeaders.Authorization = `Bearer ${token}`;
-      }
-    } catch (error) {
-      console.warn("Unable to attach auth token", error);
+  // 1. Check TTL cache if enabled
+  if (isGet && !skipCache && restOptions.cache !== "no-store" && ttlMs > 0 && cacheKey) {
+    const cached = responseCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt) {
+      return JSON.parse(JSON.stringify(cached.data));
     }
   }
 
-  const res = await fetch(toApiUrl(path), {
-    ...restOptions,
-    headers: requestHeaders,
-  });
-  const parsedBody = await parseResponseBody(res);
-
-  if (!res.ok) {
-    throw new Error(extractErrorMessage(parsedBody, res.status));
+  // 2. Coalesce in-flight identical GET requests to avoid duplicate wire roundtrips
+  if (isGet && cacheKey && inFlightRequests.has(cacheKey)) {
+    return inFlightRequests.get(cacheKey);
   }
 
-  return parsedBody;
+  const executionPromise = (async () => {
+    const requestHeaders = {
+      ...(headers || {}),
+    };
+
+    if (includeAuth && auth.currentUser) {
+      try {
+        const token = await auth.currentUser.getIdToken();
+        if (token) {
+          requestHeaders.Authorization = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.warn("Unable to attach auth token", error);
+      }
+    }
+
+    const res = await fetch(toApiUrl(path), {
+      ...restOptions,
+      headers: requestHeaders,
+    });
+    const parsedBody = await parseResponseBody(res);
+
+    if (!res.ok) {
+      throw new Error(extractErrorMessage(parsedBody, res.status));
+    }
+
+    // Save into cache if eligible
+    if (isGet && !skipCache && restOptions.cache !== "no-store" && ttlMs > 0 && cacheKey) {
+      responseCache.set(cacheKey, {
+        data: parsedBody,
+        expiresAt: Date.now() + ttlMs,
+      });
+      if (responseCache.size > 100) {
+        const oldestKey = responseCache.keys().next().value;
+        responseCache.delete(oldestKey);
+      }
+    }
+
+    return parsedBody;
+  })();
+
+  if (isGet && cacheKey) {
+    inFlightRequests.set(cacheKey, executionPromise);
+    executionPromise.finally(() => {
+      inFlightRequests.delete(cacheKey);
+    });
+  }
+
+  return executionPromise;
 }
 
 /**
  * Sync Firebase user to backend after login/signup
  */
 export async function syncUserToBackend({ uid, email, displayName, photoURL, authToken, githubUrl, linkedinUrl }) {
+  invalidateApiCache("/api/users");
   return requestJson("/api/users", {
     method: "POST",
     headers: {
@@ -110,6 +172,7 @@ export async function resolveStudentEmail(email) {
  * Dedicated Student Sync
  */
 export async function syncStudentToBackend({ uid, email, displayName, authToken, githubUrl, linkedinUrl }) {
+  invalidateApiCache("/api/users");
   return requestJson("/api/student/sync", {
     method: "POST",
     headers: {
@@ -125,7 +188,7 @@ export async function syncStudentToBackend({ uid, email, displayName, authToken,
  * Fetch leaderboard data from backend
  */
 export async function fetchLeaderboard() {
-  return requestJson("/api/leaderboard");
+  return requestJson("/api/leaderboard", { ttlMs: 10000 });
 }
 
 /**
@@ -181,14 +244,14 @@ export async function fetchPracticeProblems({ page = 1, limit = 50, difficulty =
     params.set("tags", tags);
   }
 
-  return requestJson(`/api/problems?${params.toString()}`);
+  return requestJson(`/api/problems?${params.toString()}`, { ttlMs: 15000 });
 }
 
 /**
  * Fetch one problem with only public testcase data.
  */
 export async function fetchProblemById(problemId) {
-  return requestJson(`/api/problems/${problemId}`);
+  return requestJson(`/api/problems/${problemId}`, { ttlMs: 30000 });
 }
 
 /**
@@ -226,16 +289,20 @@ export async function fetchAvailablePlayers({ search = "", status = "", limit = 
   if (excludeUserId) params.set("excludeUserId", excludeUserId);
 
   const queryString = params.toString();
-  return requestJson(`/api/players/available${queryString ? `?${queryString}` : ""}`);
+  return requestJson(`/api/players/available${queryString ? `?${queryString}` : ""}`, { ttlMs: 5000 });
 }
 
 export async function fetchUserNotifications(userId) {
   if (!userId) return { notifications: [], unreadCount: 0, total: 0 };
-  return requestJson(`/api/notifications?userId=${encodeURIComponent(userId)}`, { includeAuth: true });
+  return requestJson(`/api/notifications?userId=${encodeURIComponent(userId)}`, {
+    includeAuth: true,
+    ttlMs: 5000,
+  });
 }
 
 export async function markNotificationAsRead(userId, notificationId) {
   if (!userId || !notificationId) return { success: false };
+  invalidateApiCache("/api/notifications");
   return requestJson(`/api/notifications/${encodeURIComponent(notificationId)}/read`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -246,6 +313,7 @@ export async function markNotificationAsRead(userId, notificationId) {
 
 export async function markAllNotificationsAsRead(userId) {
   if (!userId) return { count: 0 };
+  invalidateApiCache("/api/notifications");
   return requestJson(`/api/notifications/read-all`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -256,6 +324,7 @@ export async function markAllNotificationsAsRead(userId) {
 
 export async function clearUserNotifications(userId) {
   if (!userId) return { success: false };
+  invalidateApiCache("/api/notifications");
   return requestJson(`/api/notifications`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
@@ -265,7 +334,7 @@ export async function clearUserNotifications(userId) {
 }
 
 export async function fetchActiveSystemAnnouncements() {
-  return requestJson(`/api/notifications/active-broadcasts`);
+  return requestJson(`/api/notifications/active-broadcasts`, { ttlMs: 15000 });
 }
 
 export async function dispatchAdminBroadcast(adminKey, broadcastData) {

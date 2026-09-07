@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { surfingTracker } from './services/analytics.js';
+import { unifiedAnalytics } from './services/analytics.js';
 
 import Login from './components/Login/Login.jsx';
 import NavBar from './components/NavBar/NavBar.jsx';
@@ -76,8 +76,8 @@ function App() {
   const location = useLocation();
 
   useEffect(() => {
-    surfingTracker.init();
-    surfingTracker.trackPageView(location.pathname);
+    unifiedAnalytics.init();
+    unifiedAnalytics.trackPageView(location.pathname);
   }, [location.pathname]);
 
   return (
