@@ -222,7 +222,6 @@ export default function LiveBattle() {
   const [battleId, setBattleId] = useState(null);
   const [myPerformanceScore, setMyPerformanceScore] = useState(0);
   
-  const slowNotificationTimer = useRef(null);
 
   // Gamification states
   const [myRankBefore, setMyRankBefore] = useState("ROOKIE");
@@ -509,11 +508,6 @@ export default function LiveBattle() {
         setRunning(false);
         setRunMode("idle");
         
-        if (slowNotificationTimer.current) {
-            clearTimeout(slowNotificationTimer.current);
-            slowNotificationTimer.current = null;
-        }
-
         const result = data.result || data;
         const isSuccess = result?.success || false;
         const testCases = result?.results || [];
@@ -690,7 +684,6 @@ export default function LiveBattle() {
         socketRef.current.off("matchmaking_timeout");
       }
       
-      if (slowNotificationTimer.current) clearTimeout(slowNotificationTimer.current);
     };
   }, [notify, user?.uid, username, roomId, initialMatch, initialRoomCode]);
 
@@ -703,15 +696,6 @@ export default function LiveBattle() {
     setOutput("Testing against sample cases...");
     socketRef.current.emit("test_code", { code, language, roomId, problemId: problem.id });
     
-    if (slowNotificationTimer.current) clearTimeout(slowNotificationTimer.current);
-    slowNotificationTimer.current = setTimeout(() => {
-        notify({
-            type: "info",
-            title: "Evaluating...",
-            message: "The platform is taking a little longer to get the result. Please hold on!",
-            autoClose: 5000
-        });
-    }, 5000);
   };
 
   const onSubmitCode = () => {
@@ -723,15 +707,6 @@ export default function LiveBattle() {
     setOutput("Testing against hidden and edge cases...");
     socketRef.current.emit("submit_code", { code, language, roomId, problemId: problem.id });
     
-    if (slowNotificationTimer.current) clearTimeout(slowNotificationTimer.current);
-    slowNotificationTimer.current = setTimeout(() => {
-        notify({
-            type: "info",
-            title: "Evaluating...",
-            message: "The platform is taking a little longer to get the result. Please hold on!",
-            autoClose: 5000
-        });
-    }, 5000);
   };
 
   if (status === "connecting" || status === "waiting") {

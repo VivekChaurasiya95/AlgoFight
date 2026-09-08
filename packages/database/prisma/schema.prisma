@@ -174,8 +174,6 @@ model BattleRoom {
   difficulty       String           @default("Mix")
   questionCount    Int              @default(3)
   // ▲ ----------------------------------------------- ▲
-  isFriendly       Boolean          @default(false)
-  
   timeLimitMinutes Int              @default(15)
   startedAt        DateTime?
   endedAt          DateTime?
@@ -248,5 +246,4 @@ model SystemBroadcast {
   @@index([revokedAt])
   @@index([createdAt])
 }
-
 

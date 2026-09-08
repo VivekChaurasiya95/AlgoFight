@@ -25,7 +25,6 @@ export interface BattleRoomEntity {
     questionCount: number;
     problems?: any[],
     timeLimitMinutes: number;
-    isFriendly: boolean;
     startedAt: Date | null;
     endedAt: Date | null;
     createdAt: Date;

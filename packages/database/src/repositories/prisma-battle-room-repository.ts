@@ -48,7 +48,6 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
             questionCount: room.questionCount,
             problems: room.problems,
             timeLimitMinutes: room.timeLimitMinutes,
-            isFriendly: room.isFriendly ?? false,
             startedAt: room.startedAt,
             endedAt: room.endedAt,
             createdAt: room.createdAt,
@@ -120,13 +119,8 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
     }
 
     async getRoomByCode(roomCode: string): Promise<BattleRoomEntity | null> {
-        const room = await prisma.battleRoom.findFirst({
-            where: {
-                roomCode: {
-                    equals: roomCode,
-                    mode: "insensitive"
-                }
-            },
+        const room = await prisma.battleRoom.findUnique({
+            where: { roomCode },
             include: battleRoomInclude,
         });
         return room ? this.mapToEntity(room) : null;

@@ -133,15 +133,6 @@ export default function PracticeWorkspace() {
         : `Submitting ${langLabel} to balanced practice suite...`
     );
 
-    const slowNotificationTimer = setTimeout(() => {
-      notify({
-        type: "info",
-        title: "Evaluating...",
-        message: "The platform is taking a little longer to get the result. Please hold on!",
-        autoClose: 5000,
-      });
-    }, 5000);
-
     try {
       const result = await evaluatePracticeCode({
         problemId,
@@ -221,7 +212,6 @@ export default function PracticeWorkspace() {
         message: error?.message || "Unable to execute your code.",
       });
     } finally {
-      clearTimeout(slowNotificationTimer);
       setRunning(false);
       setRunMode("idle");
     }
