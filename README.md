@@ -1,8 +1,9 @@
 # ⚔️ AlgoFight — Real-Time Competitive Coding Arena
 
 <p align="center">
-  <img src="[[frontend/public/algofight-logo.png](https://github.com/arin-gupta06/AlgoFight-New-Backend-/blob/main/frontend/src/assets/algofight-logo.png)](https://raw.githubusercontent.com/arin-gupta06/AlgoFight-New-Backend-/main/frontend/public/algofight-logo.png)" alt="AlgoFight Logo" width="130" />
+  <img src="./frontend/public/Algo%20Fight.svg" alt="AlgoFight Logo" width="130" />
 </p>
+
 
 <p align="center">
   <b>A production-grade, distributed platform for real-time competitive algorithmic battles, multiplayer coding tournaments, and secure sandboxed code execution.</b>
@@ -209,6 +210,7 @@ node apps/api/test_mm.js
 
 - **Vivek Chaurasiya**
 - **Arin Gupta**
+- **Krish Darger**
 
 ---
 
