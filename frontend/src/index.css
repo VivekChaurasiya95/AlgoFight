@@ -1,40 +1,365 @@
-/* ===== FUTURISTIC HUD INTERFACE - GLOBAL CSS ===== */
+/* ===== CUSTOM (STEALTH CYBER COCKPIT) THEME (DEFAULT) ===== */
+:root,
+:root[data-theme="custom"] {
+  /* BACKGROUND */
+  --bg-primary: #070809;
+  --bg-secondary: #0D0E10;
+  --bg-deep: #050607;
+
+  /* SURFACES */
+  --surface-primary: #1A1D25;
+  --surface-elevated: #23242E;
+  --surface-highlight: #2B2F3B;
+
+  /* SECONDARY */
+  --secondary: #434453;
+  --secondary-muted: #7F808F;
+
+  /* BORDERS */
+  --border-primary: #343640;
+  --border-subtle: #20232B;
+
+  /* TEXT */
+  --text-primary: #E3E5ED;
+  --text-secondary: #AEB2C0;
+  --text-muted: #7F808F;
+  --text-disabled: #5D606C;
+
+  /* CTA */
+  --cta-primary: #E3E5ED;
+  --cta-text: #0A0B0D;
+  --cta-hover: #F2F3F7;
+
+  /* STATUS */
+  --success: #69D391;
+  --warning: #F0C674;
+  --danger: #EF7777;
+  --info: #8FA9D9;
+
+  /* === COMPATIBILITY TOKENS === */
+  --hud-cyan: var(--text-primary);
+  --hud-cyan-dim: var(--text-secondary);
+  --hud-blue: var(--info);
+  --hud-purple: var(--surface-highlight);
+  --hud-white: var(--text-primary);
+  --bg-void: var(--bg-deep);
+  --bg-space: var(--bg-primary);
+  --bg-panel: var(--bg-secondary);
+  --bg-panel-solid: var(--bg-secondary);
+  --bg-card: var(--bg-secondary);
+  --bg-card-hover: var(--surface-primary);
+  --border-dim: var(--border-subtle);
+  --border-default: var(--border-primary);
+  --border-bright: var(--text-muted);
+  --border-active: var(--text-primary);
+  --text-dim: var(--text-secondary);
+}
+
+/* ===== ORIGINAL (ELECTRIC CYBERPUNK) THEME ===== */
+:root[data-theme="original"] {
+  /* BACKGROUND */
+  --bg-primary: #050811;
+  --bg-secondary: #0a0f1d;
+  --bg-deep: #020408;
+
+  /* SURFACES */
+  --surface-primary: #111827;
+  --surface-elevated: #1e293b;
+  --surface-highlight: #334155;
+
+  /* SECONDARY */
+  --secondary: #64748b;
+  --secondary-muted: #94a3b8;
+
+  /* BORDERS */
+  --border-primary: rgba(0, 229, 255, 0.35);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+
+  /* TEXT */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-disabled: #64748b;
+
+  /* CTA */
+  --cta-primary: #00e5ff;
+  --cta-text: #020617;
+  --cta-hover: #38bdf8;
+
+  /* STATUS */
+  --success: #22c55e;
+  --warning: #fbbf24;
+  --danger: #ef4444;
+  --info: #38bdf8;
+
+  /* === COMPATIBILITY TOKENS === */
+  --hud-cyan: #00e5ff;
+  --hud-cyan-dim: #00b4d8;
+  --hud-blue: #3b82f6;
+  --hud-purple: #8b5cf6;
+  --hud-white: #ffffff;
+  --bg-void: #020408;
+  --bg-space: #050811;
+  --bg-panel: #0a0f1d;
+  --bg-panel-solid: #0c1020;
+  --bg-card: #0a0f1d;
+  --bg-card-hover: #131b2e;
+  --border-dim: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(0, 229, 255, 0.28);
+  --border-bright: #00e5ff;
+  --border-active: #00e5ff;
+  --text-dim: #94a3b8;
+}
+
+/* ===== MATRIX EMERALD THEME ===== */
+:root[data-theme="emerald"] {
+  --bg-primary: #040d0a;
+  --bg-secondary: #071712;
+  --bg-deep: #020705;
+
+  --surface-primary: #0d241c;
+  --surface-elevated: #133529;
+  --surface-highlight: #1b4737;
+
+  --secondary: #3b6b5b;
+  --secondary-muted: #6ee7b7;
+
+  --border-primary: rgba(16, 185, 129, 0.35);
+  --border-subtle: rgba(16, 185, 129, 0.12);
+
+  --text-primary: #ecfdf5;
+  --text-secondary: #a7f3d0;
+  --text-muted: #6ee7b7;
+  --text-disabled: #3b6b5b;
+
+  --cta-primary: #10b981;
+  --cta-text: #020705;
+  --cta-hover: #34d399;
+
+  --success: #10b981;
+  --warning: #fbbf24;
+  --danger: #ef4444;
+  --info: #34d399;
+
+  --hud-cyan: #10b981;
+  --hud-cyan-dim: #059669;
+  --hud-blue: #34d399;
+  --hud-purple: #047857;
+  --hud-white: #ecfdf5;
+  --bg-void: #020705;
+  --bg-space: #040d0a;
+  --bg-panel: #071712;
+  --bg-panel-solid: #0a1e17;
+  --bg-card: #071712;
+  --bg-card-hover: #0d241c;
+  --border-dim: rgba(16, 185, 129, 0.12);
+  --border-default: rgba(16, 185, 129, 0.3);
+  --border-bright: #10b981;
+  --border-active: #34d399;
+  --text-dim: #a7f3d0;
+}
+
+/* ===== CRIMSON SYNDICATE THEME ===== */
+:root[data-theme="crimson"] {
+  --bg-primary: #0f0507;
+  --bg-secondary: #190a0e;
+  --bg-deep: #090204;
+
+  --surface-primary: #271017;
+  --surface-elevated: #381621;
+  --surface-highlight: #4d1d2c;
+
+  --secondary: #7a3546;
+  --secondary-muted: #fda4af;
+
+  --border-primary: rgba(244, 63, 94, 0.36);
+  --border-subtle: rgba(244, 63, 94, 0.12);
+
+  --text-primary: #fff1f2;
+  --text-secondary: #fecdd3;
+  --text-muted: #fda4af;
+  --text-disabled: #7a3546;
+
+  --cta-primary: #f43f5e;
+  --cta-text: #090204;
+  --cta-hover: #fb7185;
+
+  --success: #22c55e;
+  --warning: #fbbf24;
+  --danger: #f43f5e;
+  --info: #fb7185;
+
+  --hud-cyan: #f43f5e;
+  --hud-cyan-dim: #e11d48;
+  --hud-blue: #fb7185;
+  --hud-purple: #be123c;
+  --hud-white: #fff1f2;
+  --bg-void: #090204;
+  --bg-space: #0f0507;
+  --bg-panel: #190a0e;
+  --bg-panel-solid: #220d13;
+  --bg-card: #190a0e;
+  --bg-card-hover: #271017;
+  --border-dim: rgba(244, 63, 94, 0.12);
+  --border-default: rgba(244, 63, 94, 0.3);
+  --border-bright: #f43f5e;
+  --border-active: #fb7185;
+  --text-dim: #fecdd3;
+}
+
+/* ===== VOID AMETHYST THEME ===== */
+:root[data-theme="amethyst"] {
+  --bg-primary: #0a0614;
+  --bg-secondary: #120b22;
+  --bg-deep: #06030d;
+
+  --surface-primary: #1d1236;
+  --surface-elevated: #2a1a4c;
+  --surface-highlight: #3b246a;
+
+  --secondary: #5e3e9e;
+  --secondary-muted: #d8b4fe;
+
+  --border-primary: rgba(168, 85, 247, 0.36);
+  --border-subtle: rgba(168, 85, 247, 0.12);
+
+  --text-primary: #faf5ff;
+  --text-secondary: #e9d5ff;
+  --text-muted: #d8b4fe;
+  --text-disabled: #5e3e9e;
+
+  --cta-primary: #a855f7;
+  --cta-text: #06030d;
+  --cta-hover: #c084fc;
+
+  --success: #22c55e;
+  --warning: #fbbf24;
+  --danger: #ef4444;
+  --info: #c084fc;
+
+  --hud-cyan: #a855f7;
+  --hud-cyan-dim: #9333ea;
+  --hud-blue: #c084fc;
+  --hud-purple: #7e22ce;
+  --hud-white: #faf5ff;
+  --bg-void: #06030d;
+  --bg-space: #0a0614;
+  --bg-panel: #120b22;
+  --bg-panel-solid: #180e2e;
+  --bg-card: #120b22;
+  --bg-card-hover: #1d1236;
+  --border-dim: rgba(168, 85, 247, 0.12);
+  --border-default: rgba(168, 85, 247, 0.3);
+  --border-bright: #a855f7;
+  --border-active: #c084fc;
+  --text-dim: #e9d5ff;
+}
+
+/* ===== MOLTEN SUNSET THEME ===== */
+:root[data-theme="sunset"] {
+  --bg-primary: #0e0704;
+  --bg-secondary: #1a0d07;
+  --bg-deep: #070302;
+
+  --surface-primary: #26140a;
+  --surface-elevated: #341a0e;
+  --surface-highlight: #472313;
+
+  --secondary: #fb923c;
+  --secondary-muted: #fdba74;
+
+  --border-primary: rgba(249, 115, 22, 0.38);
+  --border-subtle: rgba(245, 158, 11, 0.14);
+
+  --text-primary: #fff7ed;
+  --text-secondary: #fed7aa;
+  --text-muted: #fdba74;
+  --text-disabled: #9a3412;
+
+  --cta-primary: #f97316;
+  --cta-text: #090302;
+  --cta-hover: #fb923c;
+
+  --success: #22c55e;
+  --warning: #fbbf24;
+  --danger: #ef4444;
+  --info: #fb923c;
+
+  --hud-cyan: #f97316;
+  --hud-cyan-dim: #ea580c;
+  --hud-blue: #fb923c;
+  --hud-purple: #c2410c;
+  --hud-white: #fff7ed;
+  --bg-void: #070302;
+  --bg-space: #0e0704;
+  --bg-panel: #1a0d07;
+  --bg-panel-solid: #201009;
+  --bg-card: #1a0d07;
+  --bg-card-hover: #26140a;
+  --border-dim: rgba(245, 158, 11, 0.12);
+  --border-default: rgba(249, 115, 22, 0.32);
+  --border-bright: #f97316;
+  --border-active: #fb923c;
+  --text-dim: #fed7aa;
+}
+
+/* ===== CLEAN HORIZON (LIGHT) THEME ===== */
+:root[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-deep: #f1f5f9;
+
+  --surface-primary: #ffffff;
+  --surface-elevated: #f8fafc;
+  --surface-highlight: #eff6ff;
+
+  --secondary: #475569;
+  --secondary-muted: #64748b;
+
+  --border-primary: #e2e8f0;
+  --border-subtle: #eef2f6;
+
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-disabled: #94a3b8;
+
+  --cta-primary: #2563eb;
+  --cta-text: #ffffff;
+  --cta-hover: #1d4ed8;
+  --cta-gradient: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+  --cta-shadow: rgba(37, 99, 235, 0.28);
+
+  --hero-word-1: #2563eb;
+  --hero-word-2: #3b82f6;
+  --hero-glow-1: 0 0 16px rgba(37, 99, 235, 0.35);
+  --hero-glow-2: 0 0 16px rgba(59, 130, 246, 0.3);
+
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #2563eb;
+
+  --hud-cyan: #2563eb;
+  --hud-cyan-dim: #1d4ed8;
+  --hud-blue: #3b82f6;
+  --hud-purple: #4f46e5;
+  --hud-white: #0f172a;
+  --bg-void: #f1f5f9;
+  --bg-space: #f8fafc;
+  --bg-panel: #ffffff;
+  --bg-panel-solid: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --border-dim: #eef2f6;
+  --border-default: #e2e8f0;
+  --border-bright: #2563eb;
+  --border-active: #2563eb;
+  --text-dim: #64748b;
+}
+
 
 :root {
-  /* === PRIMARY COLORS - CYBERPUNK PALETTE === */
-  --hud-cyan: #00e5ff;
-  --hud-cyan-dim: #008899;
-  --hud-blue: #0055ff;
-  --hud-purple: #8a2be2;
-  --hud-white: #ffffff;
-
-  /* === BACKGROUNDS === */
-  --bg-void: #000000;
-  --bg-space: #030303;
-  --bg-panel: rgba(0, 0, 0, 0.85);
-  --bg-panel-solid: #050505;
-  --bg-card: rgba(0, 20, 30, 0.4);
-  --bg-card-hover: rgba(0, 30, 50, 0.7);
-  --bg-elevated: rgba(0, 229, 255, 0.05);
-
-  /* === BORDERS === */
-  --border-dim: rgba(0, 229, 255, 0.2);
-  --border-default: rgba(0, 229, 255, 0.4);
-  --border-bright: rgba(0, 229, 255, 0.8);
-  --border-active: var(--hud-cyan);
-
-  /* === TEXT === */
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.85);
-  --text-dim: rgba(0, 229, 255, 0.6);
-  --text-muted: rgba(255, 255, 255, 0.4);
-
-  /* === GLOWS & SHADOWS === */
-  --glow-cyan: 0 0 15px rgba(0, 229, 255, 0.4);
-  --glow-cyan-intense: 0 0 20px rgba(0, 229, 255, 0.6), 0 0 40px rgba(0, 229, 255, 0.2);
-  --glow-text: 0 0 8px rgba(0, 229, 255, 0.7);
-  --shadow-panel: 0 4px 30px rgba(0, 0, 0, 0.8);
-
   /* === SPACING === */
   --spacing-xs: 8px;
   --spacing-sm: 16px;
@@ -97,8 +422,8 @@
 /* ===== SPACE BACKGROUND WITH GRID ===== */
 html,
 body {
-  background-color: var(--bg-void);
-  color: var(--text-primary);
+  background-color: var(--bg-primary, #070809);
+  color: var(--text-primary, #E3E5ED);
   font-family: var(--font-primary);
   font-size: var(--font-base);
   font-weight: var(--font-normal);
@@ -111,20 +436,12 @@ body {
 }
 
 body {
+  background-color: var(--bg-primary, #070809);
   background-image:
-    /* Dot grid pattern */
-    radial-gradient(circle at center, rgba(0, 229, 255, 0.15) 1px, transparent 1px),
-    /* Larger grid lines */
-    linear-gradient(rgba(0, 229, 255, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 229, 255, 0.08) 1px, transparent 1px);
-  background-size:
-    40px 40px,
-    80px 80px,
-    80px 80px;
-  background-position:
-    0 0,
-    0 0,
-    0 0;
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 44px 44px;
+  background-position: 0 0;
   background-attachment: fixed;
 }
 
@@ -561,3 +878,2342 @@ p {
   color: #ffffff !important;
   transform: translateY(-2px);
 }
+
+/* ==========================================================================
+   GLOBAL MULTI-PAGE THEME RECIPROCATION (ORIGINAL vs CUSTOM)
+   Cascades across /battle, /practice, /leaderboard, /rewards, /developer, /profile, etc.
+   ========================================================================== */
+
+/* --- 1. CUSTOM (STEALTH OBSIDIAN COCKPIT) GLOBAL OVERRIDES --- */
+:root[data-theme="custom"] body {
+  background-color: #070809 !important;
+}
+
+:root[data-theme="custom"] .background-paths-wrapper {
+  background-color: #070809 !important;
+}
+
+:root[data-theme="custom"] .dash-card,
+:root[data-theme="custom"] .arena-mode-card,
+:root[data-theme="custom"] .leaderboard-stat-card,
+:root[data-theme="custom"] .practice-stat-card,
+:root[data-theme="custom"] .rewards-stat-card,
+:root[data-theme="custom"] .rewards-item-card,
+:root[data-theme="custom"] .rewards-vault-card,
+:root[data-theme="custom"] .developer-card,
+:root[data-theme="custom"] .developer-stat-card,
+:root[data-theme="custom"] .profile-overview-shell,
+:root[data-theme="custom"] .profile-loading,
+:root[data-theme="custom"] .lobby-card-main,
+:root[data-theme="custom"] .faculty-arena-notice,
+:root[data-theme="custom"] .leaderboard-table-card,
+:root[data-theme="custom"] .practice-table-card,
+:root[data-theme="custom"] .custom-rooms-table-card {
+  background: #0D0E10 !important;
+  border-color: #20232B !important;
+  color: #E3E5ED !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+:root[data-theme="custom"] .dash-card:hover,
+:root[data-theme="custom"] .arena-mode-card:hover,
+:root[data-theme="custom"] .leaderboard-stat-card:hover,
+:root[data-theme="custom"] .practice-stat-card:hover,
+:root[data-theme="custom"] .rewards-stat-card:hover,
+:root[data-theme="custom"] .rewards-item-card:hover,
+:root[data-theme="custom"] .rewards-vault-card:hover,
+:root[data-theme="custom"] .developer-card:hover {
+  border-color: #343640 !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85) !important;
+}
+
+:root[data-theme="custom"] .arena-tabs-pill-bar,
+:root[data-theme="custom"] .practice-filter-bar,
+:root[data-theme="custom"] .rewards-filter-tabs,
+:root[data-theme="custom"] .developer-filter-tabs,
+:root[data-theme="custom"] .profile-nav-tabs,
+:root[data-theme="custom"] .telemetry-bar {
+  background: #1A1D25 !important;
+  border-color: #343640 !important;
+  color: #AEB2C0 !important;
+}
+
+:root[data-theme="custom"] .arena-pill-tab.active,
+:root[data-theme="custom"] .practice-filter-pill.active,
+:root[data-theme="custom"] .rewards-tab-btn.active,
+:root[data-theme="custom"] .developer-tab-btn.active,
+:root[data-theme="custom"] .profile-tab-btn.active {
+  background: #23242E !important;
+  border-color: #343640 !important;
+  color: #E3E5ED !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="custom"] .btn-action-cyan,
+:root[data-theme="custom"] .btn-action-purple,
+:root[data-theme="custom"] .btn-action-gold,
+:root[data-theme="custom"] .btn-action-emerald,
+:root[data-theme="custom"] .btn-hud-primary,
+:root[data-theme="custom"] .btn-primary-glow {
+  background: #E3E5ED !important;
+  border-color: #E3E5ED !important;
+  color: #0A0B0D !important;
+  box-shadow: 0 0 20px rgba(227, 229, 237, 0.22) !important;
+}
+
+:root[data-theme="custom"] .btn-action-cyan:hover,
+:root[data-theme="custom"] .btn-action-purple:hover,
+:root[data-theme="custom"] .btn-action-gold:hover,
+:root[data-theme="custom"] .btn-action-emerald:hover,
+:root[data-theme="custom"] .btn-hud-primary:hover,
+:root[data-theme="custom"] .btn-primary-glow:hover {
+  background: #F2F3F7 !important;
+  box-shadow: 0 0 28px rgba(227, 229, 237, 0.4) !important;
+  color: #0A0B0D !important;
+}
+
+:root[data-theme="custom"] .btn-hud-secondary,
+:root[data-theme="custom"] .btn-secondary-glass,
+:root[data-theme="custom"] .btn-hud-back {
+  background: #1A1D25 !important;
+  border-color: #343640 !important;
+  color: #E3E5ED !important;
+}
+
+:root[data-theme="custom"] .btn-hud-secondary:hover,
+:root[data-theme="custom"] .btn-secondary-glass:hover,
+:root[data-theme="custom"] .btn-hud-back:hover {
+  background: #23242E !important;
+  border-color: #7F808F !important;
+  color: #F2F3F7 !important;
+}
+
+:root[data-theme="custom"] .dash-pill-tag,
+:root[data-theme="custom"] .live-status-pill,
+:root[data-theme="custom"] .mode-capacity-tag,
+:root[data-theme="custom"] .arena-online-badge {
+  background: #1A1D25 !important;
+  border-color: #343640 !important;
+  color: #AEB2C0 !important;
+}
+
+:root[data-theme="custom"] .live-pulse-node,
+:root[data-theme="custom"] .online-pulse-dot {
+  background: #69D391 !important;
+  box-shadow: 0 0 6px #69D391 !important;
+}
+
+:root[data-theme="custom"] .hero-kicker-tag,
+:root[data-theme="custom"] .rewards-kicker-tag,
+:root[data-theme="custom"] .developer-kicker-tag,
+:root[data-theme="custom"] .practice-kicker,
+:root[data-theme="custom"] .leaderboard-kicker,
+:root[data-theme="custom"] .arena-kicker {
+  background: #1A1D25 !important;
+  border-color: #343640 !important;
+  color: #AEB2C0 !important;
+}
+
+:root[data-theme="custom"] .kicker-slash,
+:root[data-theme="custom"] .kicker-cross,
+:root[data-theme="custom"] .word-glow-cyan {
+  color: #AEB2C0 !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="custom"] .text-cyan-gradient,
+:root[data-theme="custom"] .text-yellow-gradient,
+:root[data-theme="custom"] .text-purple-gradient {
+  background: none !important;
+  -webkit-text-fill-color: #E3E5ED !important;
+  color: #E3E5ED !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="custom"] .text-cyan,
+:root[data-theme="custom"] .text-gold,
+:root[data-theme="custom"] .text-cyan-stat {
+  color: #E3E5ED !important;
+}
+
+:root[data-theme="custom"] .text-purple,
+:root[data-theme="custom"] .text-pink,
+:root[data-theme="custom"] .text-purple-stat {
+  color: #AEB2C0 !important;
+}
+
+:root[data-theme="custom"] .page-footer {
+  background: #050607 !important;
+  border-top-color: #20232B !important;
+}
+
+:root[data-theme="custom"] .navbar-container {
+  background: rgba(13, 14, 16, 0.92) !important;
+  border-color: #343640 !important;
+}
+
+:root[data-theme="custom"] .nav-link-pill.active-link {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: #E3E5ED !important;
+}
+
+/* --- 2. ORIGINAL (ELECTRIC CYBERPUNK) GLOBAL OVERRIDES --- */
+:root[data-theme="original"] body {
+  background-color: #050811 !important;
+}
+
+:root[data-theme="original"] .background-paths-wrapper {
+  background-color: #050811 !important;
+}
+
+:root[data-theme="original"] .dash-card,
+:root[data-theme="original"] .arena-mode-card,
+:root[data-theme="original"] .leaderboard-stat-card,
+:root[data-theme="original"] .practice-stat-card,
+:root[data-theme="original"] .rewards-stat-card,
+:root[data-theme="original"] .rewards-item-card,
+:root[data-theme="original"] .rewards-vault-card,
+:root[data-theme="original"] .developer-card,
+:root[data-theme="original"] .developer-stat-card,
+:root[data-theme="original"] .profile-overview-shell,
+:root[data-theme="original"] .profile-loading,
+:root[data-theme="original"] .lobby-card-main,
+:root[data-theme="original"] .faculty-arena-notice,
+:root[data-theme="original"] .leaderboard-table-card,
+:root[data-theme="original"] .practice-table-card,
+:root[data-theme="original"] .custom-rooms-table-card {
+  background: rgba(10, 15, 29, 0.8) !important;
+  border-color: rgba(0, 229, 255, 0.25) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+:root[data-theme="original"] .dash-card:hover,
+:root[data-theme="original"] .arena-mode-card:hover,
+:root[data-theme="original"] .leaderboard-stat-card:hover,
+:root[data-theme="original"] .practice-stat-card:hover,
+:root[data-theme="original"] .rewards-stat-card:hover,
+:root[data-theme="original"] .rewards-item-card:hover,
+:root[data-theme="original"] .rewards-vault-card:hover,
+:root[data-theme="original"] .developer-card:hover {
+  border-color: rgba(0, 229, 255, 0.55) !important;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 229, 255, 0.15) !important;
+}
+
+:root[data-theme="original"] .arena-tabs-pill-bar,
+:root[data-theme="original"] .practice-filter-bar,
+:root[data-theme="original"] .rewards-filter-tabs,
+:root[data-theme="original"] .developer-filter-tabs,
+:root[data-theme="original"] .profile-nav-tabs,
+:root[data-theme="original"] .telemetry-bar {
+  background: rgba(10, 14, 23, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+}
+
+:root[data-theme="original"] .arena-pill-tab.active,
+:root[data-theme="original"] .practice-filter-pill.active,
+:root[data-theme="original"] .rewards-tab-btn.active,
+:root[data-theme="original"] .developer-tab-btn.active,
+:root[data-theme="original"] .profile-tab-btn.active {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.2) 0%, rgba(0, 114, 255, 0.22) 100%) !important;
+  border-color: rgba(0, 229, 255, 0.55) !important;
+  color: #00e5ff !important;
+  box-shadow: 0 2px 14px rgba(0, 229, 255, 0.3) !important;
+}
+
+:root[data-theme="original"] .btn-action-cyan {
+  background: rgba(0, 229, 255, 0.1) !important;
+  border-color: rgba(0, 229, 255, 0.35) !important;
+  color: #00e5ff !important;
+}
+
+:root[data-theme="original"] .btn-action-cyan:hover {
+  background: rgba(0, 229, 255, 0.22) !important;
+  border-color: rgba(0, 229, 255, 0.7) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 16px rgba(0, 229, 255, 0.35) !important;
+}
+
+:root[data-theme="original"] .btn-action-purple {
+  background: rgba(168, 85, 247, 0.1) !important;
+  border-color: rgba(168, 85, 247, 0.35) !important;
+  color: #d8b4fe !important;
+}
+
+:root[data-theme="original"] .btn-action-purple:hover {
+  background: rgba(168, 85, 247, 0.22) !important;
+  border-color: rgba(168, 85, 247, 0.7) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="original"] .btn-action-gold {
+  background: rgba(255, 213, 0, 0.1) !important;
+  border-color: rgba(255, 213, 0, 0.35) !important;
+  color: #fde047 !important;
+}
+
+:root[data-theme="original"] .btn-action-gold:hover {
+  background: rgba(255, 213, 0, 0.22) !important;
+  border-color: rgba(255, 213, 0, 0.7) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="original"] .btn-action-emerald {
+  background: rgba(16, 185, 129, 0.1) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #6ee7b7 !important;
+}
+
+:root[data-theme="original"] .btn-action-emerald:hover {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border-color: rgba(16, 185, 129, 0.7) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="original"] .btn-hud-primary {
+  background: linear-gradient(135deg, #00e5ff 0%, #38bdf8 100%) !important;
+  color: #020617 !important;
+  border-color: #00e5ff !important;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.4) !important;
+}
+
+:root[data-theme="original"] .btn-primary-glow {
+  background: linear-gradient(90deg, #ff007f 0%, #ff52a0 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 20px rgba(255, 0, 127, 0.4) !important;
+}
+
+:root[data-theme="original"] .btn-hud-secondary,
+:root[data-theme="original"] .btn-secondary-glass,
+:root[data-theme="original"] .btn-hud-back {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="original"] .btn-hud-secondary:hover,
+:root[data-theme="original"] .btn-secondary-glass:hover,
+:root[data-theme="original"] .btn-hud-back:hover {
+  border-color: #00e5ff !important;
+  color: #00e5ff !important;
+}
+
+:root[data-theme="original"] .live-status-pill {
+  background: rgba(0, 255, 136, 0.12) !important;
+  border-color: rgba(0, 255, 136, 0.35) !important;
+  color: #00ff88 !important;
+}
+
+:root[data-theme="original"] .live-pulse-node,
+:root[data-theme="original"] .online-pulse-dot {
+  background: #00ff88 !important;
+  box-shadow: 0 0 8px #00ff88 !important;
+}
+
+:root[data-theme="original"] .tag-cyan,
+:root[data-theme="original"] .mode-capacity-tag.cyan {
+  background: rgba(0, 229, 255, 0.12) !important;
+  border-color: rgba(0, 229, 255, 0.4) !important;
+  color: #00e5ff !important;
+}
+
+:root[data-theme="original"] .tag-purple,
+:root[data-theme="original"] .mode-capacity-tag {
+  background: rgba(168, 85, 247, 0.15) !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+  color: #c084fc !important;
+}
+
+:root[data-theme="original"] .tag-gold,
+:root[data-theme="original"] .mode-capacity-tag.gold {
+  background: rgba(255, 213, 0, 0.14) !important;
+  border-color: rgba(255, 213, 0, 0.4) !important;
+  color: #ffd500 !important;
+}
+
+:root[data-theme="original"] .text-cyan-gradient {
+  background: linear-gradient(135deg, #00e5ff 0%, #38bdf8 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+}
+
+:root[data-theme="original"] .text-yellow-gradient {
+  background: linear-gradient(135deg, #ffd500 0%, #ff9500 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+}
+
+:root[data-theme="original"] .word-glow-cyan {
+  color: #00e5ff !important;
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.6) !important;
+}
+
+:root[data-theme="original"] .text-cyan,
+:root[data-theme="original"] .text-cyan-stat {
+  color: #00e5ff !important;
+}
+
+:root[data-theme="original"] .text-purple,
+:root[data-theme="original"] .text-purple-stat {
+  color: #c084fc !important;
+}
+
+:root[data-theme="original"] .text-gold {
+  color: #ffd500 !important;
+}
+
+:root[data-theme="original"] .text-pink {
+  color: #f472b6 !important;
+}
+
+:root[data-theme="original"] .hero-kicker-tag,
+:root[data-theme="original"] .rewards-kicker-tag,
+:root[data-theme="original"] .developer-kicker-tag,
+:root[data-theme="original"] .practice-kicker,
+:root[data-theme="original"] .leaderboard-kicker,
+:root[data-theme="original"] .arena-kicker {
+  background: rgba(0, 229, 255, 0.04) !important;
+  border-color: rgba(0, 229, 255, 0.2) !important;
+  color: #94a3b8 !important;
+}
+
+:root[data-theme="original"] .page-footer {
+  background: radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.03) 0%, transparent 70%) !important;
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+:root[data-theme="original"] .navbar-container {
+  background: rgba(10, 15, 29, 0.88) !important;
+  border-color: rgba(0, 229, 255, 0.22) !important;
+}
+
+:root[data-theme="original"] .nav-link-pill.active-link {
+  color: #00e5ff !important;
+  border-color: rgba(0, 229, 255, 0.45) !important;
+  background: rgba(0, 229, 255, 0.08) !important;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.2) !important;
+}
+
+/* ===== GENERAL THEME RECIPROCATION (EMERALD, CRIMSON, AMETHYST & FUTURE THEMES) ===== */
+:root[data-theme="emerald"] body,
+:root[data-theme="crimson"] body,
+:root[data-theme="amethyst"] body,
+:root[data-theme="sunset"] body {
+  background-color: var(--bg-primary) !important;
+}
+
+:root[data-theme="emerald"] .background-paths-wrapper,
+:root[data-theme="crimson"] .background-paths-wrapper,
+:root[data-theme="amethyst"] .background-paths-wrapper,
+:root[data-theme="sunset"] .background-paths-wrapper {
+  background-color: var(--bg-primary) !important;
+}
+
+:root[data-theme="emerald"] .dash-card,
+:root[data-theme="emerald"] .arena-mode-card,
+:root[data-theme="emerald"] .leaderboard-stat-card,
+:root[data-theme="emerald"] .practice-stat-card,
+:root[data-theme="emerald"] .rewards-stat-card,
+:root[data-theme="emerald"] .rewards-item-card,
+:root[data-theme="emerald"] .rewards-vault-card,
+:root[data-theme="emerald"] .developer-card,
+:root[data-theme="emerald"] .developer-stat-card,
+:root[data-theme="emerald"] .profile-overview-shell,
+:root[data-theme="emerald"] .profile-loading,
+:root[data-theme="emerald"] .lobby-card-main,
+:root[data-theme="emerald"] .faculty-arena-notice,
+:root[data-theme="emerald"] .leaderboard-table-card,
+:root[data-theme="emerald"] .practice-table-card,
+:root[data-theme="emerald"] .custom-rooms-table-card,
+:root[data-theme="crimson"] .dash-card,
+:root[data-theme="crimson"] .arena-mode-card,
+:root[data-theme="crimson"] .leaderboard-stat-card,
+:root[data-theme="crimson"] .practice-stat-card,
+:root[data-theme="crimson"] .rewards-stat-card,
+:root[data-theme="crimson"] .rewards-item-card,
+:root[data-theme="crimson"] .rewards-vault-card,
+:root[data-theme="crimson"] .developer-card,
+:root[data-theme="crimson"] .developer-stat-card,
+:root[data-theme="crimson"] .profile-overview-shell,
+:root[data-theme="crimson"] .profile-loading,
+:root[data-theme="crimson"] .lobby-card-main,
+:root[data-theme="crimson"] .faculty-arena-notice,
+:root[data-theme="crimson"] .leaderboard-table-card,
+:root[data-theme="crimson"] .practice-table-card,
+:root[data-theme="crimson"] .custom-rooms-table-card,
+:root[data-theme="amethyst"] .dash-card,
+:root[data-theme="amethyst"] .arena-mode-card,
+:root[data-theme="amethyst"] .leaderboard-stat-card,
+:root[data-theme="amethyst"] .practice-stat-card,
+:root[data-theme="amethyst"] .rewards-stat-card,
+:root[data-theme="amethyst"] .rewards-item-card,
+:root[data-theme="amethyst"] .rewards-vault-card,
+:root[data-theme="amethyst"] .developer-card,
+:root[data-theme="amethyst"] .developer-stat-card,
+:root[data-theme="amethyst"] .profile-overview-shell,
+:root[data-theme="amethyst"] .profile-loading,
+:root[data-theme="amethyst"] .lobby-card-main,
+:root[data-theme="amethyst"] .faculty-arena-notice,
+:root[data-theme="amethyst"] .leaderboard-table-card,
+:root[data-theme="amethyst"] .practice-table-card,
+:root[data-theme="amethyst"] .custom-rooms-table-card,
+:root[data-theme="sunset"] .dash-card,
+:root[data-theme="sunset"] .arena-mode-card,
+:root[data-theme="sunset"] .leaderboard-stat-card,
+:root[data-theme="sunset"] .practice-stat-card,
+:root[data-theme="sunset"] .rewards-stat-card,
+:root[data-theme="sunset"] .rewards-item-card,
+:root[data-theme="sunset"] .rewards-vault-card,
+:root[data-theme="sunset"] .developer-card,
+:root[data-theme="sunset"] .developer-stat-card,
+:root[data-theme="sunset"] .profile-overview-shell,
+:root[data-theme="sunset"] .profile-loading,
+:root[data-theme="sunset"] .lobby-card-main,
+:root[data-theme="sunset"] .faculty-arena-notice,
+:root[data-theme="sunset"] .leaderboard-table-card,
+:root[data-theme="sunset"] .practice-table-card,
+:root[data-theme="sunset"] .custom-rooms-table-card {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+:root[data-theme="emerald"] .dash-card:hover,
+:root[data-theme="emerald"] .arena-mode-card:hover,
+:root[data-theme="emerald"] .leaderboard-stat-card:hover,
+:root[data-theme="emerald"] .developer-card:hover,
+:root[data-theme="crimson"] .dash-card:hover,
+:root[data-theme="crimson"] .arena-mode-card:hover,
+:root[data-theme="crimson"] .leaderboard-stat-card:hover,
+:root[data-theme="crimson"] .developer-card:hover,
+:root[data-theme="amethyst"] .dash-card:hover,
+:root[data-theme="amethyst"] .arena-mode-card:hover,
+:root[data-theme="amethyst"] .leaderboard-stat-card:hover,
+:root[data-theme="amethyst"] .developer-card:hover,
+:root[data-theme="sunset"] .dash-card:hover,
+:root[data-theme="sunset"] .arena-mode-card:hover,
+:root[data-theme="sunset"] .leaderboard-stat-card:hover,
+:root[data-theme="sunset"] .developer-card:hover {
+  border-color: var(--cta-primary) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 20px var(--border-primary) !important;
+}
+
+:root[data-theme="emerald"] .navbar-container,
+:root[data-theme="crimson"] .navbar-container,
+:root[data-theme="amethyst"] .navbar-container,
+:root[data-theme="sunset"] .navbar-container {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+:root[data-theme="emerald"] .nav-link-pill.active-link,
+:root[data-theme="crimson"] .nav-link-pill.active-link,
+:root[data-theme="amethyst"] .nav-link-pill.active-link,
+:root[data-theme="sunset"] .nav-link-pill.active-link {
+  color: var(--cta-primary) !important;
+  border-color: var(--cta-primary) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 0 16px var(--border-primary) !important;
+}
+
+:root[data-theme="emerald"] .hero-kicker-tag,
+:root[data-theme="crimson"] .hero-kicker-tag,
+:root[data-theme="amethyst"] .hero-kicker-tag,
+:root[data-theme="sunset"] .hero-kicker-tag {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="emerald"] .arena-pill-tab.active,
+:root[data-theme="emerald"] .practice-filter-pill.active,
+:root[data-theme="emerald"] .rewards-tab-btn.active,
+:root[data-theme="emerald"] .developer-tab-btn.active,
+:root[data-theme="emerald"] .profile-tab-btn.active,
+:root[data-theme="crimson"] .arena-pill-tab.active,
+:root[data-theme="crimson"] .practice-filter-pill.active,
+:root[data-theme="crimson"] .rewards-tab-btn.active,
+:root[data-theme="crimson"] .developer-tab-btn.active,
+:root[data-theme="crimson"] .profile-tab-btn.active,
+:root[data-theme="amethyst"] .arena-pill-tab.active,
+:root[data-theme="amethyst"] .practice-filter-pill.active,
+:root[data-theme="amethyst"] .rewards-tab-btn.active,
+:root[data-theme="amethyst"] .developer-tab-btn.active,
+:root[data-theme="amethyst"] .profile-tab-btn.active,
+:root[data-theme="sunset"] .arena-pill-tab.active,
+:root[data-theme="sunset"] .practice-filter-pill.active,
+:root[data-theme="sunset"] .rewards-tab-btn.active,
+:root[data-theme="sunset"] .developer-tab-btn.active,
+:root[data-theme="sunset"] .profile-tab-btn.active {
+  background: var(--surface-highlight) !important;
+  border-color: var(--cta-primary) !important;
+  color: var(--cta-primary) !important;
+  box-shadow: 0 2px 14px var(--border-primary) !important;
+}
+
+:root[data-theme="emerald"] .btn-action-cyan,
+:root[data-theme="crimson"] .btn-action-cyan,
+:root[data-theme="amethyst"] .btn-action-cyan,
+:root[data-theme="sunset"] .btn-action-cyan {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--cta-primary) !important;
+}
+
+:root[data-theme="emerald"] .btn-action-cyan:hover,
+:root[data-theme="crimson"] .btn-action-cyan:hover,
+:root[data-theme="amethyst"] .btn-action-cyan:hover,
+:root[data-theme="sunset"] .btn-action-cyan:hover {
+  background: var(--cta-primary) !important;
+  border-color: var(--cta-primary) !important;
+  color: var(--cta-text) !important;
+  box-shadow: 0 3px 16px var(--border-primary) !important;
+}
+
+/* ==========================================================================
+   UNIVERSAL THEME-AWARE ELEMENT CONTRACT (All Themes & Cockpit Identites)
+   Enforces consistent reciprocation of text, buttons, modals, navbar, and footer
+   ========================================================================== */
+
+/* 1. Theme-Adaptive Typography & Kicker Highlights */
+.word-glow-cyan {
+  color: var(--cta-primary) !important;
+  text-shadow: 0 0 16px var(--cta-shadow) !important;
+}
+
+.kicker-slash,
+.kicker-cross {
+  color: var(--cta-primary) !important;
+}
+
+.text-cyan {
+  color: var(--cta-primary) !important;
+}
+
+.text-cyan-dim {
+  color: var(--secondary-muted, var(--text-secondary)) !important;
+}
+
+.text-cyan-stat {
+  color: var(--cta-primary) !important;
+  text-shadow: 0 0 16px var(--cta-shadow) !important;
+}
+
+.text-cyan-gradient {
+  background: var(--cta-gradient) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.kicker-word.word-glow-cyan {
+  color: var(--cta-primary) !important;
+  text-shadow: 0 0 12px var(--cta-shadow) !important;
+}
+
+/* 2. Theme-Adaptive Buttons */
+.btn-primary,
+.btn-hud-primary,
+.btn-hero-compete,
+.btn-action-cyan {
+  background: var(--cta-gradient, var(--cta-primary)) !important;
+  color: var(--cta-text, #ffffff) !important;
+  border-color: var(--cta-primary) !important;
+  box-shadow: 0 4px 18px var(--cta-shadow) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.btn-primary:hover,
+.btn-hud-primary:hover,
+.btn-hero-compete:hover,
+.btn-action-cyan:hover {
+  background: var(--cta-hover, var(--cta-primary)) !important;
+  border-color: var(--cta-hover, var(--cta-primary)) !important;
+  color: var(--cta-text, #ffffff) !important;
+  box-shadow: 0 6px 24px var(--cta-shadow) !important;
+}
+
+.btn-nav-outline,
+.btn-ghost,
+.btn-outline {
+  border-color: var(--border-default) !important;
+  color: var(--text-secondary) !important;
+}
+
+.btn-nav-outline:hover,
+.btn-ghost:hover,
+.btn-outline:hover {
+  border-color: var(--cta-primary) !important;
+  color: var(--text-primary) !important;
+  background: var(--border-subtle) !important;
+  box-shadow: 0 0 12px var(--cta-shadow) !important;
+}
+
+/* 3. Theme-Adaptive Dialog Boxes & Modals */
+.modal-overlay,
+.feedback-modal-backdrop,
+.public-modal-backdrop,
+.countdown-modal-backdrop,
+.rejoin-modal-backdrop {
+  background: rgba(2, 6, 14, 0.82) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+}
+
+.modal-card,
+.create-room-modal-hud,
+.feedback-modal-container,
+.public-modal-card,
+.rejoin-modal-container,
+.faculty-modal-content,
+.import-modal-content {
+  background: var(--surface-primary) !important;
+  border: 1px solid var(--border-default) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8), 0 0 30px var(--cta-shadow) !important;
+}
+
+.modal-card h2,
+.modal-card h3,
+.public-modal-title,
+.feedback-modal-title,
+.rejoin-modal-title {
+  color: var(--text-primary) !important;
+}
+
+.modal-info,
+.modal-desc,
+.feedback-modal-subtitle,
+.rejoin-modal-desc {
+  color: var(--text-secondary) !important;
+}
+
+.modal-card input,
+.modal-card select,
+.modal-card textarea,
+.create-room-modal-hud input,
+.create-room-modal-hud select,
+.feedback-modal-container input,
+.feedback-modal-container textarea {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-default) !important;
+  color: var(--text-primary) !important;
+}
+
+.modal-card input:focus,
+.modal-card select:focus,
+.modal-card textarea:focus,
+.create-room-modal-hud input:focus,
+.create-room-modal-hud select:focus,
+.feedback-modal-container input:focus,
+.feedback-modal-container textarea:focus {
+  border-color: var(--cta-primary) !important;
+  box-shadow: 0 0 14px var(--cta-shadow) !important;
+}
+
+/* 4. Theme-Adaptive Footer */
+.page-footer {
+  border-top-color: var(--border-subtle) !important;
+  background: radial-gradient(circle at 50% 0%, var(--cta-shadow) 0%, transparent 70%), var(--bg-deep) !important;
+}
+
+/* ===== LIGHT THEME SPECIFIC POLISH ===== */
+/* ==========================================================================
+   CLEAN HORIZON (LIGHT THEME) - COMPREHENSIVE HIGH-KEY STYLING
+   Pristine white & slate aesthetic with royal blue precision.
+   Guarantees 100% text visibility, high contrast, and component consistency.
+   ========================================================================== */
+
+/* ===== 1. GLOBAL BASE & BACKGROUND ===== */
+:root[data-theme="light"] body,
+:root[data-theme="light"] html {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] body::before {
+  display: none !important;
+}
+
+:root[data-theme="light"] .background-paths-wrapper {
+  background-color: #f8fafc !important;
+  background-image:
+    linear-gradient(to right, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.04) 1px, transparent 1px) !important;
+}
+
+:root[data-theme="light"] .background-paths-wrapper::after {
+  background: radial-gradient(ellipse 85% 65% at 50% 35%, transparent 35%, #f1f5f9 100%) !important;
+}
+
+/* ===== 2. UNIVERSAL TYPOGRAPHY & ZERO-INVISIBLE-TEXT CONTRACT ===== */
+:root[data-theme="light"] h1,
+:root[data-theme="light"] h2,
+:root[data-theme="light"] h3,
+:root[data-theme="light"] h4,
+:root[data-theme="light"] h5,
+:root[data-theme="light"] h6,
+:root[data-theme="light"] .hero-headline,
+:root[data-theme="light"] .hero-main-heading,
+:root[data-theme="light"] .hero-for-text,
+:root[data-theme="light"] .practice-header-title,
+:root[data-theme="light"] .arena-header-title,
+:root[data-theme="light"] .leaderboard-title,
+:root[data-theme="light"] .rewards-hero-title,
+:root[data-theme="light"] .developer-hero-title,
+:root[data-theme="light"] .about-hero-title,
+:root[data-theme="light"] .learn-hero-title,
+:root[data-theme="light"] .legal-hero-title,
+:root[data-theme="light"] .help-hero-title,
+:root[data-theme="light"] .blog-hero-title,
+:root[data-theme="light"] .careers-hero-title,
+:root[data-theme="light"] .contact-hero-title,
+:root[data-theme="light"] .panel-heading-title,
+:root[data-theme="light"] .side-card-title,
+:root[data-theme="light"] .podium-card-title,
+:root[data-theme="light"] .dash-card-title,
+:root[data-theme="light"] .reward-item-title,
+:root[data-theme="light"] .hero-feature-title,
+:root[data-theme="light"] .arena-mode-title,
+:root[data-theme="light"] .mode-heading,
+:root[data-theme="light"] .read-drawer-title,
+:root[data-theme="light"] .tier-rail-current,
+:root[data-theme="light"] .tier-rail-next,
+:root[data-theme="light"] .tier-label-name,
+:root[data-theme="light"] .title-text,
+:root[data-theme="light"] .row-username,
+:root[data-theme="light"] .podium-user-name,
+:root[data-theme="light"] .champion-name,
+:root[data-theme="light"] .ap-player-name,
+:root[data-theme="light"] .c-name,
+:root[data-theme="light"] .profile-display-name,
+:root[data-theme="light"] .info-value,
+:root[data-theme="light"] .news-title,
+:root[data-theme="light"] .offer-title,
+:root[data-theme="light"] .card-name,
+:root[data-theme="light"] .mission-title,
+:root[data-theme="light"] .arch-card-title,
+:root[data-theme="light"] .flow-card-title,
+:root[data-theme="light"] .track-name,
+:root[data-theme="light"] .why-title,
+:root[data-theme="light"] .Signup-Heading h1,
+:root[data-theme="light"] .Signup-Header h1,
+:root[data-theme="light"] .Signup-Heading h2,
+:root[data-theme="light"] .Signup-Header h2,
+:root[data-theme="light"] .Login-Heading h1,
+:root[data-theme="light"] .Login-Header h1,
+:root[data-theme="light"] .Login-Heading h2,
+:root[data-theme="light"] .Login-Header h2,
+:root[data-theme="light"] .modal-title-group h2,
+:root[data-theme="light"] .modal-card h2,
+:root[data-theme="light"] .modal-card h3,
+:root[data-theme="light"] .public-modal-title,
+:root[data-theme="light"] .feedback-modal-title,
+:root[data-theme="light"] .rejoin-modal-title,
+:root[data-theme="light"] .faculty-badge-title,
+:root[data-theme="light"] .faculty-title,
+:root[data-theme="light"] .theme-selector-title,
+:root[data-theme="light"] .footer-col-title,
+:root[data-theme="light"] .footer-brand-name,
+:root[data-theme="light"] .col-combatant,
+:root[data-theme="light"] .practice-page-display strong {
+  color: #0f172a !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: initial !important;
+}
+
+:root[data-theme="light"] p,
+:root[data-theme="light"] .hero-main-subtext,
+:root[data-theme="light"] .practice-header-subtext,
+:root[data-theme="light"] .arena-header-subtext,
+:root[data-theme="light"] .rewards-hero-desc,
+:root[data-theme="light"] .developer-hero-desc,
+:root[data-theme="light"] .about-hero-desc,
+:root[data-theme="light"] .learn-hero-desc,
+:root[data-theme="light"] .legal-hero-desc,
+:root[data-theme="light"] .help-hero-desc,
+:root[data-theme="light"] .blog-hero-desc,
+:root[data-theme="light"] .careers-hero-desc,
+:root[data-theme="light"] .contact-hero-desc,
+:root[data-theme="light"] .kpi-subtext,
+:root[data-theme="light"] .dash-card-subtext,
+:root[data-theme="light"] .arena-sub,
+:root[data-theme="light"] .reward-item-desc,
+:root[data-theme="light"] .mode-description,
+:root[data-theme="light"] .arch-card-desc,
+:root[data-theme="light"] .mission-copy,
+:root[data-theme="light"] .card-bio,
+:root[data-theme="light"] .card-institution,
+:root[data-theme="light"] .track-summary,
+:root[data-theme="light"] .why-desc,
+:root[data-theme="light"] .testimonial-quote-text,
+:root[data-theme="light"] .tier-progress-copy,
+:root[data-theme="light"] .news-snippet,
+:root[data-theme="light"] .offer-snippet,
+:root[data-theme="light"] .c-rank,
+:root[data-theme="light"] .ap-table-inst-text,
+:root[data-theme="light"] .ap-record-text,
+:root[data-theme="light"] .archive-counter-pill,
+:root[data-theme="light"] .col-num,
+:root[data-theme="light"] .col-acc,
+:root[data-theme="light"] .filter-label,
+:root[data-theme="light"] .input-label,
+:root[data-theme="light"] .role-selector-label,
+:root[data-theme="light"] .footer-mission-text,
+:root[data-theme="light"] .footer-list li a,
+:root[data-theme="light"] .footer-contact-items li,
+:root[data-theme="light"] .footer-contact-link,
+:root[data-theme="light"] .footer-bottom-line,
+:root[data-theme="light"] .footer-powered-by,
+:root[data-theme="light"] .modal-info,
+:root[data-theme="light"] .modal-desc,
+:root[data-theme="light"] .form-group-hint,
+:root[data-theme="light"] .feedback-modal-subtitle,
+:root[data-theme="light"] .rejoin-modal-desc,
+:root[data-theme="light"] .theme-card-tagline,
+:root[data-theme="light"] .theme-footer-note,
+:root[data-theme="light"] .Signup-Heading p,
+:root[data-theme="light"] .Signup-Header p,
+:root[data-theme="light"] .Login-Heading p,
+:root[data-theme="light"] .Login-Header p,
+:root[data-theme="light"] .auth-switch-text {
+  color: #475569 !important;
+}
+
+/* Primary Metric & Value Highlighting */
+:root[data-theme="light"] .dash-stat-big,
+:root[data-theme="light"] .q-stat-value,
+:root[data-theme="light"] .c-stat-val,
+:root[data-theme="light"] .ap-table-rating-num,
+:root[data-theme="light"] .profile-stat-content h3 {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+/* Word Glow & Accent Highlights Mapped to Royal Blue */
+:root[data-theme="light"] .word-glow-cyan,
+:root[data-theme="light"] .kicker-word.word-glow-cyan,
+:root[data-theme="light"] .text-cyan,
+:root[data-theme="light"] .text-cyan-stat,
+:root[data-theme="light"] .meta-cyan,
+:root[data-theme="light"] .cost-num,
+:root[data-theme="light"] .rank-badge,
+:root[data-theme="light"] .pedestal-1 .pedestal-rank,
+:root[data-theme="light"] .elo-text,
+:root[data-theme="light"] .highlight-cyan,
+:root[data-theme="light"] .testimonial-elo-badge,
+:root[data-theme="light"] .stat-cyan,
+:root[data-theme="light"] .c-icon {
+  color: #2563eb !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .text-cyan-gradient {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .hero-word-sharp {
+  color: #2563eb !important;
+  -webkit-text-fill-color: #2563eb !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .hero-word-minds {
+  color: #3b82f6 !important;
+  -webkit-text-fill-color: #3b82f6 !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .stat-pink {
+  color: #db2777 !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .stat-purple {
+  color: #7c3aed !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .kicker-slash {
+  color: #3b82f6 !important;
+}
+
+:root[data-theme="light"] .kicker-cross {
+  color: #94a3b8 !important;
+}
+
+/* ===== 3. CARDS & ELEVATED SURFACES ===== */
+:root[data-theme="light"] .dash-card,
+:root[data-theme="light"] .rating-card,
+:root[data-theme="light"] .news-dispatch-card,
+:root[data-theme="light"] .testimonials-card,
+:root[data-theme="light"] .live-arena-card,
+:root[data-theme="light"] .quick-stats-card,
+:root[data-theme="light"] .offers-card,
+:root[data-theme="light"] .arena-mode-card,
+:root[data-theme="light"] .arena-mode-card.featured-mode-card,
+:root[data-theme="light"] .arena-sidebar-card,
+:root[data-theme="light"] .reward-card.dash-card,
+:root[data-theme="light"] .rewards-main-panel,
+:root[data-theme="light"] .rewards-side-card,
+:root[data-theme="light"] .rewards-dash-kpi,
+:root[data-theme="light"] .rewards-vault-card,
+:root[data-theme="light"] .dev-profile-card.dash-card,
+:root[data-theme="light"] .developer-card,
+:root[data-theme="light"] .developer-stat-card,
+:root[data-theme="light"] .mission-card,
+:root[data-theme="light"] .arch-card,
+:root[data-theme="light"] .learn-flow-card,
+:root[data-theme="light"] .hero-stat-card,
+:root[data-theme="light"] .profile-overview-shell,
+:root[data-theme="light"] .profile-stat-card,
+:root[data-theme="light"] .profile-loading,
+:root[data-theme="light"] .student-card-note,
+:root[data-theme="light"] .leaderboard-stat-card,
+:root[data-theme="light"] .practice-stat-card,
+:root[data-theme="light"] .podium-wrapper-card,
+:root[data-theme="light"] .leaderboard-table-card,
+:root[data-theme="light"] .practice-table-card,
+:root[data-theme="light"] .custom-rooms-table-card,
+:root[data-theme="light"] .ap-table-card,
+:root[data-theme="light"] .lobby-card-main,
+:root[data-theme="light"] .faculty-arena-notice,
+:root[data-theme="light"] .Signup-Container,
+:root[data-theme="light"] .Login-Container,
+:root[data-theme="light"] .problem-read-drawer,
+:root[data-theme="light"] .read-drawer-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+:root[data-theme="light"] .dash-card:hover,
+:root[data-theme="light"] .arena-mode-card:hover,
+:root[data-theme="light"] .arena-mode-card.featured-mode-card:hover,
+:root[data-theme="light"] .leaderboard-stat-card:hover,
+:root[data-theme="light"] .developer-card:hover,
+:root[data-theme="light"] .dev-profile-card.dash-card:hover,
+:root[data-theme="light"] .reward-card.dash-card:hover,
+:root[data-theme="light"] .mission-card:hover,
+:root[data-theme="light"] .arch-card:hover,
+:root[data-theme="light"] .profile-stat-card:hover {
+  border-color: #93c5fd !important;
+  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.12), 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* ===== 4. PRIMARY & ACTION BUTTONS ===== */
+:root[data-theme="light"] .btn-primary,
+:root[data-theme="light"] .btn-hud-primary,
+:root[data-theme="light"] .btn-hero-compete,
+:root[data-theme="light"] .btn-action-cyan,
+:root[data-theme="light"] .btn-action-purple,
+:root[data-theme="light"] .btn-action-gold,
+:root[data-theme="light"] .btn-action-emerald,
+:root[data-theme="light"] .btn-join-match,
+:root[data-theme="light"] .reward-action-btn.action-redeem,
+:root[data-theme="light"] .read-solve-btn,
+:root[data-theme="light"] .auth-submit-btn,
+:root[data-theme="light"] .nav-get-started,
+:root[data-theme="light"] .mobile-btn-signup,
+:root[data-theme="light"] .card-primary-btn,
+:root[data-theme="light"] .tone-cyan .card-primary-btn,
+:root[data-theme="light"] .tone-emerald .card-primary-btn,
+:root[data-theme="light"] .tone-magenta .card-primary-btn,
+:root[data-theme="light"] .tone-amber .card-primary-btn,
+:root[data-theme="light"] .mentor-email-btn,
+:root[data-theme="light"] .ap-btn-table-challenge,
+:root[data-theme="light"] .lobby-btn-ready,
+:root[data-theme="light"] .edit-faculty-details-btn {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #1d4ed8 !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28) !important;
+}
+
+:root[data-theme="light"] .btn-primary:hover,
+:root[data-theme="light"] .btn-hud-primary:hover,
+:root[data-theme="light"] .btn-hero-compete:hover,
+:root[data-theme="light"] .btn-action-cyan:hover,
+:root[data-theme="light"] .btn-action-purple:hover,
+:root[data-theme="light"] .btn-action-gold:hover,
+:root[data-theme="light"] .btn-action-emerald:hover,
+:root[data-theme="light"] .btn-join-match:hover,
+:root[data-theme="light"] .reward-action-btn.action-redeem:hover,
+:root[data-theme="light"] .read-solve-btn:hover,
+:root[data-theme="light"] .auth-submit-btn:hover,
+:root[data-theme="light"] .nav-get-started:hover,
+:root[data-theme="light"] .mobile-btn-signup:hover,
+:root[data-theme="light"] .card-primary-btn:hover,
+:root[data-theme="light"] .ap-btn-table-challenge:hover,
+:root[data-theme="light"] .edit-faculty-details-btn:hover {
+  background: #1d4ed8 !important;
+  border-color: #1e40af !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4) !important;
+}
+
+:root[data-theme="light"] .btn-hero-compete .btn-play-icon,
+:root[data-theme="light"] .btn-primary svg,
+:root[data-theme="light"] .btn-hud-primary svg {
+  color: #ffffff !important;
+}
+
+/* Secondary, Ghost & Outline Buttons */
+:root[data-theme="light"] .btn-hero-practice,
+:root[data-theme="light"] .btn-hud-secondary,
+:root[data-theme="light"] .btn-secondary-glass,
+:root[data-theme="light"] .btn-hud-back,
+:root[data-theme="light"] .btn-nav-outline,
+:root[data-theme="light"] .btn-outline,
+:root[data-theme="light"] .btn-ghost,
+:root[data-theme="light"] .home-host-duel-btn,
+:root[data-theme="light"] .view-profile-btn,
+:root[data-theme="light"] .news-action-btn,
+:root[data-theme="light"] .action-btn-duel,
+:root[data-theme="light"] .testimonial-explore-btn,
+:root[data-theme="light"] .offer-action-btn,
+:root[data-theme="light"] .btn-claim-ready,
+:root[data-theme="light"] .practice-nav-btn,
+:root[data-theme="light"] .modal-close-btn,
+:root[data-theme="light"] .mobile-btn-signin,
+:root[data-theme="light"] .social-btn,
+:root[data-theme="light"] .ap-btn-table-self {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+
+:root[data-theme="light"] .btn-hero-practice:hover,
+:root[data-theme="light"] .btn-hud-secondary:hover,
+:root[data-theme="light"] .btn-secondary-glass:hover,
+:root[data-theme="light"] .btn-hud-back:hover,
+:root[data-theme="light"] .btn-outline:hover,
+:root[data-theme="light"] .btn-ghost:hover,
+:root[data-theme="light"] .home-host-duel-btn:hover,
+:root[data-theme="light"] .view-profile-btn:hover,
+:root[data-theme="light"] .news-action-btn:hover,
+:root[data-theme="light"] .action-btn-duel:hover,
+:root[data-theme="light"] .testimonial-explore-btn:hover,
+:root[data-theme="light"] .offer-action-btn:hover,
+:root[data-theme="light"] .practice-nav-btn:hover,
+:root[data-theme="light"] .social-btn:hover {
+  background: #eff6ff !important;
+  border-color: #2563eb !important;
+  color: #2563eb !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15) !important;
+}
+
+:root[data-theme="light"] .btn-nav-outline:hover {
+  background: #fef2f2 !important;
+  border-color: #ef4444 !important;
+  color: #dc2626 !important;
+}
+
+:root[data-theme="light"] .btn-code-icon {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .btn-hero-practice:hover .btn-code-icon {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .reward-action-btn.action-locked,
+:root[data-theme="light"] .reward-action-btn.action-coming-soon {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+/* ===== 5. PILLS, FILTERS, BADGES & STATUS TAGS ===== */
+:root[data-theme="light"] .category-pill,
+:root[data-theme="light"] .diff-pill-btn,
+:root[data-theme="light"] .arena-pill-tab,
+:root[data-theme="light"] .practice-filter-pill,
+:root[data-theme="light"] .rewards-tab-btn,
+:root[data-theme="light"] .developer-tab-btn,
+:root[data-theme="light"] .profile-tab-btn,
+:root[data-theme="light"] .pill-btn,
+:root[data-theme="light"] .mode-tab-btn,
+:root[data-theme="light"] .account-role-btn {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .category-pill:hover,
+:root[data-theme="light"] .diff-pill-btn:hover,
+:root[data-theme="light"] .arena-pill-tab:hover,
+:root[data-theme="light"] .pill-btn:hover,
+:root[data-theme="light"] .mode-tab-btn:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .category-pill.is-active,
+:root[data-theme="light"] .diff-pill-btn.active,
+:root[data-theme="light"] .arena-pill-tab.active,
+:root[data-theme="light"] .practice-filter-pill.active,
+:root[data-theme="light"] .rewards-tab-btn.active,
+:root[data-theme="light"] .developer-tab-btn.active,
+:root[data-theme="light"] .profile-tab-btn.active,
+:root[data-theme="light"] .pill-btn.active,
+:root[data-theme="light"] .mode-tab-btn.active,
+:root[data-theme="light"] .account-role-btn.active {
+  background: #eff6ff !important;
+  border-color: #2563eb !important;
+  color: #2563eb !important;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.16) !important;
+  font-weight: 700 !important;
+}
+
+:root[data-theme="light"] .hero-kicker-tag,
+:root[data-theme="light"] .practice-kicker,
+:root[data-theme="light"] .arena-kicker,
+:root[data-theme="light"] .leaderboard-kicker,
+:root[data-theme="light"] .rewards-kicker-tag,
+:root[data-theme="light"] .developer-kicker-tag,
+:root[data-theme="light"] .about-kicker-tag,
+:root[data-theme="light"] .profile-kicker-tag,
+:root[data-theme="light"] .read-drawer-kicker {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .dash-icon-box {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .dash-pill-tag,
+:root[data-theme="light"] .tag-purple,
+:root[data-theme="light"] .tag-cyan,
+:root[data-theme="light"] .tag-gold,
+:root[data-theme="light"] .tag-pink,
+:root[data-theme="light"] .tag-muted,
+:root[data-theme="light"] .tag-pill,
+:root[data-theme="light"] .country-chip,
+:root[data-theme="light"] .mode-chip,
+:root[data-theme="light"] .card-tag-pill,
+:root[data-theme="light"] .card-skills-list span,
+:root[data-theme="light"] .ap-code-badge {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #1d4ed8 !important;
+}
+
+:root[data-theme="light"] .mode-capacity-tag,
+:root[data-theme="light"] .mode-capacity-tag.cyan,
+:root[data-theme="light"] .mode-capacity-tag.gold,
+:root[data-theme="light"] .mode-capacity-tag.emerald {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #1d4ed8 !important;
+}
+
+:root[data-theme="light"] .news-category-badge,
+:root[data-theme="light"] .public-challenge-badge,
+:root[data-theme="light"] .offer-category-badge {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .offer-cost-badge {
+  background: #fef3c7 !important;
+  border: 1px solid #fde68a !important;
+  color: #b45309 !important;
+}
+
+:root[data-theme="light"] .offer-coin-icon {
+  color: #b45309 !important;
+}
+
+:root[data-theme="light"] .live-status-pill,
+:root[data-theme="light"] .ap-sync-beacon,
+:root[data-theme="light"] .arena-online-badge,
+:root[data-theme="light"] .status-icon.solved,
+:root[data-theme="light"] .reward-status-pill.status-redeem,
+:root[data-theme="light"] .diff-badge.diff-easy {
+  background: #dcfce7 !important;
+  border-color: #86efac !important;
+  color: #15803d !important;
+}
+
+:root[data-theme="light"] .live-pulse-node,
+:root[data-theme="light"] .ap-pulse-dot,
+:root[data-theme="light"] .online-pulse-dot,
+:root[data-theme="light"] .live-duel-pulse,
+:root[data-theme="light"] .live-news-pulse,
+:root[data-theme="light"] .live-offers-pulse {
+  background: #16a34a !important;
+  box-shadow: 0 0 6px #16a34a !important;
+}
+
+:root[data-theme="light"] .reward-status-pill.status-coming-soon,
+:root[data-theme="light"] .diff-badge.diff-medium {
+  background: #fef3c7 !important;
+  border-color: #fde68a !important;
+  color: #b45309 !important;
+}
+
+:root[data-theme="light"] .diff-badge.diff-hard {
+  background: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+  color: #b91c1c !important;
+}
+
+:root[data-theme="light"] .reward-status-pill.status-locked {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+/* Dots / Pagers */
+:root[data-theme="light"] .news-dot-btn,
+:root[data-theme="light"] .testimonial-dot-btn,
+:root[data-theme="light"] .offer-dot-btn {
+  background: #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .news-dot-btn.active,
+:root[data-theme="light"] .testimonial-dot-btn.active,
+:root[data-theme="light"] .offer-dot-btn.active {
+  background: #2563eb !important;
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.4) !important;
+}
+
+/* ===== 6. TABLES, LISTS & DETAILS ===== */
+:root[data-theme="light"] .practice-toolbar,
+:root[data-theme="light"] .telemetry-bar,
+:root[data-theme="light"] .arena-tabs-pill-bar,
+:root[data-theme="light"] .ap-toolbar {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+
+:root[data-theme="light"] .telemetry-divider {
+  color: #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .practice-list-head,
+:root[data-theme="light"] .leaderboard-table-header,
+:root[data-theme="light"] .ap-table thead th {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+}
+
+:root[data-theme="light"] .practice-row,
+:root[data-theme="light"] .leaderboard-row,
+:root[data-theme="light"] .ap-table tbody tr.ap-table-row {
+  background: #ffffff !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .practice-row:hover,
+:root[data-theme="light"] .leaderboard-row:hover,
+:root[data-theme="light"] .ap-table tbody tr.ap-table-row:hover {
+  background: #f8fafc !important;
+  border-left-color: #2563eb !important;
+}
+
+:root[data-theme="light"] .row-avatar,
+:root[data-theme="light"] .ap-table-avatar {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .tier-list-item,
+:root[data-theme="light"] .earn-list-item,
+:root[data-theme="light"] .redeem-item,
+:root[data-theme="light"] .track-list-item,
+:root[data-theme="light"] .why-list-item,
+:root[data-theme="light"] .c-stat-row,
+:root[data-theme="light"] .offer-progress-container {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .tier-list-item:hover,
+:root[data-theme="light"] .earn-list-item:hover,
+:root[data-theme="light"] .track-list-item:hover {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .tier-progress-track,
+:root[data-theme="light"] .offer-progress-track,
+:root[data-theme="light"] .ap-winrate-track {
+  background: #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .pedestal-1 {
+  background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%) !important;
+  border: 1px solid #bfdbfe !important;
+  box-shadow: inset 0 2px 10px rgba(37, 99, 235, 0.1) !important;
+}
+
+:root[data-theme="light"] .pedestal-2 {
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%) !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .pedestal-3 {
+  background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%) !important;
+  border: 1px solid #fde68a !important;
+}
+
+:root[data-theme="light"] .pedestal-2 .pedestal-rank {
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .pedestal-3 .pedestal-rank {
+  color: #b45309 !important;
+}
+
+:root[data-theme="light"] .pedestal-label {
+  color: #64748b !important;
+}
+
+/* Combatant Circles on Home & Arena */
+:root[data-theme="light"] .combatant-circle.user-circle {
+  background: #eff6ff !important;
+  border: 1.5px solid #93c5fd !important;
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .combatant-circle.opp-circle {
+  background: #f1f5f9 !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .vs-watermark-text {
+  color: #cbd5e1 !important;
+}
+
+/* ===== 7. FORMS, INPUTS & MODALS ===== */
+:root[data-theme="light"] .modal-overlay,
+:root[data-theme="light"] .problem-read-backdrop,
+:root[data-theme="light"] .feedback-modal-backdrop,
+:root[data-theme="light"] .public-modal-backdrop,
+:root[data-theme="light"] .countdown-modal-backdrop,
+:root[data-theme="light"] .rejoin-modal-backdrop {
+  background: rgba(15, 23, 42, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+:root[data-theme="light"] .modal-card,
+:root[data-theme="light"] .modal-content-hud,
+:root[data-theme="light"] .create-room-modal-hud,
+:root[data-theme="light"] .feedback-modal-container,
+:root[data-theme="light"] .public-modal-card,
+:root[data-theme="light"] .rejoin-modal-container,
+:root[data-theme="light"] .faculty-modal-content,
+:root[data-theme="light"] .import-modal-content,
+:root[data-theme="light"] .result-popup-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.16) !important;
+}
+
+:root[data-theme="light"] .problem-read-drawer {
+  background: #ffffff !important;
+  border-left: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: -20px 0 60px rgba(15, 23, 42, 0.12) !important;
+}
+
+:root[data-theme="light"] .read-drawer-header {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .read-drawer-title {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .read-drawer-kicker {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .read-drawer-close-btn {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .read-drawer-close-btn:hover {
+  background: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+  color: #ef4444 !important;
+}
+
+:root[data-theme="light"] .read-meta-pill {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .read-section-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05) !important;
+}
+
+:root[data-theme="light"] .read-section-card:hover {
+  border-color: #93c5fd !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08) !important;
+}
+
+:root[data-theme="light"] .read-section-title {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .read-paragraph {
+  color: #334155 !important;
+}
+
+:root[data-theme="light"] .read-box {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+:root[data-theme="light"] .read-box.input-format-box {
+  background: #faf5ff !important;
+  border-left: 3px solid #8b5cf6 !important;
+}
+
+:root[data-theme="light"] .read-box.output-format-box {
+  background: #eff6ff !important;
+  border-left: 3px solid #3b82f6 !important;
+}
+
+:root[data-theme="light"] .read-box.constraints-box {
+  background: #fff1f2 !important;
+  border-left: 3px solid #f43f5e !important;
+}
+
+:root[data-theme="light"] .read-box.note-box {
+  background: #fffbeb !important;
+  border-left: 3px solid #f59e0b !important;
+}
+
+:root[data-theme="light"] .constraint-item {
+  color: #1e293b !important;
+}
+
+:root[data-theme="light"] .read-sample-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .read-sample-header {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .sample-case-label {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .read-copy-btn {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .read-copy-btn:hover {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .read-sample-label {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .read-code-block {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .read-code-block.output-block {
+  background: #f0f9ff !important;
+  border-color: #bae6fd !important;
+  border-left: 3px solid #0284c7 !important;
+  color: #0369a1 !important;
+}
+
+:root[data-theme="light"] .read-drawer-footer {
+  background: #ffffff !important;
+  border-top: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .read-drawer-footer-hint kbd {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+/* Live Battle & Live Workspace in Light Mode */
+:root[data-theme="light"] .livebattle-page {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .livebattle-header-card,
+:root[data-theme="light"] .livebattle-panel,
+:root[data-theme="light"] .livebattle-wait-panel,
+:root[data-theme="light"] .livebattle-result-banner {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .livebattle-header-card::before {
+  display: none !important;
+}
+
+:root[data-theme="light"] .livebattle-hero-title {
+  background: none !important;
+  -webkit-text-fill-color: #0f172a !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .btn-livebattle-back {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .btn-livebattle-back:hover {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .livebattle-room-pill {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+}
+
+:root[data-theme="light"] .livebattle-room-pill .room-code-tag {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .livebattle-timer.calm-timer {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #2563eb !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12) !important;
+}
+
+:root[data-theme="light"] .livebattle-timer.calm-timer .timer-icon {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .livebattle-panel-head {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .livebattle-panel-head h3,
+:root[data-theme="light"] .problem-panel-head h3 {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .problem-tabs .tab-btn {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .problem-tabs .tab-btn:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .problem-tabs .tab-btn.active {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+  color: #2563eb !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15) !important;
+}
+
+:root[data-theme="light"] .player-pts {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .player-solved {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .player-elo-tag {
+  background: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+  color: #16a34a !important;
+}
+
+:root[data-theme="light"] .livebattle-action-btn,
+:root[data-theme="light"] .statusbar-editor-action-btn {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+:root[data-theme="light"] .matchmaking-combatant-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important;
+}
+
+:root[data-theme="light"] .matchmaking-combatant-card.is-user {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+}
+
+:root[data-theme="light"] .matchmaking-combatant-card.is-searching {
+  background: #f8fafc !important;
+  border: 1px dashed #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .matchmaking-rule-item {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+:root[data-theme="light"] .matrix-grid {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .mx-header {
+  color: #475569 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .mx-cell {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .mx-player-cell.is-me {
+  color: #2563eb !important;
+}
+
+/* Room Lobby in Light Mode */
+:root[data-theme="light"] .lobby-root {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .lobby-card-main {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08) !important;
+}
+
+:root[data-theme="light"] .room-code-display {
+  background: #f8fafc !important;
+  border: 1px dashed #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .room-code-display:hover {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+}
+
+:root[data-theme="light"] .code-value {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .copy-icon {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .spec-label {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .spec-val {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .section-title-hud {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .participant-card {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04) !important;
+}
+
+:root[data-theme="light"] .participant-card.me {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+}
+
+:root[data-theme="light"] .participant-name {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .participant-rating {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .readiness-meter-container {
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .meter-title {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .meter-sub {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .readiness-progress-track {
+  background: #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .search-bar-hud {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .search-bar-hud input {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .search-bar-hud input::placeholder {
+  color: #94a3b8 !important;
+}
+
+:root[data-theme="light"] .filter-pill-group {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .filter-pill {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .filter-pill:hover {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .filter-pill.active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25) !important;
+}
+
+:root[data-theme="light"] .capacity-summary-card {
+  background: #f8fafc !important;
+  border: 1px dashed #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .capacity-summary-card:hover {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+}
+
+:root[data-theme="light"] .capacity-title {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .capacity-desc {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .capacity-icon {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .btn-hud-ready {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+:root[data-theme="light"] .btn-hud-ready:hover {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .btn-hud-ready.is-ready {
+  background: #ecfdf5 !important;
+  border-color: #059669 !important;
+  color: #059669 !important;
+}
+
+:root[data-theme="light"] .host-join-requests-panel {
+  background: #fffbeb !important;
+  border: 1px solid #fde68a !important;
+}
+
+:root[data-theme="light"] .requests-title {
+  color: #b45309 !important;
+}
+
+:root[data-theme="light"] .requests-sub {
+  color: #78350f !important;
+}
+
+:root[data-theme="light"] .request-item-card {
+  background: #ffffff !important;
+  border: 1px solid #fde68a !important;
+}
+
+:root[data-theme="light"] .req-name {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .req-rating {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .btn-hud-launch {
+  background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3) !important;
+}
+
+:root[data-theme="light"] .btn-hud-launch:hover:not(:disabled) {
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45) !important;
+}
+
+:root[data-theme="light"] .modal-card input,
+:root[data-theme="light"] .modal-card select,
+:root[data-theme="light"] .modal-card textarea,
+:root[data-theme="light"] .create-room-modal-hud input,
+:root[data-theme="light"] .create-room-modal-hud select,
+:root[data-theme="light"] .feedback-modal-container input,
+:root[data-theme="light"] .feedback-modal-container textarea,
+:root[data-theme="light"] .Login-Container input,
+:root[data-theme="light"] .Signup-Container input,
+:root[data-theme="light"] .hud-select,
+:root[data-theme="light"] .code-input,
+:root[data-theme="light"] .ap-search-input {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .modal-card input:focus,
+:root[data-theme="light"] .modal-card select:focus,
+:root[data-theme="light"] .modal-card textarea:focus,
+:root[data-theme="light"] .create-room-modal-hud input:focus,
+:root[data-theme="light"] .create-room-modal-hud select:focus,
+:root[data-theme="light"] .feedback-modal-container input:focus,
+:root[data-theme="light"] .feedback-modal-container textarea:focus,
+:root[data-theme="light"] .Login-Container input:focus,
+:root[data-theme="light"] .Signup-Container input:focus,
+:root[data-theme="light"] .hud-select:focus,
+:root[data-theme="light"] .code-input:focus,
+:root[data-theme="light"] .ap-search-input:focus {
+  background: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .hud-select option,
+:root[data-theme="light"] .modal-card select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .account-role-switch {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .account-role-btn {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .account-role-btn.active {
+  background: #ffffff !important;
+  color: #2563eb !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08) !important;
+}
+
+:root[data-theme="light"] .Login-Separator {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .Login-Separator::before,
+:root[data-theme="light"] .Login-Separator::after {
+  background: #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .signup-link {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .signup-link:hover {
+  color: #1d4ed8 !important;
+  text-shadow: none !important;
+}
+
+/* ===== 8. NAVBAR & CONTROLS ===== */
+:root[data-theme="light"] .navbar-container {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+:root[data-theme="light"] .nav-link-pill {
+  color: #334155 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+:root[data-theme="light"] .nav-link-pill:hover {
+  color: #2563eb !important;
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+
+:root[data-theme="light"] .nav-link-pill.active-link {
+  color: #2563eb !important;
+  border-color: #93c5fd !important;
+  background: #eff6ff !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12) !important;
+}
+
+:root[data-theme="light"] .nav-link-pill.dev-highlight-pill {
+  color: #0f172a !important;
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+
+:root[data-theme="light"] .nav-link-pill.dev-highlight-pill .dev-pill-icon {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .nav-link-pill.dev-highlight-pill:hover {
+  border-color: #2563eb !important;
+  background: #eff6ff !important;
+  box-shadow: 0 0 14px rgba(37, 99, 235, 0.2) !important;
+}
+
+:root[data-theme="light"] .nav-sign-in {
+  color: #334155 !important;
+}
+
+:root[data-theme="light"] .nav-sign-in:hover {
+  color: #2563eb !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .navbar-mits-divider {
+  background: #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .navbar-mits-link {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .navbar-mits-link:hover {
+  border-color: #2563eb !important;
+  background: #eff6ff !important;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.25) !important;
+}
+
+:root[data-theme="light"] .explore-dropdown-menu {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12) !important;
+}
+
+:root[data-theme="light"] .explore-item {
+  color: #334155 !important;
+}
+
+:root[data-theme="light"] .explore-item:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .explore-item.active-link {
+  color: #2563eb !important;
+  background: #eff6ff !important;
+}
+
+:root[data-theme="light"] .explore-item.admin-item,
+:root[data-theme="light"] .explore-item.faculty-item {
+  color: #334155 !important;
+  border-color: #e2e8f0 !important;
+  background: transparent !important;
+}
+
+:root[data-theme="light"] .explore-item.admin-item:hover,
+:root[data-theme="light"] .explore-item.faculty-item:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .explore-icon {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .nav-bell-trigger {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .nav-bell-trigger:hover,
+:root[data-theme="light"] .nav-bell-trigger.is-active {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  border-color: #93c5fd !important;
+}
+
+:root[data-theme="light"] .nav-profile-circle {
+  border: 1.5px solid #93c5fd !important;
+  background: #eff6ff !important;
+  color: #2563eb !important;
+}
+
+/* ===== 9. HERO SCENE FINISHING TREATMENT ===== */
+:root[data-theme="light"] .hero-video-container {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06) !important;
+}
+
+:root[data-theme="light"] .hero-video-vignette {
+  background: radial-gradient(ellipse 96% 92% at 50% 55%, transparent 70%, rgba(241, 245, 249, 0.35) 85%, rgba(241, 245, 249, 0.85) 100%) !important;
+}
+
+:root[data-theme="light"] .hero-scene-layer-vignette {
+  box-shadow: inset 0 0 32px rgba(37, 99, 235, 0.08) !important;
+}
+
+:root[data-theme="light"] .hero-scene-edge-glow {
+  background: radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.08) 0%, transparent 72%) !important;
+  box-shadow: inset 0 0 24px rgba(37, 99, 235, 0.06) !important;
+}
+
+:root[data-theme="light"] .hero-scene-root {
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* ===== 10. FOOTER IN LIGHT MODE ===== */
+:root[data-theme="light"] .page-footer {
+  background: #f1f5f9 !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .footer-brand-name {
+  background: none !important;
+  -webkit-text-fill-color: #0f172a !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .footer-mission-text {
+  color: #475569 !important;
+  border-left-color: #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .footer-col-title {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .footer-col-title:hover,
+:root[data-theme="light"] .footer-accordion-btn:hover .footer-col-title {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .footer-list li a {
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .footer-list li a:hover {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .footer-contact-items li,
+:root[data-theme="light"] .footer-contact-link {
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .footer-contact-link:hover {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .footer-col-chevron {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .footer-accordion-btn:hover .footer-col-chevron,
+:root[data-theme="light"] .footer-col-chevron.is-open {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .footer-institution-badge {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .footer-institution-badge:hover {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.25) !important;
+}
+
+:root[data-theme="light"] .dev-stack-avatar {
+  border-color: #ffffff !important;
+}
+
+:root[data-theme="light"] .dev-stack-avatar:hover {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.25) !important;
+}
+
+:root[data-theme="light"] .dev-stack-avatar.dev-stack-plus {
+  background: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+:root[data-theme="light"] .dev-stack-avatar.dev-stack-plus:hover {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+/* ===== 11. THEME SELECTOR IN LIGHT MODE ===== */
+:root[data-theme="light"] .theme-selector-trigger-btn {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .theme-selector-trigger-btn:hover {
+  background: #eff6ff !important;
+  border-color: #2563eb !important;
+}
+
+:root[data-theme="light"] .theme-selector-popover {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12) !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .theme-card-option {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .theme-card-option:hover {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+}
+
+:root[data-theme="light"] .theme-card-option.is-active {
+  background: #eff6ff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.16) !important;
+}
+
+:root[data-theme="light"] .theme-card-name {
+  color: #0f172a !important;
+}
+
+/* ===== 12. CHARTS & TELEMETRY ===== */
+:root[data-theme="light"] .graph-grid-line {
+  stroke: #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .graph-axis-text {
+  fill: #64748b !important;
+}
+
+:root[data-theme="light"] .graph-live-guide {
+  stroke: #93c5fd !important;
+}
+
+:root[data-theme="light"] .graph-node-dot {
+  fill: #2563eb !important;
+  stroke: #ffffff !important;
+}
+
+:root[data-theme="light"] .graph-node-dot:hover {
+  fill: #1d4ed8 !important;
+}
+
+:root[data-theme="light"] .graph-live-dot {
+  fill: #2563eb !important;
+  filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.5)) !important;
+}
+
+:root[data-theme="light"] .graph-pulse-ring {
+  stroke: #2563eb !important;
+}
+
+:root[data-theme="light"] .graph-x-label {
+  fill: #64748b !important;
+}
+
+:root[data-theme="light"] .graph-x-live {
+  fill: #2563eb !important;
+}
+
+/* Seamless Theme Transition Variables */
+body,
+.background-paths-wrapper,
+.dash-card,
+.navbar-container,
+.hero-video-glow,
+.btn-hero-compete,
+.nav-link-pill {
+  transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease, color 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .background-paths-wrapper,
+  .dash-card,
+  .navbar-container,
+  .hero-video-glow,
+  .btn-hero-compete,
+  .nav-link-pill {
+    transition: none !important;
+  }
+}
+

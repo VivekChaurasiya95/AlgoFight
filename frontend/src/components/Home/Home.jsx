@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Home.css';
-import heroCharacterVideo from '../../assets/watermark-removed-gemini_generated_video_a46fd70e.mp4';
+import HeroScene from './HeroScene';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlay,
@@ -27,6 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import BackgroundPaths from '../BackgroundPaths/BackgroundPaths';
 import '../BackgroundPaths/BackgroundPaths.css';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import Footer from '../Common/Footer/Footer';
 import BrandIntro from '../BrandIntro/BrandIntro';
 import { fetchPublicRooms, fetchPlatformStats, fetchShowcaseFeedback } from '../../services/api';
@@ -209,11 +210,11 @@ const coderOffersData = [
 ];
 
 const dynamicWords = [
-  { w1: "SHARP", w2: "MINDS", c1: "dynamic-pink", c2: "dynamic-cyan" },
-  { w1: "ELITE", w2: "CODERS", c1: "dynamic-gold", c2: "dynamic-purple" },
-  { w1: "FUTURE", w2: "MASTERS", c1: "dynamic-cyan", c2: "dynamic-green" },
-  { w1: "SPEED", w2: "DEMONS", c1: "dynamic-pink", c2: "dynamic-gold" },
-  { w1: "CODE", w2: "WARRIORS", c1: "dynamic-purple", c2: "dynamic-cyan" },
+  { w1: "SHARP", w2: "MINDS" },
+  { w1: "ELITE", w2: "CODERS" },
+  { w1: "FUTURE", w2: "MASTERS" },
+  { w1: "SPEED", w2: "DEMONS" },
+  { w1: "CODE", w2: "WARRIORS" },
 ];
 
 const getInitials = (user) => {
@@ -228,6 +229,7 @@ const getInitials = (user) => {
 
 function Home() {
   const { user } = useAuth();
+  const { theme, activeThemeConfig } = useTheme();
   const navigate = useNavigate();
   const [showIntro, setShowIntro] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -253,55 +255,6 @@ function Home() {
 
   // Fetch actual enrolled platform coders count
   const [liveFeedbackList, setLiveFeedbackList] = useState([]);
-
-  // 🚀 Optimized Hero Video loading: deferred until after initial paint & viewport intersection
-  const [videoSrc, setVideoSrc] = useState(null);
-  const [isVideoReady, setIsVideoReady] = useState(false);
-  const videoRef = useRef(null);
-  const videoContainerRef = useRef(null);
-
-  useEffect(() => {
-    let idleTimer;
-    let observer;
-
-    const startVideoLoad = () => {
-      setVideoSrc(heroCharacterVideo);
-    };
-
-    // Use IntersectionObserver to start loading only when approaching viewport
-    if (typeof IntersectionObserver !== 'undefined' && videoContainerRef.current) {
-      observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              startVideoLoad();
-              if (videoRef.current && videoRef.current.paused) {
-                videoRef.current.play().catch(() => {});
-              }
-            } else if (videoRef.current && !videoRef.current.paused) {
-              videoRef.current.pause();
-            }
-          });
-        },
-        { rootMargin: '250px 0px' }
-      );
-      observer.observe(videoContainerRef.current);
-    } else {
-      // Fallback: defer load until browser is idle or after short timeout
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        const idleId = window.requestIdleCallback(startVideoLoad, { timeout: 1200 });
-        idleTimer = () => window.cancelIdleCallback(idleId);
-      } else {
-        const timeoutId = setTimeout(startVideoLoad, 250);
-        idleTimer = () => clearTimeout(timeoutId);
-      }
-    }
-
-    return () => {
-      if (observer) observer.disconnect();
-      if (idleTimer) idleTimer();
-    };
-  }, []);
 
   useEffect(() => {
     fetchPlatformStats()
@@ -462,6 +415,14 @@ function Home() {
   const isOfferClaimable = userPoints >= currentOffer.cost && !currentOffer.isUpcoming;
   const activeTestimonial = allTestimonials[testimonialIndex] || allTestimonials[0];
 
+  const graphConfig = useMemo(() => {
+    return activeThemeConfig?.graph || {
+      lineGradient: ['#7F808F', '#CBD5E1', '#FFFFFF'],
+      areaColor: '#FFFFFF',
+      areaOpacities: [0.18, 0.03, 0.0],
+    };
+  }, [activeThemeConfig]);
+
   return (
     <BackgroundPaths>
       {/* Brand First-Load Reveal Animation */}
@@ -502,17 +463,17 @@ function Home() {
 
               {/* Proper Graph Structure with Coordinates, Axes, and Grid Lines */}
               <div className="proper-graph-container">
-                <svg className="proper-graph-svg" viewBox="0 0 250 74" preserveAspectRatio="none">
+                <svg key={`graph-svg-${theme}`} className="proper-graph-svg" viewBox="0 0 250 74" preserveAspectRatio="none">
                   <defs>
-                    <linearGradient id="eloGraphGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#3b82f6" />
-                      <stop offset="45%" stopColor="#8b5cf6" />
-                      <stop offset="100%" stopColor="#c084fc" />
+                    <linearGradient id={`eloGraphGrad-${theme}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor={graphConfig.lineGradient[0]} />
+                      <stop offset="50%" stopColor={graphConfig.lineGradient[1]} />
+                      <stop offset="100%" stopColor={graphConfig.lineGradient[2]} />
                     </linearGradient>
-                    <linearGradient id="eloGraphArea" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.32" />
-                      <stop offset="70%" stopColor="#8b5cf6" stopOpacity="0.08" />
-                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.0" />
+                    <linearGradient id={`eloGraphArea-${theme}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor={graphConfig.areaColor} stopOpacity={graphConfig.areaOpacities[0]} />
+                      <stop offset="70%" stopColor={graphConfig.areaColor} stopOpacity={graphConfig.areaOpacities[1]} />
+                      <stop offset="100%" stopColor={graphConfig.areaColor} stopOpacity={graphConfig.areaOpacities[2]} />
                     </linearGradient>
                     <filter id="graphGlow" x="-20%" y="-20%" width="140%" height="140%">
                       <feGaussianBlur stdDeviation="2.5" result="blur" />
@@ -536,14 +497,14 @@ function Home() {
                   {/* Gradient Area Fill Under Curve */}
                   <path
                     d="M 36,50 C 52,52 64,48 78,44 C 92,40 102,46 116,42 C 130,38 140,28 156,26 C 172,24 182,32 196,28 C 210,24 220,16 234,13 L 234,52 L 36,52 Z"
-                    fill="url(#eloGraphArea)"
+                    fill={`url(#eloGraphArea-${theme})`}
                   />
 
                   {/* Main Metric Trajectory Curve */}
                   <path
                     d="M 36,50 C 52,52 64,48 78,44 C 92,40 102,46 116,42 C 130,38 140,28 156,26 C 172,24 182,32 196,28 C 210,24 220,16 234,13"
                     fill="none"
-                    stroke="url(#eloGraphGrad)"
+                    stroke={`url(#eloGraphGrad-${theme})`}
                     strokeWidth="2.4"
                     strokeLinecap="round"
                     filter="url(#graphGlow)"
@@ -558,7 +519,7 @@ function Home() {
 
                   {/* Live Endpoint Pulse */}
                   <circle cx="234" cy="13" r="6" className="graph-pulse-ring" />
-                  <circle cx="234" cy="13" r="3.5" fill="#e879f9" className="graph-live-dot" />
+                  <circle cx="234" cy="13" r="3.5" fill={theme === 'original' ? "#e879f9" : "#ffffff"} className="graph-live-dot" />
 
                   {/* X-axis Match Ticks & Labels */}
                   <text x="36" y="67" textAnchor="middle" className="graph-x-label">M1</text>
@@ -746,6 +707,22 @@ function Home() {
           {/* ========== CENTER COLUMN: HERO HEADLINE & 3D ANIMATED CHARACTERS ========== */}
           <div className="hero-center-col">
             
+            {/* Monospace Hacker Kicker */}
+            <motion.div 
+              className="hero-kicker-tag"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <span className="kicker-slash">//</span>
+              <span>CODE</span>
+              <span className="kicker-cross">×</span>
+              <span>COMPETE</span>
+              <span className="kicker-cross">×</span>
+              <span>GROW</span>
+              <span className="kicker-slash">//</span>
+            </motion.div>
+
             {/* Main Title */}
             <motion.h1 
               className="hero-main-heading"
@@ -766,10 +743,10 @@ function Home() {
                       exit={{ y: -12, opacity: 0 }}
                       transition={{ duration: 0.35, ease: "easeOut" }}
                     >
-                      <span className={`hero-word-sharp ${dynamicWords[wordIndex].c1}`}>
+                      <span className="hero-word-sharp">
                         {dynamicWords[wordIndex].w1}
                       </span>{" "}
-                      <span className={`hero-word-minds ${dynamicWords[wordIndex].c2}`}>
+                      <span className="hero-word-minds">
                         {dynamicWords[wordIndex].w2}
                       </span>
                     </motion.span>
@@ -806,33 +783,8 @@ function Home() {
               </button>
             </motion.div>
 
-            {/* 3D Animated Character Hero Video */}
-            <motion.div 
-              ref={videoContainerRef}
-              className="hero-video-container"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            >
-              <div className="hero-video-glow" />
-              <div className="hero-video-wrap">
-                {videoSrc && (
-                  <video
-                    ref={videoRef}
-                    className={`hero-video-character ${isVideoReady ? 'is-ready' : ''}`}
-                    src={videoSrc}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    controls={false}
-                    preload="metadata"
-                    onCanPlay={() => setIsVideoReady(true)}
-                  />
-                )}
-                <div className="hero-video-vignette" />
-              </div>
-            </motion.div>
+            {/* Theme-Aware Layered Dynamic Hero Scene */}
+            <HeroScene />
 
             {/* Scroll Indicator */}
             <motion.div 

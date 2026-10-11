@@ -27,6 +27,8 @@ export default function CreateRoomModal({ isOpen, onClose }) {
   const navigate = useNavigate();
 
   // Mode: "AUTO" (Random Auto-Pick) or "CUSTOM" (User chooses specific problems)
+  const [battleMode, setBattleMode] = useState("DUEL_1V1"); // "DUEL_1V1" or "SQUAD_BATTLE"
+  const [squadSize, setSquadSize] = useState(2); // 2 (2v2) or 3 (3v3)
   const [selectionMode, setSelectionMode] = useState("AUTO");
   const [roomType, setRoomType] = useState("RATED"); // "RATED" or "UNRATED"
   const [maxPlayers, setMaxPlayers] = useState(2);
@@ -129,9 +131,10 @@ export default function CreateRoomModal({ isOpen, onClose }) {
     try {
       setCreating(true);
 
+      const isSquad = battleMode === "SQUAD_BATTLE";
       const payload = {
         hostId: user.uid || user.email,
-        maxPlayers: Number(maxPlayers),
+        maxPlayers: isSquad ? squadSize * 2 : Number(maxPlayers),
         timeLimitMinutes: Number(timeLimit),
         difficulty: selectionMode === "CUSTOM" ? "CUSTOM" : difficulty,
         questionCount:
@@ -140,9 +143,11 @@ export default function CreateRoomModal({ isOpen, onClose }) {
           selectionMode === "CUSTOM"
             ? selectedProblems.map((p) => String(p.id || p._id))
             : undefined,
-        roomType,
-        isFriendly: roomType === "UNRATED",
+        roomType: isSquad ? "UNRATED" : roomType,
+        isFriendly: isSquad ? true : roomType === "UNRATED",
         isPublic,
+        battleMode,
+        squadSize: isSquad ? squadSize : undefined,
       };
 
       const res = await requestJson("/api/battle/rooms", {
@@ -191,61 +196,170 @@ export default function CreateRoomModal({ isOpen, onClose }) {
             </button>
           </div>
 
-          {/* Match Type: Rated vs Unrated */}
-          <div className="match-type-selector-box" style={{ margin: "12px 0 16px" }}>
+          {/* Battle Format Selector: Standard Duel vs Squad Battle */}
+          <div className="battle-format-selector-box" style={{ margin: "12px 0 16px" }}>
             <div className="form-group-header" style={{ marginBottom: "8px" }}>
               <label style={{ fontSize: "0.85rem", fontWeight: 800, letterSpacing: "0.04em", color: "#cbd5e1" }}>
-                MATCH TYPE
+                BATTLE FORMAT
               </label>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
               <div
-                className={`match-type-card ${roomType === "RATED" ? "active-rated" : ""}`}
-                onClick={() => setRoomType("RATED")}
+                className={`match-type-card ${battleMode === "DUEL_1V1" ? "active-rated" : ""}`}
+                onClick={() => setBattleMode("DUEL_1V1")}
                 style={{
                   padding: "12px",
                   borderRadius: "8px",
-                  border: roomType === "RATED" ? "1px solid #06b6d4" : "1px solid rgba(255,255,255,0.1)",
-                  background: roomType === "RATED" ? "rgba(6, 182, 212, 0.12)" : "rgba(15, 23, 42, 0.5)",
+                  border: battleMode === "DUEL_1V1" ? "1px solid #06b6d4" : "1px solid rgba(255,255,255,0.1)",
+                  background: battleMode === "DUEL_1V1" ? "rgba(6, 182, 212, 0.12)" : "rgba(15, 23, 42, 0.5)",
                   cursor: "pointer",
                   transition: "all 0.2s ease",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                  <span style={{ fontWeight: 800, fontSize: "0.9rem", color: roomType === "RATED" ? "#38bdf8" : "#e2e8f0" }}>
-                    ⚔️ Rated Match
+                  <span style={{ fontWeight: 800, fontSize: "0.9rem", color: battleMode === "DUEL_1V1" ? "#38bdf8" : "#e2e8f0" }}>
+                    ⚔️ Standard Duel / FFA
                   </span>
-                  {roomType === "RATED" && <span style={{ background: "#06b6d4", color: "#0f172a", fontSize: "0.65rem", fontWeight: 900, padding: "2px 6px", borderRadius: "4px" }}>ACTIVE</span>}
+                  {battleMode === "DUEL_1V1" && <span style={{ background: "#06b6d4", color: "#0f172a", fontSize: "0.65rem", fontWeight: 900, padding: "2px 6px", borderRadius: "4px" }}>ACTIVE</span>}
                 </div>
                 <p style={{ fontSize: "0.72rem", color: "#94a3b8", margin: 0, lineHeight: 1.35 }}>
-                  Competitive match. Elo rating &amp; competitive statistics are updated. Earn performance Arena Points.
+                  Classic competitive 1v1 duel or multi-player arena. Individual scoring and leaderboard.
                 </p>
               </div>
 
               <div
-                className={`match-type-card ${roomType === "UNRATED" ? "active-unrated" : ""}`}
-                onClick={() => setRoomType("UNRATED")}
+                className={`match-type-card ${battleMode === "SQUAD_BATTLE" ? "active-squad" : ""}`}
+                onClick={() => {
+                  setBattleMode("SQUAD_BATTLE");
+                  setRoomType("UNRATED");
+                }}
                 style={{
                   padding: "12px",
                   borderRadius: "8px",
-                  border: roomType === "UNRATED" ? "1px solid #a855f7" : "1px solid rgba(255,255,255,0.1)",
-                  background: roomType === "UNRATED" ? "rgba(168, 85, 247, 0.12)" : "rgba(15, 23, 42, 0.5)",
+                  border: battleMode === "SQUAD_BATTLE" ? "1px solid #10b981" : "1px solid rgba(255,255,255,0.1)",
+                  background: battleMode === "SQUAD_BATTLE" ? "rgba(16, 185, 129, 0.14)" : "rgba(15, 23, 42, 0.5)",
                   cursor: "pointer",
                   transition: "all 0.2s ease",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                  <span style={{ fontWeight: 800, fontSize: "0.9rem", color: roomType === "UNRATED" ? "#c084fc" : "#e2e8f0" }}>
-                    🤝 Unrated Practice
+                  <span style={{ fontWeight: 800, fontSize: "0.9rem", color: battleMode === "SQUAD_BATTLE" ? "#34d399" : "#e2e8f0" }}>
+                    🛡️ Squad Battle (Team vs Team)
                   </span>
-                  {roomType === "UNRATED" && <span style={{ background: "#a855f7", color: "#ffffff", fontSize: "0.65rem", fontWeight: 900, padding: "2px 6px", borderRadius: "4px" }}>ACTIVE</span>}
+                  {battleMode === "SQUAD_BATTLE" && <span style={{ background: "#10b981", color: "#0f172a", fontSize: "0.65rem", fontWeight: 900, padding: "2px 6px", borderRadius: "4px" }}>ACTIVE</span>}
                 </div>
                 <p style={{ fontSize: "0.72rem", color: "#94a3b8", margin: 0, lineHeight: 1.35 }}>
-                  Friendly practice. No Elo changes or rating impact. Safe environment for learning &amp; testing.
+                  Alpha vs Beta. Dual-captain approval gate, squad scoring, and teammate live code viewing!
                 </p>
               </div>
             </div>
           </div>
+
+          {/* If Squad Battle: show Squad Size Selector */}
+          {battleMode === "SQUAD_BATTLE" ? (
+            <div className="squad-config-box" style={{ margin: "0 0 16px", padding: "12px 14px", background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.25)", borderRadius: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                <span style={{ fontSize: "0.82rem", fontWeight: 800, color: "#34d399", letterSpacing: "0.04em" }}>
+                  SQUAD ROSTER FORMAT
+                </span>
+                <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>
+                  Unrated Friendly Scrimmage
+                </span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => setSquadSize(2)}
+                  style={{
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: squadSize === 2 ? "1px solid #10b981" : "1px solid rgba(255,255,255,0.1)",
+                    background: squadSize === 2 ? "rgba(16, 185, 129, 0.2)" : "rgba(0,0,0,0.3)",
+                    color: squadSize === 2 ? "#6ee7b7" : "#cbd5e1",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: "0.95rem" }}>2 vs 2 (4 Players)</div>
+                  <div style={{ fontSize: "0.7rem", opacity: 0.8, marginTop: "2px" }}>2 per squad • 1 Captain each</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSquadSize(3)}
+                  style={{
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: squadSize === 3 ? "1px solid #10b981" : "1px solid rgba(255,255,255,0.1)",
+                    background: squadSize === 3 ? "rgba(16, 185, 129, 0.2)" : "rgba(0,0,0,0.3)",
+                    color: squadSize === 3 ? "#6ee7b7" : "#cbd5e1",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: "0.95rem" }}>3 vs 3 (6 Players)</div>
+                  <div style={{ fontSize: "0.7rem", opacity: 0.8, marginTop: "2px" }}>3 per squad • 1 Captain each</div>
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Match Type: Rated vs Unrated for Standard Duel */
+            <div className="match-type-selector-box" style={{ margin: "12px 0 16px" }}>
+              <div className="form-group-header" style={{ marginBottom: "8px" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: 800, letterSpacing: "0.04em", color: "#cbd5e1" }}>
+                  MATCH TYPE
+                </label>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <div
+                  className={`match-type-card ${roomType === "RATED" ? "active-rated" : ""}`}
+                  onClick={() => setRoomType("RATED")}
+                  style={{
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: roomType === "RATED" ? "1px solid #06b6d4" : "1px solid rgba(255,255,255,0.1)",
+                    background: roomType === "RATED" ? "rgba(6, 182, 212, 0.12)" : "rgba(15, 23, 42, 0.5)",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <span style={{ fontWeight: 800, fontSize: "0.9rem", color: roomType === "RATED" ? "#38bdf8" : "#e2e8f0" }}>
+                      ⚔️ Rated Match
+                    </span>
+                    {roomType === "RATED" && <span style={{ background: "#06b6d4", color: "#0f172a", fontSize: "0.65rem", fontWeight: 900, padding: "2px 6px", borderRadius: "4px" }}>ACTIVE</span>}
+                  </div>
+                  <p style={{ fontSize: "0.72rem", color: "#94a3b8", margin: 0, lineHeight: 1.35 }}>
+                    Competitive match. Elo rating &amp; competitive statistics are updated. Earn performance Arena Points.
+                  </p>
+                </div>
+
+                <div
+                  className={`match-type-card ${roomType === "UNRATED" ? "active-unrated" : ""}`}
+                  onClick={() => setRoomType("UNRATED")}
+                  style={{
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: roomType === "UNRATED" ? "1px solid #a855f7" : "1px solid rgba(255,255,255,0.1)",
+                    background: roomType === "UNRATED" ? "rgba(168, 85, 247, 0.12)" : "rgba(15, 23, 42, 0.5)",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <span style={{ fontWeight: 800, fontSize: "0.9rem", color: roomType === "UNRATED" ? "#c084fc" : "#e2e8f0" }}>
+                      🤝 Unrated Practice
+                    </span>
+                    {roomType === "UNRATED" && <span style={{ background: "#a855f7", color: "#ffffff", fontSize: "0.65rem", fontWeight: 900, padding: "2px 6px", borderRadius: "4px" }}>ACTIVE</span>}
+                  </div>
+                  <p style={{ fontSize: "0.72rem", color: "#94a3b8", margin: 0, lineHeight: 1.35 }}>
+                    Friendly practice. No Elo changes or rating impact. Safe environment for learning &amp; testing.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Mode Switcher: Auto-Pick vs Choose Problems */}
           <div className="battle-mode-selector">
@@ -274,24 +388,32 @@ export default function CreateRoomModal({ isOpen, onClose }) {
                 <div className="form-group-hud">
                   <div className="form-group-header">
                     <label>
-                      <FontAwesomeIcon icon={faUsers} /> Max Participants
+                      <FontAwesomeIcon icon={faUsers} /> {battleMode === "SQUAD_BATTLE" ? "Squad Capacity" : "Max Participants"}
                     </label>
-                    <span className="form-group-value-badge">{maxPlayers} Seats</span>
+                    <span className="form-group-value-badge">
+                      {battleMode === "SQUAD_BATTLE" ? `${squadSize * 2} Seats (${squadSize}v${squadSize})` : `${maxPlayers} Seats`}
+                    </span>
                   </div>
-                  <select
-                    className="hud-select"
-                    value={maxPlayers}
-                    onChange={(e) => setMaxPlayers(Number(e.target.value))}
-                  >
-                    <option value={2}>2 Participants (1v1 Duel)</option>
-                    <option value={4}>4 Participants (Small Team)</option>
-                    <option value={8}>8 Participants (Group Tournament)</option>
-                    <option value={16}>16 Participants (Classroom Round)</option>
-                    <option value={25}>25 Participants (Medium Arena)</option>
-                    <option value={50}>50 Participants (Large Arena)</option>
-                    <option value={75}>75 Participants (Mega Tournament)</option>
-                    <option value={100}>100 Participants (Full Hall)</option>
-                  </select>
+                  {battleMode === "SQUAD_BATTLE" ? (
+                    <div style={{ padding: "10px 14px", background: "rgba(0,0,0,0.3)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.08)", fontSize: "0.85rem", color: "#6ee7b7" }}>
+                      🛡️ Fixed {squadSize}v{squadSize} Squad ({squadSize} Alpha vs {squadSize} Beta)
+                    </div>
+                  ) : (
+                    <select
+                      className="hud-select"
+                      value={maxPlayers}
+                      onChange={(e) => setMaxPlayers(Number(e.target.value))}
+                    >
+                      <option value={2}>2 Participants (1v1 Duel)</option>
+                      <option value={4}>4 Participants (Small Team)</option>
+                      <option value={8}>8 Participants (Group Tournament)</option>
+                      <option value={16}>16 Participants (Classroom Round)</option>
+                      <option value={25}>25 Participants (Medium Arena)</option>
+                      <option value={50}>50 Participants (Large Arena)</option>
+                      <option value={75}>75 Participants (Mega Tournament)</option>
+                      <option value={100}>100 Participants (Full Hall)</option>
+                    </select>
+                  )}
                 </div>
 
                 <div className="form-group-hud">

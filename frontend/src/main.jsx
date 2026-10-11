@@ -8,21 +8,24 @@ import { NotificationProvider } from './contexts/NotificationContext.jsx';
 import { NotificationInboxProvider } from './contexts/NotificationInboxContext.jsx';
 import { SocketProvider } from './contexts/SocketContext.jsx';
 import { ActiveEventProvider } from './contexts/ActiveEventContext.jsx';
+import { ThemeProvider } from './contexts/ThemeContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <NotificationProvider>
-        <AuthProvider>
-          <NotificationInboxProvider>
-            <SocketProvider>
-              <ActiveEventProvider>
-                <App />
-              </ActiveEventProvider>
-            </SocketProvider>
-          </NotificationInboxProvider>
-        </AuthProvider>
-      </NotificationProvider>
+      <ThemeProvider>
+        <NotificationProvider>
+          <AuthProvider>
+            <NotificationInboxProvider>
+              <SocketProvider>
+                <ActiveEventProvider>
+                  <App />
+                </ActiveEventProvider>
+              </SocketProvider>
+            </NotificationInboxProvider>
+          </AuthProvider>
+        </NotificationProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </StrictMode>,
 )

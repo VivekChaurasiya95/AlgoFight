@@ -128,6 +128,20 @@ redisSubscriber.on("message", (channel, message) => {
                 connectionManager.broadcastToRoom(payload.roomId, "battle_state_sync", payload.newState);
             }
 
+            if (payload.event === "SQUAD_PLAYER_SOLVED") {
+                connectionManager.broadcastToRoom(payload.roomId, "squad_score_update", payload);
+                connectionManager.broadcastToRoom(payload.roomId, "battle_state_sync", payload.newState);
+            }
+
+            if (payload.event === "SQUAD_ROSTER_UPDATED") {
+                const targetChannel = payload.roomCode || payload.roomId;
+                connectionManager.broadcastToRoom(targetChannel, "squad_roster_updated", payload);
+            }
+
+            if (payload.event === "SQUAD_APPROVAL_UPDATED") {
+                connectionManager.broadcastToRoom(payload.roomIdOrCode, "squad_approval_updated", payload);
+            }
+
             if (payload.event === "BATTLE_FINISHED") {
                 const winnerPlayer = payload.finalState?.players?.find((p: any) => p.userId === payload.winnerId);
                 const winnerUsername = winnerPlayer?.username || payload.winnerUsername || payload.winnerId;

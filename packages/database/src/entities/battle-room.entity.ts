@@ -21,9 +21,13 @@ export interface BattleRoomEntity {
     maxPlayers: number;
     participants: BattleParticipantEntity[];
     status: BattleRoomStatusType;
+    battleMode?: "DUEL_1V1" | "SQUAD_BATTLE" | "PRACTICE_SOLO";
+    squadSize?: number;
+    rosterVersion?: number;
+    teams?: any[];
     difficulty: string | null;
     questionCount: number;
-    problems?: any[],
+    problems?: any[];
     timeLimitMinutes: number;
     isFriendly: boolean;
     startedAt: Date | null;

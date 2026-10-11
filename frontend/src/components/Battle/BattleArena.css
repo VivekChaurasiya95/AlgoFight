@@ -13,7 +13,7 @@
   position: relative;
   z-index: 1;
   font-family: 'Inter', sans-serif;
-  color: #ffffff;
+  color: var(--text-primary, #E3E5ED);
   box-sizing: border-box;
 }
 

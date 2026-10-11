@@ -315,7 +315,18 @@ export default function LiveBattle() {
   const [executionTimeline, setExecutionTimeline] = useState([]);
   const [executionTests, setExecutionTests] = useState([]);
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
-  const [isSubmitPanelOpen, setIsSubmitPanelOpen] = useState(true);
+  const [rightRailMode, setRightRailMode] = useState("TEST"); // "TEST" | "SQUAD" | "COLLAPSED"
+  const isSubmitPanelOpen = rightRailMode !== "COLLAPSED";
+  const setIsSubmitPanelOpen = (open) => setRightRailMode(open ? "TEST" : "COLLAPSED");
+
+  const [watchingTeammate, setWatchingTeammate] = useState(null); // { userId, username, code, language }
+  const watchingTeammateRef = useRef(null);
+  useEffect(() => {
+    watchingTeammateRef.current = watchingTeammate;
+  }, [watchingTeammate]);
+
+  const [claimedProblems, setClaimedProblems] = useState({}); // { [userId]: problemId }
+  const streamDebounceTimer = useRef(null);
   const [searchElapsed, setSearchElapsed] = useState(0);
   const [searchWindow, setSearchWindow] = useState("±50 ELO");
   const [isSelfDisqualified, setIsSelfDisqualified] = useState(false);
@@ -529,6 +540,74 @@ export default function LiveBattle() {
     ];
   }, [liveState?.players, initialMatch?.players, username, user?.uid, user?.rating, opponentName]);
 
+  // Squad Battle Team Derivation & Handlers
+  const isSquad = liveState?.battleMode === "SQUAD_BATTLE" || initialMatch?.battleMode === "SQUAD_BATTLE" || Boolean(liveState?.teams?.length);
+  const alphaTeam = (liveState?.teams || []).find((t) => t.teamSide === "ALPHA");
+  const betaTeam = (liveState?.teams || []).find((t) => t.teamSide === "BETA");
+
+  const myPlayerObj = battlePlayers.find((p) => p.userId === user?.uid || p.username === username);
+  const myTeamSide = myPlayerObj?.teamSide || (myPlayerObj?.teamId === alphaTeam?.id ? "ALPHA" : myPlayerObj?.teamId === betaTeam?.id ? "BETA" : "ALPHA");
+  const myTeammates = battlePlayers.filter(
+    (p) => (p.userId !== user?.uid && p.username !== username) && (p.teamSide === myTeamSide || p.teamId === (myTeamSide === "ALPHA" ? alphaTeam?.id : betaTeam?.id))
+  );
+  const opponentTeammates = battlePlayers.filter(
+    (p) => (p.teamSide !== myTeamSide && p.teamId !== (myTeamSide === "ALPHA" ? alphaTeam?.id : betaTeam?.id))
+  );
+
+  const handleWatchTeammate = (teammate) => {
+    if (watchingTeammate?.userId === teammate.userId) {
+      setWatchingTeammate(null);
+      return;
+    }
+    const currentProb = problems[activeProblemIndexRef.current];
+    const currentProbId = currentProb?.id || (currentProb ? `p_${activeProblemIndexRef.current}` : null);
+    const targetId = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode || paramRoomCode;
+
+    setWatchingTeammate({
+      userId: teammate.userId,
+      username: teammate.username,
+      code: "// Requesting teammate live code buffer...",
+      language: languageRef.current,
+    });
+
+    if (socketRef.current?.connected && targetId) {
+      socketRef.current.emit("squad_watch_teammate_code", {
+        roomId: targetId,
+        teammateUserId: teammate.userId,
+        problemId: currentProbId,
+      });
+    }
+
+    notify({
+      type: "info",
+      title: "Viewing Teammate",
+      message: `Now viewing ${teammate.username}'s solution in read-only mode.`,
+      duration: 3000,
+    });
+  };
+
+  const handleClaimCurrentProblem = () => {
+    const currentProb = problems[activeProblemIndexRef.current];
+    const currentProbId = currentProb?.id || (currentProb ? `p_${activeProblemIndexRef.current}` : null);
+    const targetId = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode || paramRoomCode;
+
+    if (currentProbId && user?.uid) {
+      setClaimedProblems((prev) => ({ ...prev, [user.uid]: currentProbId }));
+      if (socketRef.current?.connected && targetId) {
+        socketRef.current.emit("squad_claim_problem", {
+          roomId: targetId,
+          problemId: currentProbId,
+        });
+      }
+      notify({
+        type: "success",
+        title: "Problem Claimed",
+        message: `Announced to teammates that you are tackling Problem ${activeProblemIndex + 1}!`,
+        duration: 3000,
+      });
+    }
+  };
+
   // Fetch full room and problem details from API if problem statement/testcases are missing or on direct match entry
   useEffect(() => {
     const targetId = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode || paramRoomCode;
@@ -664,6 +743,7 @@ export default function LiveBattle() {
 
     setLanguage(nextLang);
     setCode(nextCode);
+    setWatchingTeammate(null);
     setActiveProblemIndex(nextIdx);
   };
 
@@ -675,6 +755,22 @@ export default function LiveBattle() {
     const currentProb = problems[activeProblemIndexRef.current];
     const currentProbId = currentProb?.id || (currentProb ? `p_${activeProblemIndexRef.current}` : null);
     if (!currentProbId) return;
+
+    // Stream live code to teammates in Squad Battle
+    if (isSquad && socketRef.current?.connected) {
+      const targetId = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode || paramRoomCode;
+      if (targetId) {
+        if (streamDebounceTimer.current) clearTimeout(streamDebounceTimer.current);
+        streamDebounceTimer.current = setTimeout(() => {
+          socketRef.current?.emit("squad_code_stream", {
+            roomId: targetId,
+            problemId: currentProbId,
+            code: newCode,
+            language: languageRef.current,
+          });
+        }, 300);
+      }
+    }
 
     const now = Date.now();
     const existing = codeByProblemRef.current[currentProbId];
@@ -1052,6 +1148,35 @@ export default function LiveBattle() {
         if (data?.checkpoints && typeof data.checkpoints === "object") {
           applyServerCheckpoints(data.checkpoints);
         }
+      });
+
+      socket.on("squad_teammate_code_chunk", (data) => {
+        if (watchingTeammateRef.current && watchingTeammateRef.current.userId === data?.teammateUserId) {
+          setWatchingTeammate((prev) =>
+            prev ? { ...prev, code: data.code, language: data.language || prev.language } : null
+          );
+        }
+      });
+
+      socket.on("squad_problem_claimed", (data) => {
+        if (data?.userId && data?.problemId) {
+          setClaimedProblems((prev) => ({ ...prev, [data.userId]: data.problemId }));
+          notify({
+            type: "info",
+            title: "Problem Claimed",
+            message: `${data.username || "Teammate"} is now working on Problem #${data.problemId.slice(0, 6)}...`,
+            duration: 3500,
+          });
+        }
+      });
+
+      socket.on("squad_player_solved", (data) => {
+        notify({
+          type: "success",
+          title: `Team ${data.teamSide} Scored!`,
+          message: `${data.solverUsername || "A player"} solved problem! (+${data.teamPointsAwarded} pts to team)`,
+          duration: 4000,
+        });
       });
 
 
@@ -1776,103 +1901,129 @@ export default function LiveBattle() {
 
           {/* Center Matchup Duel Hub */}
           <div className="livebattle-header-center">
-            <div className="livebattle-players-matchup">
-              {battlePlayers.map((p, idx) => {
-                const hasLeft = p.status === 'LEFT' || p.forfeited;
-                const isMe = p.username === username || p.userId === user?.uid;
-                const isWinner = battleResult && (battleResult.winnerId === p.userId || battleResult.winner === p.username);
-                const playerRating = p.rating || (isMe ? (user?.rating || 1200) : 1200);
-                const totalProblemsCount = Math.max(problems.length, 1);
-                const solveProgressPct = Math.min(100, Math.round(((p.solvedCount || 0) / totalProblemsCount) * 100));
+            {isSquad ? (
+              <div className="squad-scoreboard-hub">
+                <div className="squad-score-box alpha">
+                  <div>
+                    <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#38bdf8", letterSpacing: "0.06em" }}>TEAM ALPHA</div>
+                    <div className="squad-score-value alpha">{alphaTeam?.score || 0} PTS</div>
+                  </div>
+                  <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                    {alphaTeam?.solvedProblemIds?.length || 0}/{problems.length} solved
+                  </span>
+                </div>
 
-                return (
-                  <React.Fragment key={p.userId || idx}>
-                    {idx > 0 && <div className="matchup-vs-divider">VS</div>}
-                    <div className={`player-score-card ${isMe ? 'is-me' : ''} ${hasLeft ? 'is-left' : ''} ${isWinner ? 'is-winner' : ''}`}>
-                      <div className="player-avatar-badge-wrap">
-                        <div className="player-avatar">
-                          {(p.username || "P")[0].toUpperCase()}
+                <div className="matchup-vs-divider" style={{ margin: "0 4px" }}>VS</div>
+
+                <div className="squad-score-box beta">
+                  <div>
+                    <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#c084fc", letterSpacing: "0.06em" }}>TEAM BETA</div>
+                    <div className="squad-score-value beta">{betaTeam?.score || 0} PTS</div>
+                  </div>
+                  <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                    {betaTeam?.solvedProblemIds?.length || 0}/{problems.length} solved
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="livebattle-players-matchup">
+                {battlePlayers.map((p, idx) => {
+                  const hasLeft = p.status === 'LEFT' || p.forfeited;
+                  const isMe = p.username === username || p.userId === user?.uid;
+                  const isWinner = battleResult && (battleResult.winnerId === p.userId || battleResult.winner === p.username);
+                  const playerRating = p.rating || (isMe ? (user?.rating || 1200) : 1200);
+                  const totalProblemsCount = Math.max(problems.length, 1);
+                  const solveProgressPct = Math.min(100, Math.round(((p.solvedCount || 0) / totalProblemsCount) * 100));
+
+                  return (
+                    <React.Fragment key={p.userId || idx}>
+                      {idx > 0 && <div className="matchup-vs-divider">VS</div>}
+                      <div className={`player-score-card ${isMe ? 'is-me' : ''} ${hasLeft ? 'is-left' : ''} ${isWinner ? 'is-winner' : ''}`}>
+                        <div className="player-avatar-badge-wrap">
+                          <div className="player-avatar">
+                            {(p.username || "P")[0].toUpperCase()}
+                          </div>
+                          <div className="player-rank-emblem-mini">
+                            <RankEmblem rating={playerRating} size={18} glow={false} />
+                          </div>
                         </div>
-                        <div className="player-rank-emblem-mini">
-                          <RankEmblem rating={playerRating} size={18} glow={false} />
+
+                        <div className="player-info">
+                          <div className="player-name-row">
+                            <span className="player-username">{p.username}</span>
+                            {isMe && <span className="you-badge">YOU</span>}
+                            {p.disqualified && (
+                              <span className="disqualified-badge">
+                                DISQUALIFIED ({p.tabSwitches || 3})
+                              </span>
+                            )}
+                            {hasLeft && !p.disqualified && <span className="left-badge">LEFT</span>}
+                            {isWinner && <span className="winner-badge"><FontAwesomeIcon icon={faTrophy} /> WIN</span>}
+                            {/* Host participant controls */}
+                            {((liveState?.hostId && liveState.hostId === user?.uid) || (initialMatch?.hostId && initialMatch.hostId === user?.uid)) && !isMe && (
+                              p.disqualified ? (
+                                <button
+                                  type="button"
+                                  className="host-btn pardon-btn"
+                                  onClick={() => {
+                                    const targetId = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode || paramRoomCode;
+                                    if (socketRef.current && targetId) {
+                                      socketRef.current.emit("approve_anticheat_reentry", { roomId: targetId, targetUserId: p.userId });
+                                      notify({ type: "info", title: "Host Action", message: `Pardoned ${p.username}. Re-admitted to match.` });
+                                    }
+                                  }}
+                                >
+                                  Pardon
+                                </button>
+                              ) : hasLeft ? (
+                                <button
+                                  type="button"
+                                  className="host-btn readmit-btn"
+                                  onClick={() => {
+                                    const targetId = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode || paramRoomCode;
+                                    if (socketRef.current && targetId) {
+                                      socketRef.current.emit("readmit_player", { roomId: targetId, targetUserId: p.userId });
+                                      notify({ type: "info", title: "Host Action", message: `Re-admitting ${p.username}...` });
+                                    }
+                                  }}
+                                >
+                                  Re-admit
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="host-btn kick-btn"
+                                  onClick={() => {
+                                    const targetId = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode || paramRoomCode;
+                                    if (socketRef.current && targetId) {
+                                      socketRef.current.emit("kick_player", { roomId: targetId, targetUserId: p.userId, reason: "Host moderation" });
+                                      notify({ type: "warning", title: "Host Action", message: `Removed ${p.username} from match.` });
+                                    }
+                                  }}
+                                >
+                                  Kick
+                                </button>
+                              )
+                            )}
+                          </div>
+                          <div className="player-score-row">
+                            <span className="player-pts">{p.points || 0} pts</span>
+                            <span className="player-solved">({p.solvedCount || 0}/{problems.length} solved)</span>
+                            <span className="player-elo-tag">{playerRating} ELO</span>
+                          </div>
+                          <div className="player-solved-progress-bar">
+                            <div 
+                              className="player-solved-progress-fill" 
+                              style={{ width: `${solveProgressPct}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
-
-                      <div className="player-info">
-                        <div className="player-name-row">
-                          <span className="player-username">{p.username}</span>
-                          {isMe && <span className="you-badge">YOU</span>}
-                          {p.disqualified && (
-                            <span className="disqualified-badge">
-                              DISQUALIFIED ({p.tabSwitches || 3})
-                            </span>
-                          )}
-                          {hasLeft && !p.disqualified && <span className="left-badge">LEFT</span>}
-                          {isWinner && <span className="winner-badge"><FontAwesomeIcon icon={faTrophy} /> WIN</span>}
-                          {/* Host participant controls */}
-                          {((liveState?.hostId && liveState.hostId === user?.uid) || (initialMatch?.hostId && initialMatch.hostId === user?.uid)) && !isMe && (
-                            p.disqualified ? (
-                              <button
-                                type="button"
-                                className="host-btn pardon-btn"
-                                onClick={() => {
-                                  const targetId = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode || paramRoomCode;
-                                  if (socketRef.current && targetId) {
-                                    socketRef.current.emit("approve_anticheat_reentry", { roomId: targetId, targetUserId: p.userId });
-                                    notify({ type: "info", title: "Host Action", message: `Pardoned ${p.username}. Re-admitted to match.` });
-                                  }
-                                }}
-                              >
-                                Pardon
-                              </button>
-                            ) : hasLeft ? (
-                              <button
-                                type="button"
-                                className="host-btn readmit-btn"
-                                onClick={() => {
-                                  const targetId = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode || paramRoomCode;
-                                  if (socketRef.current && targetId) {
-                                    socketRef.current.emit("readmit_player", { roomId: targetId, targetUserId: p.userId });
-                                    notify({ type: "info", title: "Host Action", message: `Re-admitting ${p.username}...` });
-                                  }
-                                }}
-                              >
-                                Re-admit
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                className="host-btn kick-btn"
-                                onClick={() => {
-                                  const targetId = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode || paramRoomCode;
-                                  if (socketRef.current && targetId) {
-                                    socketRef.current.emit("kick_player", { roomId: targetId, targetUserId: p.userId, reason: "Host moderation" });
-                                    notify({ type: "warning", title: "Host Action", message: `Removed ${p.username} from match.` });
-                                  }
-                                }}
-                              >
-                                Kick
-                              </button>
-                            )
-                          )}
-                        </div>
-                        <div className="player-score-row">
-                          <span className="player-pts">{p.points || 0} pts</span>
-                          <span className="player-solved">({p.solvedCount || 0}/{problems.length} solved)</span>
-                          <span className="player-elo-tag">{playerRating} ELO</span>
-                        </div>
-                        <div className="player-solved-progress-bar">
-                          <div 
-                            className="player-solved-progress-fill" 
-                            style={{ width: `${solveProgressPct}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </React.Fragment>
-                );
-              })}
-            </div>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="livebattle-header-right">
@@ -1983,17 +2134,33 @@ export default function LiveBattle() {
               {!isSubmitPanelOpen && (
                 <button
                   className="livebattle-action-btn"
-                  onClick={() => setIsSubmitPanelOpen(true)}
+                  onClick={() => setRightRailMode(isSquad ? "SQUAD" : "TEST")}
                   style={{ padding: "4px 10px", minHeight: "30px", marginLeft: "4px" }}
-                  title="Open Submit Panel"
+                  title={isSquad ? "Open Squad Rail" : "Open Submit Panel"}
                 >
                   <FontAwesomeIcon icon={faChevronLeft} />
+                  <span style={{ fontSize: "0.75rem", marginLeft: "4px" }}>{isSquad ? "Squad" : "Panel"}</span>
                 </button>
               )}
             </div>
           </div>
 
           <div className="code-editor-wrapper" style={{ position: "relative" }}>
+            {watchingTeammate && (
+              <div className="watching-teammate-banner">
+                <div className="watching-teammate-text">
+                  <FontAwesomeIcon icon={faCode} style={{ color: "#38bdf8" }} />
+                  <span>Viewing {watchingTeammate.username}&apos;s Live Code (Read-Only)</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn-return-my-code"
+                  onClick={() => setWatchingTeammate(null)}
+                >
+                  Return to My Solution
+                </button>
+              </div>
+            )}
             {isSelfDisqualified && (
               <div className="live-disqualified-overlay">
                 <div className="live-disqualified-card">
@@ -2029,10 +2196,10 @@ export default function LiveBattle() {
             )}
             <SmartCodeEditor
               ref={editorRef}
-              value={code}
+              value={watchingTeammate ? watchingTeammate.code : code}
               onChange={handleCodeChange}
-              language={language}
-              disabled={status === "finished" || isSelfDisqualified}
+              language={watchingTeammate ? (watchingTeammate.language || language) : language}
+              disabled={Boolean(watchingTeammate) || status === "finished" || isSelfDisqualified}
               isBlurred={isBlurred}
               problemId={problem?.id}
               onRun={onTestCode}
@@ -2139,20 +2306,113 @@ export default function LiveBattle() {
             style={{ flex: `0 0 ${rightWidth}%`, minWidth: "220px", maxWidth: "45%" }}
           >
           <div className="livebattle-panel-head">
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <FontAwesomeIcon icon={faFlask} style={{ color: "#ff2a7a", fontSize: "0.9rem" }} />
-              <h3>Submit Solution</h3>
+            <div className="right-rail-tabs-container">
+              <button
+                type="button"
+                className={`right-rail-tab-btn ${rightRailMode === "TEST" ? "active" : ""}`}
+                onClick={() => setRightRailMode("TEST")}
+              >
+                <FontAwesomeIcon icon={faFlask} style={{ color: "#ff2a7a" }} />
+                <span>Test / Submit</span>
+              </button>
+              {isSquad && (
+                <button
+                  type="button"
+                  className={`right-rail-tab-btn ${rightRailMode === "SQUAD" ? "active" : ""}`}
+                  onClick={() => setRightRailMode("SQUAD")}
+                >
+                  <FontAwesomeIcon icon={faShieldHalved} style={{ color: "#38bdf8" }} />
+                  <span>Squad</span>
+                </button>
+              )}
             </div>
             <button
               className="livebattle-action-btn"
-              onClick={() => setIsSubmitPanelOpen(false)}
+              onClick={() => setRightRailMode("COLLAPSED")}
               style={{ padding: "4px 10px", minHeight: "30px" }}
-              title="Hide Submit Panel"
+              title="Collapse Rail"
             >
               <FontAwesomeIcon icon={faChevronRight} />
             </button>
           </div>
 
+          {rightRailMode === "SQUAD" ? (
+            <div className="squad-rail-content">
+              {/* Claim Current Problem Button */}
+              <div>
+                <button
+                  type="button"
+                  className="btn-claim-problem"
+                  onClick={handleClaimCurrentProblem}
+                  title="Announce to squad that you are solving this problem"
+                >
+                  <FontAwesomeIcon icon={faBolt} />
+                  <span>Claim Problem {activeProblemIndex + 1} for Squad</span>
+                </button>
+              </div>
+
+              {/* Your Squad Roster */}
+              <div>
+                <div className="squad-rail-section-title">
+                  <span>Your Squad ({myTeamSide})</span>
+                  <span style={{ color: myTeamSide === "ALPHA" ? "#38bdf8" : "#c084fc" }}>
+                    {myTeamSide === "ALPHA" ? (alphaTeam?.score || 0) : (betaTeam?.score || 0)} pts
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {myTeammates.map((mate, idx) => {
+                    const isViewingThis = watchingTeammate?.userId === mate.userId;
+                    const claimedProb = claimedProblems[mate.userId];
+                    const mateName = mate.username || `Teammate ${idx + 1}`;
+
+                    return (
+                      <div key={mate.userId || idx} className={`squad-teammate-row ${isViewingThis ? "is-viewing" : ""}`}>
+                        <div>
+                          <div style={{ fontSize: "0.88rem", fontWeight: 700, color: "#f8fafc", display: "flex", alignItems: "center", gap: "6px" }}>
+                            <span>{mateName}</span>
+                            {mate.participantCode && <span className="slot-code-tag">{mate.participantCode}</span>}
+                          </div>
+                          <div style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "2px" }}>
+                            {claimedProb ? `🎯 Working on Prob #${claimedProb.slice(0, 5)}` : "Online in squad"}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="btn-view-live-code"
+                          onClick={() => handleWatchTeammate(mate)}
+                          title={`View ${mateName}'s code`}
+                        >
+                          <FontAwesomeIcon icon={faCode} />
+                          <span>{isViewingThis ? "Viewing" : "View Code"}</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+
+                  {myTeammates.length === 0 && (
+                    <div style={{ fontSize: "0.8rem", color: "#64748b", padding: "8px 0" }}>
+                      No other teammates in this squad session.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Opponent Squad Summary */}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "12px" }}>
+                <div className="squad-rail-section-title">
+                  <span>Opponent Squad ({myTeamSide === "ALPHA" ? "BETA" : "ALPHA"})</span>
+                  <span style={{ color: myTeamSide === "ALPHA" ? "#c084fc" : "#38bdf8" }}>
+                    {myTeamSide === "ALPHA" ? (betaTeam?.score || 0) : (alphaTeam?.score || 0)} pts
+                  </span>
+                </div>
+                <div style={{ fontSize: "0.78rem", color: "#94a3b8" }}>
+                  Opponent code is strictly firewalled to ensure fair play.
+                </div>
+              </div>
+            </div>
+          ) : (
           <div className="livebattle-submit-body">
             <div className="livebattle-actions-row">
               <button
@@ -2261,6 +2521,7 @@ export default function LiveBattle() {
               </div>
             </div>
           </div>
+          )}
         </section>
         </>
         )}

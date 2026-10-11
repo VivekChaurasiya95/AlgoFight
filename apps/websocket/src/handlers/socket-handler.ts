@@ -839,6 +839,257 @@ export class SocketHandler {
                     break;
                 }
 
+                case "squad_join_channel": {
+                    const { roomCode, userId, username } = data;
+                    if (roomCode) {
+                        const actualUserId = userId || currentUserId.value || "guest";
+                        this.connectionManager.joinRoom(roomCode, socket);
+                        const session = this.socketUsers.get(socket) || {
+                            userId: actualUserId,
+                            username: username || "Player",
+                            roomId: roomCode,
+                        };
+                        session.roomId = roomCode;
+                        this.socketUsers.set(socket, session);
+
+                        if (session.userId) {
+                            this.connectionManager.updatePresenceStatus(session.userId, "IN_LOBBY", roomCode);
+                        }
+
+                        try {
+                            const room = await this.battleRoomRepo.getRoomByCode(roomCode)
+                                || await this.battleRoomRepo.getRoomById(roomCode);
+                            if (room) {
+                                this.connectionManager.broadcastToRoom(roomCode, "squad_roster_sync", {
+                                    roomCode: room.roomCode,
+                                    rosterVersion: room.rosterVersion || 1,
+                                    status: room.status,
+                                    teams: room.teams || [],
+                                    participants: room.participants || [],
+                                });
+                            }
+                        } catch (err) {
+                            logger.error({ err, roomCode }, "Error syncing squad roster on join");
+                        }
+                    }
+                    break;
+                }
+
+                case "squad_approval_toggle": {
+                    const { roomCode, isApproved } = data;
+                    const session = this.socketUsers.get(socket);
+                    const captainUserId = session?.userId || currentUserId.value;
+
+                    if (roomCode && captainUserId) {
+                        try {
+                            const result = await this.battleRoomService.setSquadCaptainApproval(roomCode, captainUserId, isApproved);
+                            const room = await this.battleRoomRepo.getRoomByCode(roomCode)
+                                || await this.battleRoomRepo.getRoomById(roomCode);
+
+                            this.connectionManager.broadcastToRoom(roomCode, "squad_approval_updated", {
+                                roomCode,
+                                captainUserId,
+                                isApproved,
+                                alphaApproved: result.alphaApproved,
+                                betaApproved: result.betaApproved,
+                                canStart: result.canStart,
+                                rosterVersion: result.rosterVersion,
+                                teams: room?.teams || [],
+                            });
+
+                            if (result.canStart && room) {
+                                this.connectionManager.broadcastToRoom(roomCode, "squad_countdown_started", {
+                                    roomCode,
+                                    countdownSeconds: 5,
+                                    startTime: Date.now() + 5000,
+                                });
+
+                                setTimeout(async () => {
+                                    try {
+                                        const freshRoom = await this.battleRoomRepo.getRoomByCode(roomCode)
+                                            || await this.battleRoomRepo.getRoomById(roomCode);
+                                        if (freshRoom && freshRoom.status === "WAITING") {
+                                            await this.battleRoomService.startBattle(freshRoom.id, freshRoom.hostId);
+                                            const roomWithProblems = await this.battleRoomRepo.getRoomById(freshRoom.id);
+                                            const problems = roomWithProblems?.problems || [];
+
+                                            const matchPayload = {
+                                                roomId: freshRoom.id,
+                                                roomCode: freshRoom.roomCode,
+                                                problems: problems,
+                                                timeLimitSeconds: freshRoom.timeLimitMinutes * 60,
+                                                battleMode: "SQUAD_BATTLE",
+                                                teams: freshRoom.teams || [],
+                                            };
+
+                                            const battleState = {
+                                                roomId: freshRoom.id,
+                                                roomCode: freshRoom.roomCode,
+                                                hostId: freshRoom.hostId,
+                                                status: "RUNNING",
+                                                battleMode: "SQUAD_BATTLE",
+                                                timeLimitSeconds: freshRoom.timeLimitMinutes * 60,
+                                                startTime: Date.now(),
+                                                totalQuestions: problems.length,
+                                                teams: (freshRoom.teams || []).map((t: any) => ({
+                                                    id: t.id,
+                                                    teamSide: t.teamSide,
+                                                    score: 0,
+                                                    solvedProblemIds: [],
+                                                })),
+                                                players: freshRoom.participants.map((p, idx) => ({
+                                                    userId: p.userId,
+                                                    username: p.username || `Player ${idx + 1}`,
+                                                    teamId: p.teamId,
+                                                    participantCode: p.participantCode || (idx % 2 === 0 ? `A-0${idx + 1}` : `B-0${idx + 1}`),
+                                                    points: 0,
+                                                    solvedProblems: [],
+                                                    solvedCount: 0,
+                                                    tabSwitches: 0,
+                                                    disqualified: false,
+                                                })),
+                                            };
+
+                                            await this.redis.set(`battle_state:${freshRoom.id}`, JSON.stringify(battleState), "EX", (freshRoom.timeLimitMinutes * 60) + 300);
+                                            await battleTimerQueue.add(JOB_NAMES.BATTLE_TIMER, { roomId: freshRoom.id }, { delay: (freshRoom.timeLimitMinutes * 60) * 1000 });
+
+                                            this.connectionManager.broadcastToRoom(roomCode, "battle_started", matchPayload);
+                                            this.connectionManager.broadcastToRoom(roomCode, "battle_state_sync", battleState);
+                                        }
+                                    } catch (startErr) {
+                                        logger.error({ startErr, roomCode }, "Error starting squad battle after countdown");
+                                    }
+                                }, 5000);
+                            }
+                        } catch (err: any) {
+                            this.send(socket, "error", err.message || "Failed to update squad approval");
+                        }
+                    }
+                    break;
+                }
+
+                case "squad_claim_problem": {
+                    const { roomCode, problemId } = data;
+                    const session = this.socketUsers.get(socket);
+                    const userId = session?.userId || currentUserId.value;
+
+                    if (roomCode && problemId && userId) {
+                        try {
+                            const room = await this.battleRoomRepo.getRoomByCode(roomCode)
+                                || await this.battleRoomRepo.getRoomById(roomCode);
+                            const participant = room?.participants?.find(p => p.userId === userId);
+                            const team = (room?.teams || []).find((t: any) => t.id === participant?.teamId);
+                            const teamSide = team?.teamSide || "ALPHA";
+
+                            await this.redis.hset(`squad_claims:${room?.id || roomCode}:${teamSide}`, problemId, userId);
+                            await this.redis.expire(`squad_claims:${room?.id || roomCode}:${teamSide}`, 7200);
+
+                            this.connectionManager.broadcastToRoom(roomCode, "squad_problem_claimed", {
+                                roomCode,
+                                problemId,
+                                userId,
+                                username: session?.username || "Teammate",
+                                slotCode: participant?.participantCode,
+                                teamSide,
+                            });
+                        } catch (claimErr) {
+                            logger.error({ claimErr, roomCode, problemId }, "Error processing squad problem claim");
+                        }
+                    }
+                    break;
+                }
+
+                case "squad_watch_teammate_code": {
+                    const { roomCode, targetUserId } = data;
+                    const session = this.socketUsers.get(socket);
+                    const viewerId = session?.userId || currentUserId.value;
+
+                    if (roomCode && targetUserId && viewerId) {
+                        try {
+                            const room = await this.battleRoomRepo.getRoomByCode(roomCode)
+                                || await this.battleRoomRepo.getRoomById(roomCode);
+                            const viewerParticipant = room?.participants?.find(p => p.userId === viewerId);
+                            const targetParticipant = room?.participants?.find(p => p.userId === targetUserId);
+
+                            if (!viewerParticipant || !targetParticipant || viewerParticipant.teamId !== targetParticipant.teamId) {
+                                this.send(socket, "error", "Unauthorized: You can only view code of your own squad mates.");
+                                break;
+                            }
+
+                            await this.redis.sadd(`squad_viewers:${room?.id || roomCode}:${targetUserId}`, viewerId);
+                            await this.redis.expire(`squad_viewers:${room?.id || roomCode}:${targetUserId}`, 7200);
+
+                            const snapshot = await this.redis.get(`squad_code_snapshot:${room?.id || roomCode}:${targetUserId}`);
+                            if (snapshot) {
+                                try {
+                                    const parsedSnap = JSON.parse(snapshot);
+                                    this.send(socket, "squad_teammate_code_snapshot", {
+                                        authorId: targetUserId,
+                                        authorSlotCode: targetParticipant.participantCode,
+                                        authorUsername: targetParticipant.user?.username || targetParticipant.username || "Teammate",
+                                        ...parsedSnap,
+                                    });
+                                } catch (_) {}
+                            }
+                        } catch (watchErr) {
+                            logger.error({ watchErr, roomCode, targetUserId }, "Error watching teammate code");
+                        }
+                    }
+                    break;
+                }
+
+                case "squad_stop_watching_code": {
+                    const { roomCode, targetUserId } = data;
+                    const session = this.socketUsers.get(socket);
+                    const viewerId = session?.userId || currentUserId.value;
+                    if (roomCode && targetUserId && viewerId) {
+                        await this.redis.srem(`squad_viewers:${roomCode}:${targetUserId}`, viewerId).catch(() => {});
+                    }
+                    break;
+                }
+
+                case "squad_code_stream": {
+                    const { roomCode, problemId, code, language } = data;
+                    const session = this.socketUsers.get(socket);
+                    const authorId = session?.userId || currentUserId.value;
+
+                    if (roomCode && authorId && code !== undefined) {
+                        try {
+                            const room = await this.battleRoomRepo.getRoomByCode(roomCode)
+                                || await this.battleRoomRepo.getRoomById(roomCode);
+                            const authorParticipant = room?.participants?.find(p => p.userId === authorId);
+
+                            if (authorParticipant && authorParticipant.teamId) {
+                                const snapObj = { problemId, code, language, updatedAt: Date.now() };
+                                await this.redis.set(
+                                    `squad_code_snapshot:${room?.id || roomCode}:${authorId}`,
+                                    JSON.stringify(snapObj),
+                                    "EX",
+                                    7200
+                                );
+
+                                const viewers = await this.redis.smembers(`squad_viewers:${room?.id || roomCode}:${authorId}`);
+                                if (viewers && viewers.length > 0) {
+                                    for (const vId of viewers) {
+                                        this.connectionManager.sendToUser(vId, "squad_teammate_code_update", {
+                                            authorId,
+                                            authorSlotCode: authorParticipant.participantCode,
+                                            authorUsername: session?.username || "Teammate",
+                                            problemId,
+                                            code,
+                                            language,
+                                            updatedAt: Date.now(),
+                                        });
+                                    }
+                                }
+                            }
+                        } catch (streamErr) {
+                            // Non-blocking
+                        }
+                    }
+                    break;
+                }
+
                 case "leave_room_channel": {
                     const { roomCode, userId, username } = data;
                     if (roomCode) {

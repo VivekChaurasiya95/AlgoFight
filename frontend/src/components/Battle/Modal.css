@@ -18,13 +18,13 @@
 .modal-card {
   width: 100%;
   max-width: 440px;
-  background: linear-gradient(180deg, rgba(14, 19, 32, 0.96) 0%, rgba(10, 14, 24, 0.98) 100%);
+  background: var(--surface-primary, linear-gradient(180deg, rgba(14, 19, 32, 0.96) 0%, rgba(10, 14, 24, 0.98) 100%));
   padding: 26px 28px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.1));
   border-radius: 20px;
-  color: #f1f6fd;
+  color: var(--text-primary, #f1f6fd);
   position: relative;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(0, 229, 255, 0.08);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 30px var(--cta-shadow, rgba(0, 229, 255, 0.08));
 }
 
 .modal-card h3 {
@@ -32,19 +32,19 @@
   font-size: 1.35rem;
   font-weight: 700;
   margin: 0 0 8px;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   letter-spacing: -0.01em;
 }
 
 .modal-info {
-  color: #94a3b8;
+  color: var(--text-secondary, #94a3b8);
   font-size: 0.92rem;
   margin-bottom: 20px;
   line-height: 1.5;
 }
 
 .modal-info strong {
-  color: #00e5ff;
+  color: var(--cta-primary, #00e5ff);
   font-weight: 700;
 }
 
@@ -111,13 +111,13 @@
 }
 
 .btn.primary {
-  background: linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%);
-  color: #ffffff;
+  background: var(--cta-gradient, linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%));
+  color: var(--cta-text, #ffffff);
   border: none;
-  box-shadow: 0 4px 18px rgba(139, 92, 246, 0.45);
+  box-shadow: 0 4px 18px var(--cta-shadow, rgba(139, 92, 246, 0.45));
 }
 
 .btn.primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.65);
+  box-shadow: 0 8px 24px var(--cta-shadow, rgba(139, 92, 246, 0.65));
 }

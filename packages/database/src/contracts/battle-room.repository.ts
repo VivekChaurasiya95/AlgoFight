@@ -10,6 +10,10 @@ export type CreateBattleRoomInput = {
     questionCount: number;
     problemIds: string[];
     isFriendly?: boolean;
+    battleMode?: "DUEL_1V1" | "SQUAD_BATTLE" | "PRACTICE_SOLO";
+    squadSize?: number;
+    alphaCodeHash?: string;
+    betaCodeHash?: string;
 };
 
 export interface BattleRoomRepository {

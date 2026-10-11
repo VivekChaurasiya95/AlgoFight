@@ -28,7 +28,7 @@
 .create-room-modal-hud .modal-title-group h2 {
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  text-shadow: 0 0 16px rgba(0, 229, 255, 0.4);
+  text-shadow: 0 0 16px var(--cta-shadow, rgba(0, 229, 255, 0.4));
 }
 
 /* Mode Switcher Tabs */
@@ -66,10 +66,10 @@
 }
 
 .mode-tab-btn.active {
-  background: linear-gradient(135deg, rgba(0, 229, 255, 0.18), rgba(0, 114, 255, 0.24));
-  border: 1px solid rgba(0, 229, 255, 0.45);
-  color: #00e5ff;
-  box-shadow: 0 4px 18px rgba(0, 229, 255, 0.2);
+  background: var(--border-subtle, rgba(0, 229, 255, 0.18));
+  border: 1px solid var(--cta-primary, rgba(0, 229, 255, 0.45));
+  color: var(--cta-primary, #00e5ff);
+  box-shadow: 0 4px 18px var(--cta-shadow, rgba(0, 229, 255, 0.2));
 }
 
 /* Modal Form Layout */
@@ -134,10 +134,10 @@
 }
 
 .pill-btn.active {
-  background: linear-gradient(135deg, rgba(0, 229, 255, 0.18), rgba(0, 114, 255, 0.25));
-  border-color: #00e5ff;
-  color: #00e5ff;
-  box-shadow: 0 0 14px rgba(0, 229, 255, 0.25);
+  background: var(--border-subtle, rgba(0, 229, 255, 0.18));
+  border-color: var(--cta-primary, #00e5ff);
+  color: var(--cta-primary, #00e5ff);
+  box-shadow: 0 0 14px var(--cta-shadow, rgba(0, 229, 255, 0.25));
 }
 
 /* Difficulty specific pill themes */

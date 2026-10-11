@@ -2,6 +2,7 @@ import {
     BattleRoomRepository,
     BattleRoomEntity,
     ProblemRepository,
+    prisma,
 } from "@algofight/database";
 import { RoomCodeGenerator } from "../utils/room-code.generator";
 import { RatingService, EloResult } from "./rating.service";
@@ -14,6 +15,8 @@ export interface CreateRoomDto {
     questionCount?: number;
     isFriendly?: boolean;
     problemIds?: string[];
+    battleMode?: "DUEL_1V1" | "SQUAD_BATTLE" | "PRACTICE_SOLO";
+    squadSize?: number;
 }
 
 
@@ -61,17 +64,41 @@ export class BattleRoomService {
             selectedProblemIds = selectedProblems.map(p => p.id);
         }
 
-        return this.battleRoomRepository.createRoom({
+        let alphaCode: string | undefined;
+        let betaCode: string | undefined;
+        let alphaCodeHash: string | undefined;
+        let betaCodeHash: string | undefined;
+
+        if (dto.battleMode === "SQUAD_BATTLE") {
+            const squadCodes = RoomCodeGenerator.generateSquadCodes();
+            alphaCode = squadCodes.alphaCode;
+            betaCode = squadCodes.betaCode;
+            alphaCodeHash = squadCodes.alphaHash;
+            betaCodeHash = squadCodes.betaHash;
+        }
+
+        const room = await this.battleRoomRepository.createRoom({
             hostId: dto.hostId,
             roomCode,
-            maxPlayers: dto.maxPlayers ?? 2,
+            maxPlayers: dto.battleMode === "SQUAD_BATTLE" ? (dto.squadSize || 2) * 2 : (dto.maxPlayers ?? 2),
             timeLimitMinutes: dto.timeLimitMinutes ?? 15,
             difficulty: finalDifficulty,
             questionCount: finalQuestionCount,
             problemIds: selectedProblemIds,
             isFriendly: dto.isFriendly,
+            battleMode: dto.battleMode,
+            squadSize: dto.squadSize,
+            alphaCodeHash,
+            betaCodeHash,
             status: "WAITING",
         });
+
+        if (dto.battleMode === "SQUAD_BATTLE") {
+            (room as any).alphaInvitationCode = alphaCode;
+            (room as any).betaInvitationCode = betaCode;
+        }
+
+        return room;
     }
 
 
@@ -135,6 +162,198 @@ export class BattleRoomService {
 
         const result = await this.battleRoomRepository.leaveRoom(room.id, targetUserId);
         return { remainingCount: result.remainingCount };
+    }
+
+    async joinSquadTeam(userId: string, teamCode: string): Promise<{ room: BattleRoomEntity; team: any; participantCode: string }> {
+        const codeHash = RoomCodeGenerator.hashTeamCode(teamCode);
+        const team = await prisma.battleTeam.findFirst({
+            where: { invitationCodeHash: codeHash },
+            include: {
+                battleRoom: {
+                    include: {
+                        participants: true,
+                        teams: true,
+                    },
+                },
+                participants: true,
+            },
+        });
+
+        if (!team) {
+            throw new Error("Invalid squad invitation code");
+        }
+
+        const room = team.battleRoom;
+        if (room.status !== "WAITING" && room.status !== "READY") {
+            throw new Error("Cannot join squad: Battle has already started or concluded");
+        }
+
+        const squadCap = room.squadSize || 2;
+        const existingInThisTeam = team.participants.find((p: any) => p.userId === userId);
+        if (existingInThisTeam) {
+            const fullRoom = await this.getRoom(room.id);
+            return {
+                room: fullRoom,
+                team,
+                participantCode: existingInThisTeam.participantCode || (team.teamSide === "ALPHA" ? "A-01" : "B-01"),
+            };
+        }
+
+        const inOtherTeam = room.participants.find((p: any) => p.userId === userId && p.teamId !== team.id);
+        if (inOtherTeam) {
+            throw new Error("You are already registered on the opposing squad in this battle");
+        }
+
+        if (team.participants.length >= squadCap) {
+            throw new Error(`Squad ${team.teamSide === "ALPHA" ? "Alpha" : "Beta"} is at full capacity (${squadCap}/${squadCap})`);
+        }
+
+        const prefix = team.teamSide === "ALPHA" ? "A" : "B";
+        const isFirstInBeta = team.teamSide === "BETA" && team.participants.length === 0;
+        let participantCode: string;
+
+        if (isFirstInBeta) {
+            participantCode = `${prefix}-01`;
+            await prisma.battleTeam.update({
+                where: { id: team.id },
+                data: {
+                    captainUserId: userId,
+                    isApproved: false,
+                },
+            });
+        } else {
+            const nextIdx = team.participants.length + 1;
+            participantCode = `${prefix}-0${nextIdx}`;
+        }
+
+        await prisma.$transaction([
+            prisma.battleParticipant.create({
+                data: {
+                    roomId: room.id,
+                    userId,
+                    teamId: team.id,
+                    participantCode,
+                    isReady: false,
+                },
+            }),
+            prisma.battleRoom.update({
+                where: { id: room.id },
+                data: {
+                    rosterVersion: { increment: 1 },
+                },
+            }),
+            prisma.battleTeam.updateMany({
+                where: { battleRoomId: room.id },
+                data: { isApproved: false },
+            }),
+        ]);
+
+        const fullRoom = await this.getRoom(room.id);
+        return {
+            room: fullRoom,
+            team,
+            participantCode,
+        };
+    }
+
+    async setSquadCaptainApproval(roomIdOrCode: string, captainUserId: string, isApproved: boolean): Promise<{ success: boolean; alphaApproved: boolean; betaApproved: boolean; canStart: boolean; rosterVersion: number }> {
+        const room = await this.getRoom(roomIdOrCode);
+        if (room.status !== "WAITING" && room.status !== "READY") {
+            throw new Error("Cannot modify approval: Battle is not in lobby state");
+        }
+
+        const team = (room.teams || []).find((t: any) => t.captainUserId === captainUserId);
+        if (!team) {
+            throw new Error("Only an authorized squad captain may approve the match");
+        }
+
+        const rosterVer = room.rosterVersion || 1;
+
+        await prisma.battleTeam.update({
+            where: { id: team.id },
+            data: {
+                isApproved,
+                approvedVersion: isApproved ? rosterVer : 0,
+                approvedAt: isApproved ? new Date() : null,
+            },
+        });
+
+        const updatedTeams = await prisma.battleTeam.findMany({
+            where: { battleRoomId: room.id },
+        });
+
+        const alphaTeam = updatedTeams.find((t: any) => t.teamSide === "ALPHA");
+        const betaTeam = updatedTeams.find((t: any) => t.teamSide === "BETA");
+
+        const alphaApproved = Boolean(alphaTeam?.isApproved && alphaTeam?.approvedVersion === rosterVer);
+        const betaApproved = Boolean(betaTeam?.isApproved && betaTeam?.approvedVersion === rosterVer);
+
+        const squadCap = room.squadSize || 2;
+        const alphaCount = (room.participants || []).filter((p: any) => p.teamId === alphaTeam?.id).length;
+        const betaCount = (room.participants || []).filter((p: any) => p.teamId === betaTeam?.id).length;
+        const teamsFull = alphaCount === squadCap && betaCount === squadCap;
+
+        const canStart = alphaApproved && betaApproved && teamsFull;
+
+        return {
+            success: true,
+            alphaApproved,
+            betaApproved,
+            canStart,
+            rosterVersion: rosterVer,
+        };
+    }
+
+    async kickSquadMember(roomIdOrCode: string, captainUserId: string, targetUserId: string): Promise<{ remainingCount: number; teamSide: string }> {
+        const room = await this.getRoom(roomIdOrCode);
+        if (room.status !== "WAITING" && room.status !== "READY") {
+            throw new Error("Cannot kick players after battle has started");
+        }
+
+        const captainTeam = (room.teams || []).find((t: any) => t.captainUserId === captainUserId);
+        if (!captainTeam) {
+            throw new Error("Only an authorized squad captain can remove players from their team");
+        }
+
+        if (captainUserId === targetUserId) {
+            throw new Error("Captain cannot kick themselves from their squad");
+        }
+
+        const targetParticipant = room.participants.find(p => p.userId === targetUserId);
+        if (!targetParticipant) {
+            throw new Error("Target player is not in this battle");
+        }
+
+        if (targetParticipant.teamId !== captainTeam.id) {
+            throw new Error("Captains can only kick players from their own squad");
+        }
+
+        await prisma.$transaction([
+            prisma.battleParticipant.delete({
+                where: {
+                    roomId_userId: {
+                        roomId: room.id,
+                        userId: targetUserId,
+                    },
+                },
+            }),
+            prisma.battleRoom.update({
+                where: { id: room.id },
+                data: {
+                    rosterVersion: { increment: 1 },
+                },
+            }),
+            prisma.battleTeam.updateMany({
+                where: { battleRoomId: room.id },
+                data: { isApproved: false },
+            }),
+        ]);
+
+        const updatedRoom = await this.getRoom(room.id);
+        return {
+            remainingCount: updatedRoom.participants.length,
+            teamSide: captainTeam.teamSide,
+        };
     }
 
     async setPlayerReady(roomIdOrCode: string, userId: string, isReady: boolean): Promise<BattleRoomEntity> {

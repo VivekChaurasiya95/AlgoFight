@@ -23,6 +23,19 @@ const battleRoomInclude = {
             },
         },
     },
+    teams: {
+        include: {
+            captain: {
+                select: {
+                    id: true,
+                    username: true,
+                    rating: true,
+                    email: true,
+                },
+            },
+            problemScores: true,
+        },
+    },
     problems: {
         include: {
             testCases: true,
@@ -42,6 +55,9 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
                 rating: room.host.rating ?? 0,
                 email: room.host.email,
             } : undefined,
+            battleMode: room.battleMode,
+            squadSize: room.squadSize,
+            rosterVersion: room.rosterVersion,
             maxPlayers: room.maxPlayers,
             status: room.status,
             difficulty: room.difficulty,
@@ -52,11 +68,29 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
             startedAt: room.startedAt,
             endedAt: room.endedAt,
             createdAt: room.createdAt,
+            teams: (room.teams || []).map((t: any) => ({
+                id: t.id,
+                teamSide: t.teamSide,
+                captainUserId: t.captainUserId,
+                score: t.score,
+                isApproved: t.isApproved,
+                approvedVersion: t.approvedVersion,
+                approvedAt: t.approvedAt,
+                captain: t.captain ? {
+                    id: t.captain.id,
+                    username: t.captain.username,
+                    rating: t.captain.rating ?? 0,
+                    email: t.captain.email,
+                } : undefined,
+                problemScores: t.problemScores,
+            })),
             participants: (room.participants || []).map((p: any) => {
                 const u = p.user;
                 return {
                     userId: p.userId,
                     roomId: p.roomId,
+                    teamId: p.teamId,
+                    participantCode: p.participantCode,
                     joinedAt: p.joinedAt,
                     isReady: p.isReady,
                     score: p.score,
@@ -77,27 +111,59 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
     }
 
     async createRoom(input: CreateBattleRoomInput): Promise<BattleRoomEntity> {
+        const isSquad = input.battleMode === "SQUAD_BATTLE";
+        const squadSize = input.squadSize || 2;
+        const maxPlayers = isSquad ? squadSize * 2 : (input.maxPlayers ?? 2);
+
         const room = await prisma.$transaction(async (tx: any) => {
             const created = await tx.battleRoom.create({
                 data: {
                     roomCode: input.roomCode,
                     hostId: input.hostId,
-                    maxPlayers: input.maxPlayers ?? 2,
+                    battleMode: input.battleMode || "DUEL_1V1",
+                    squadSize: isSquad ? squadSize : null,
+                    maxPlayers,
                     timeLimitMinutes: input.timeLimitMinutes ?? 15,
                     difficulty: input.difficulty,
                     questionCount: input.questionCount,
+                    isFriendly: input.isFriendly ?? false,
                     problems: {
                         connect: input.problemIds.map(id => ({ id }))
                     },
-
                     status: "WAITING",
                 },
             });
+
+            let alphaTeamId: string | null = null;
+            if (isSquad) {
+                const alphaTeam = await tx.battleTeam.create({
+                    data: {
+                        battleRoomId: created.id,
+                        teamSide: "ALPHA",
+                        captainUserId: input.hostId,
+                        invitationCodeHash: input.alphaCodeHash || "default_alpha_hash",
+                        score: 0,
+                    },
+                });
+                alphaTeamId = alphaTeam.id;
+
+                await tx.battleTeam.create({
+                    data: {
+                        battleRoomId: created.id,
+                        teamSide: "BETA",
+                        captainUserId: input.hostId, // Initialized placeholder until Beta captain claims
+                        invitationCodeHash: input.betaCodeHash || "default_beta_hash",
+                        score: 0,
+                    },
+                });
+            }
 
             await tx.battleParticipant.create({
                 data: {
                     roomId: created.id,
                     userId: input.hostId,
+                    teamId: alphaTeamId,
+                    participantCode: isSquad ? "A-01" : null,
                     isReady: true, // Host is ready by default
                 },
             });

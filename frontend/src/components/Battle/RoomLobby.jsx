@@ -429,6 +429,39 @@ export default function RoomLobby() {
                         loadRoom(true);
                     }
 
+                    if (evt === "squad_roster_updated") {
+                        loadRoom(true);
+                    }
+
+                    if (evt === "squad_approval_updated") {
+                        setRoom((prev) => {
+                            if (!prev) return prev;
+                            const updatedTeams = (prev.teams || []).map((t) => {
+                                if (t.teamSide === "ALPHA") return { ...t, captainApproved: payload?.alphaApproved };
+                                if (t.teamSide === "BETA") return { ...t, captainApproved: payload?.betaApproved };
+                                return t;
+                            });
+                            return {
+                                ...prev,
+                                teams: updatedTeams,
+                                rosterVersion: payload?.rosterVersion ?? prev.rosterVersion,
+                            };
+                        });
+                    }
+
+                    if (evt === "squad_countdown_tick") {
+                        setCountdown(payload?.count);
+                    }
+
+                    if (evt === "squad_countdown_aborted") {
+                        setCountdown(null);
+                        notify({
+                            type: "warning",
+                            title: "Countdown Cancelled",
+                            message: payload?.reason || "A captain cancelled approval or the roster changed.",
+                        });
+                    }
+
                     if (evt === "battle_started" || evt === "match_found") {
                         setActiveEvent({
                             type: "BATTLE",
@@ -724,8 +757,111 @@ export default function RoomLobby() {
         }
     };
 
+    // Squad Battle Specific Properties & Handlers
+    const isSquadBattle = room?.battleMode === "SQUAD_BATTLE" || Boolean(room?.teams?.length);
+    const alphaTeam = (room?.teams || []).find((t) => t.teamSide === "ALPHA");
+    const betaTeam = (room?.teams || []).find((t) => t.teamSide === "BETA");
+    const squadSize = room?.squadSize || 2;
+    const squadCapacity = squadSize * 2;
+
+    const alphaParticipants = participants.filter(
+        (p) => p.teamId === alphaTeam?.id || p.teamSide === "ALPHA" || p.participantCode?.startsWith("A-")
+    );
+    const betaParticipants = participants.filter(
+        (p) => p.teamId === betaTeam?.id || p.teamSide === "BETA" || p.participantCode?.startsWith("B-")
+    );
+
+    const isAlphaCaptain = Boolean(
+        alphaTeam && (alphaTeam.captainUserId === currentUserId || (isHost && !alphaTeam.captainUserId))
+    );
+    const isBetaCaptain = Boolean(
+        betaTeam && (betaTeam.captainUserId === currentUserId)
+    );
+    const isAnyCaptain = isAlphaCaptain || isBetaCaptain;
+    const alphaApproved = Boolean(alphaTeam?.captainApproved);
+    const betaApproved = Boolean(betaTeam?.captainApproved);
+
+    const handleToggleSquadApproval = async () => {
+        const myApproval = isAlphaCaptain ? alphaApproved : betaApproved;
+        const nextApproved = !myApproval;
+        try {
+            await requestJson(`/api/battle/squad/${encodeURIComponent(room?.roomCode || roomCode)}/approve`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId: currentUserId,
+                    isApproved: nextApproved,
+                    rosterVersion: room?.rosterVersion || 1,
+                }),
+                includeAuth: true,
+            });
+
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({
+                    action: "squad_approval_toggle",
+                    payload: {
+                        roomCode: room?.roomCode || roomCode,
+                        userId: currentUserId,
+                        isApproved: nextApproved,
+                        rosterVersion: room?.rosterVersion || 1,
+                    },
+                }));
+            }
+
+            notify({
+                type: nextApproved ? "success" : "info",
+                title: nextApproved ? "Squad Approved" : "Approval Retracted",
+                message: nextApproved ? "Waiting for opposing captain's approval..." : "Approval cancelled.",
+            });
+            loadRoom(true);
+        } catch (err) {
+            notify({
+                type: "error",
+                title: "Approval Failed",
+                message: err.message || "Failed to update squad approval.",
+            });
+        }
+    };
+
+    const handleKickSquadMember = async (targetUserId, targetUsername) => {
+        if (!window.confirm(`Kick ${targetUsername} from your squad?`)) return;
+        try {
+            await requestJson(`/api/battle/squad/${encodeURIComponent(room?.roomCode || roomCode)}/kick`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    captainUserId: currentUserId,
+                    targetUserId,
+                }),
+                includeAuth: true,
+            });
+            notify({
+                type: "info",
+                title: "Member Evicted",
+                message: `${targetUsername} was removed from your squad.`,
+            });
+            loadRoom(true);
+        } catch (err) {
+            notify({
+                type: "error",
+                title: "Kick Failed",
+                message: err.message || "Could not kick squad member.",
+            });
+        }
+    };
+
+    const copyTeamCode = (teamCode, teamLabel) => {
+        if (!teamCode) return;
+        navigator.clipboard.writeText(teamCode);
+        notify({
+            type: "success",
+            title: "Code Copied!",
+            message: `${teamLabel} Invite Code (${teamCode}) copied to clipboard.`,
+        });
+    };
+
     // Metrics for classroom / 50-student scaling
-    const maxCapacity = room?.maxPlayers || 2;
+    const maxCapacity = isSquadBattle ? squadCapacity : (room?.maxPlayers || 2);
     const readyCount = useMemo(() => {
         return participants.filter((p) => p.isReady || p.userId === room?.hostId || p.userId === room?.host?.id).length;
     }, [participants, room?.hostId, room?.host?.id]);
@@ -847,8 +983,10 @@ export default function RoomLobby() {
                         <FontAwesomeIcon icon={faArrowLeft} /> Leave Lobby
                     </button>
                     <div className="lobby-badge">
-                        <FontAwesomeIcon icon={maxCapacity >= 16 ? faGraduationCap : faUsers} />
-                        {maxCapacity >= 16 ? `CLASSROOM ARENA (${maxCapacity} SEATS)` : "CUSTOM BATTLE LOBBY"}
+                        <FontAwesomeIcon icon={isSquadBattle ? faShieldHalved : (maxCapacity >= 16 ? faGraduationCap : faUsers)} />
+                        {isSquadBattle
+                            ? `SQUAD BATTLE ARENA (${squadSize}v${squadSize})`
+                            : (maxCapacity >= 16 ? `CLASSROOM ARENA (${maxCapacity} SEATS)` : "CUSTOM BATTLE LOBBY")}
                     </div>
                 </div>
 
@@ -860,11 +998,39 @@ export default function RoomLobby() {
                 >
                     <div className="room-meta-strip">
                         <div className="room-code-display" onClick={copyCode} title="Click to copy invite code">
-                            <span className="code-label">ROOM INVITE CODE</span>
+                            <span className="code-label">ROOM CODE</span>
                             <div className="code-value">
                                 {roomCode} <FontAwesomeIcon icon={faCopy} className="copy-icon" />
                             </div>
                         </div>
+
+                        {isSquadBattle && alphaTeam?.teamCode && (
+                            <div
+                                className="room-code-display"
+                                onClick={() => copyTeamCode(alphaTeam.teamCode, "Team Alpha")}
+                                title="Click to copy Alpha invite code"
+                                style={{ borderColor: "rgba(6, 182, 212, 0.4)", background: "rgba(6, 182, 212, 0.08)" }}
+                            >
+                                <span className="code-label" style={{ color: "#38bdf8" }}>ALPHA INVITE CODE</span>
+                                <div className="code-value" style={{ color: "#38bdf8" }}>
+                                    {alphaTeam.teamCode} <FontAwesomeIcon icon={faCopy} className="copy-icon" />
+                                </div>
+                            </div>
+                        )}
+
+                        {isSquadBattle && betaTeam?.teamCode && (
+                            <div
+                                className="room-code-display"
+                                onClick={() => copyTeamCode(betaTeam.teamCode, "Team Beta")}
+                                title="Click to copy Beta invite code"
+                                style={{ borderColor: "rgba(168, 85, 247, 0.4)", background: "rgba(168, 85, 247, 0.08)" }}
+                            >
+                                <span className="code-label" style={{ color: "#c084fc" }}>BETA INVITE CODE</span>
+                                <div className="code-value" style={{ color: "#c084fc" }}>
+                                    {betaTeam.teamCode} <FontAwesomeIcon icon={faCopy} className="copy-icon" />
+                                </div>
+                            </div>
+                        )}
 
                         <div className="room-specs">
                             <div className="spec-item">
@@ -893,24 +1059,26 @@ export default function RoomLobby() {
                     </div>
 
                     {/* Readiness Progress Bar for Classroom / Tournament */}
-                    <div className="readiness-meter-container">
-                        <div className="readiness-meter-labels">
-                            <span className="meter-title">
-                                <FontAwesomeIcon icon={faCheckCircle} /> Readiness Status: <strong>{readyCount} / {participants.length} Students Ready</strong> ({readyPercentage}%)
-                            </span>
-                            <span className="meter-sub">
-                                {participants.length >= 2 ? "Ready to start battle when instructor launches" : "Waiting for at least 2 participants to join"}
-                            </span>
+                    {!isSquadBattle && (
+                        <div className="readiness-meter-container">
+                            <div className="readiness-meter-labels">
+                                <span className="meter-title">
+                                    <FontAwesomeIcon icon={faCheckCircle} /> Readiness Status: <strong>{readyCount} / {participants.length} Students Ready</strong> ({readyPercentage}%)
+                                </span>
+                                <span className="meter-sub">
+                                    {participants.length >= 2 ? "Ready to start battle when instructor launches" : "Waiting for at least 2 participants to join"}
+                                </span>
+                            </div>
+                            <div className="readiness-progress-track">
+                                <motion.div
+                                    className="readiness-progress-fill"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${readyPercentage}%` }}
+                                    transition={{ duration: 0.4 }}
+                                />
+                            </div>
                         </div>
-                        <div className="readiness-progress-track">
-                            <motion.div
-                                className="readiness-progress-fill"
-                                initial={{ width: 0 }}
-                                animate={{ width: `${readyPercentage}%` }}
-                                transition={{ duration: 0.4 }}
-                            />
-                        </div>
-                    </div>
+                    )}
                 </motion.div>
 
                 {/* Host Join Requests Queue */}
@@ -1127,163 +1295,440 @@ export default function RoomLobby() {
                     )}
                 </AnimatePresence>
 
-                {/* Participants Section with Search & Filter Bar */}
-                <div className="participants-section">
-                    <div className="participants-toolbar">
-                        <h3 className="section-title-hud" style={{ margin: 0 }}>
-                            <FontAwesomeIcon icon={faUsers} /> COMBATANTS ({participants.length}/{maxCapacity})
-                        </h3>
+                {/* Squad Battle Dual-Captain Approval Gate */}
+                {isSquadBattle && (
+                    <motion.div
+                        className="squad-gate-card"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <div className="squad-gate-top">
+                            <div className="squad-gate-title">
+                                <FontAwesomeIcon icon={faShieldHalved} style={{ color: "#38bdf8" }} />
+                                <span>Dual-Captain Approval Gate</span>
+                            </div>
+                            <div className="squad-gate-notice">
+                                Both captains must approve before synchronized launch • Roster changes reset approvals
+                            </div>
+                        </div>
 
-                        {/* Search & Filter Controls */}
-                        <div className="participants-controls">
-                            <div className="search-bar-hud">
-                                <FontAwesomeIcon icon={faSearch} className="search-icon" />
-                                <input
-                                    type="text"
-                                    placeholder="Search student / combatant..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                                {searchQuery && (
-                                    <button className="clear-search" onClick={() => setSearchQuery("")}>
-                                        <FontAwesomeIcon icon={faTimes} />
-                                    </button>
-                                )}
+                        <div className="squad-captains-status-grid">
+                            <div className={`captain-status-badge alpha-side ${alphaApproved ? 'approved' : ''}`}>
+                                <div>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8' }}>TEAM ALPHA CAPTAIN</div>
+                                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc' }}>
+                                        {alphaTeam?.captainUserId ? (
+                                            participants.find((p) => p.userId === alphaTeam.captainUserId)?.username || "Alpha Captain"
+                                        ) : (
+                                            "Pending Assignment"
+                                        )}
+                                    </div>
+                                </div>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: alphaApproved ? '#34d399' : '#f59e0b' }}>
+                                    {alphaApproved ? '✓ APPROVED & READY' : '⏳ PENDING'}
+                                </span>
                             </div>
 
-                            <div className="filter-pill-group">
+                            <div className="gate-vs-badge">VS</div>
+
+                            <div className={`captain-status-badge beta-side ${betaApproved ? 'approved' : ''}`}>
+                                <div>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#c084fc' }}>TEAM BETA CAPTAIN</div>
+                                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc' }}>
+                                        {betaTeam?.captainUserId ? (
+                                            participants.find((p) => p.userId === betaTeam.captainUserId)?.username || "Beta Captain"
+                                        ) : (
+                                            "Pending Assignment"
+                                        )}
+                                    </div>
+                                </div>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: betaApproved ? '#34d399' : '#f59e0b' }}>
+                                    {betaApproved ? '✓ APPROVED & READY' : '⏳ PENDING'}
+                                </span>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* SQUAD BATTLE SPLIT TEAMS GRID */}
+                {isSquadBattle ? (
+                    <div className="squad-teams-grid">
+                        {/* TEAM ALPHA CARD */}
+                        <div className="squad-team-card alpha">
+                            <div className="team-card-header">
+                                <div className="team-title-group">
+                                    <span className="team-tag-pill alpha">ALPHA SQUAD</span>
+                                    <h3 className="team-name-text">Team Alpha</h3>
+                                </div>
                                 <button
-                                    className={`filter-pill ${filterTab === "ALL" ? "active" : ""}`}
-                                    onClick={() => setFilterTab("ALL")}
+                                    type="button"
+                                    className="btn-team-code-copy"
+                                    onClick={() => copyTeamCode(alphaTeam?.teamCode, "Team Alpha")}
+                                    title="Copy Team Alpha Invite Code"
                                 >
-                                    All ({participants.length})
+                                    <FontAwesomeIcon icon={faCopy} />
+                                    <span>{alphaTeam?.teamCode || "SQ-ALP"}</span>
                                 </button>
+                            </div>
+
+                            <div className="squad-slots-container">
+                                {Array.from({ length: squadSize }).map((_, slotIdx) => {
+                                    const member = alphaParticipants[slotIdx];
+                                    const slotCode = `A-0${slotIdx + 1}`;
+                                    const isMemberCaptain = member && member.userId === alphaTeam?.captainUserId;
+                                    const isMe = member && member.userId === currentUserId;
+
+                                    if (member) {
+                                        const memberName =
+                                            member.user?.username ||
+                                            member.username ||
+                                            (isMe ? currentUsername : `Combatant ${slotIdx + 1}`);
+                                        const memberRating = member.user?.rating ?? member.rating ?? 0;
+
+                                        return (
+                                            <div key={member.userId || slotIdx} className={`squad-slot-item filled ${isMe ? 'me' : ''}`}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <span className="slot-code-tag">{slotCode}</span>
+                                                    <div className="participant-avatar" style={{ width: '32px', height: '32px', fontSize: '0.85rem' }}>
+                                                        {(memberName || 'A')[0].toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <span>{memberName}</span>
+                                                            {isMe && <span className="me-badge">YOU</span>}
+                                                            {isMemberCaptain && (
+                                                                <span style={{ fontSize: '0.65rem', background: '#ffd500', color: '#0f172a', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>
+                                                                    <FontAwesomeIcon icon={faCrown} /> CAPTAIN
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            <RankEmblem rating={memberRating} size={14} glow={false} />
+                                                            <span>Rating: {memberRating}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {isAlphaCaptain && !isMe && (
+                                                    <button
+                                                        className="btn-card-kick"
+                                                        onClick={() => handleKickSquadMember(member.userId, memberName)}
+                                                        title={`Kick ${memberName} from squad`}
+                                                    >
+                                                        <FontAwesomeIcon icon={faUserSlash} />
+                                                        <span>Kick</span>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <div
+                                            key={slotIdx}
+                                            className="squad-slot-item empty"
+                                            onClick={() => copyTeamCode(alphaTeam?.teamCode, "Team Alpha")}
+                                            style={{ cursor: 'pointer' }}
+                                            title="Click to copy Alpha invite code"
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <span className="slot-code-tag">{slotCode}</span>
+                                                <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Empty Alpha Slot</span>
+                                            </div>
+                                            <span style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 600 }}>
+                                                <FontAwesomeIcon icon={faCopy} /> Copy Invite
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* TEAM BETA CARD */}
+                        <div className="squad-team-card beta">
+                            <div className="team-card-header">
+                                <div className="team-title-group">
+                                    <span className="team-tag-pill beta">BETA SQUAD</span>
+                                    <h3 className="team-name-text">Team Beta</h3>
+                                </div>
                                 <button
-                                    className={`filter-pill ${filterTab === "READY" ? "active" : ""}`}
-                                    onClick={() => setFilterTab("READY")}
+                                    type="button"
+                                    className="btn-team-code-copy"
+                                    onClick={() => copyTeamCode(betaTeam?.teamCode, "Team Beta")}
+                                    title="Copy Team Beta Invite Code"
                                 >
-                                    Ready ({readyCount})
+                                    <FontAwesomeIcon icon={faCopy} />
+                                    <span>{betaTeam?.teamCode || "SQ-BET"}</span>
                                 </button>
-                                <button
-                                    className={`filter-pill ${filterTab === "WAITING" ? "active" : ""}`}
-                                    onClick={() => setFilterTab("WAITING")}
-                                >
-                                    Waiting ({participants.length - readyCount})
-                                </button>
+                            </div>
+
+                            <div className="squad-slots-container">
+                                {Array.from({ length: squadSize }).map((_, slotIdx) => {
+                                    const member = betaParticipants[slotIdx];
+                                    const slotCode = `B-0${slotIdx + 1}`;
+                                    const isMemberCaptain = member && member.userId === betaTeam?.captainUserId;
+                                    const isMe = member && member.userId === currentUserId;
+
+                                    if (member) {
+                                        const memberName =
+                                            member.user?.username ||
+                                            member.username ||
+                                            (isMe ? currentUsername : `Combatant ${slotIdx + 1}`);
+                                        const memberRating = member.user?.rating ?? member.rating ?? 0;
+
+                                        return (
+                                            <div key={member.userId || slotIdx} className={`squad-slot-item filled ${isMe ? 'me' : ''}`}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <span className="slot-code-tag">{slotCode}</span>
+                                                    <div className="participant-avatar" style={{ width: '32px', height: '32px', fontSize: '0.85rem' }}>
+                                                        {(memberName || 'B')[0].toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <span>{memberName}</span>
+                                                            {isMe && <span className="me-badge">YOU</span>}
+                                                            {isMemberCaptain && (
+                                                                <span style={{ fontSize: '0.65rem', background: '#ffd500', color: '#0f172a', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>
+                                                                    <FontAwesomeIcon icon={faCrown} /> CAPTAIN
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            <RankEmblem rating={memberRating} size={14} glow={false} />
+                                                            <span>Rating: {memberRating}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {isBetaCaptain && !isMe && (
+                                                    <button
+                                                        className="btn-card-kick"
+                                                        onClick={() => handleKickSquadMember(member.userId, memberName)}
+                                                        title={`Kick ${memberName} from squad`}
+                                                    >
+                                                        <FontAwesomeIcon icon={faUserSlash} />
+                                                        <span>Kick</span>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <div
+                                            key={slotIdx}
+                                            className="squad-slot-item empty"
+                                            onClick={() => copyTeamCode(betaTeam?.teamCode, "Team Beta")}
+                                            style={{ cursor: 'pointer' }}
+                                            title="Click to copy Beta invite code"
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <span className="slot-code-tag">{slotCode}</span>
+                                                <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Empty Beta Slot</span>
+                                            </div>
+                                            <span style={{ fontSize: '0.75rem', color: '#c084fc', fontWeight: 600 }}>
+                                                <FontAwesomeIcon icon={faCopy} /> Copy Invite
+                                            </span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
+                ) : (
+                    /* Standard Participants Section with Search & Filter Bar */
+                    <div className="participants-section">
+                        <div className="participants-toolbar">
+                            <h3 className="section-title-hud" style={{ margin: 0 }}>
+                                <FontAwesomeIcon icon={faUsers} /> COMBATANTS ({participants.length}/{maxCapacity})
+                            </h3>
 
-                    <div className="participants-grid">
-                        {filteredParticipants.map((player, idx) => {
-                            const isPlayerHost = player.userId === room?.hostId || player.userId === room?.host?.id;
-                            const isMe = player.userId === currentUserId;
-                            const playerName =
-                                player.user?.username ||
-                                player.username ||
-                                (isMe ? currentUsername : null) ||
-                                (player.user?.email ? player.user.email.split('@')[0] : null) ||
-                                (player.email ? player.email.split('@')[0] : null) ||
-                                `Combatant ${idx + 1}`;
-                            const playerRating = player.user?.rating ?? player.rating ?? 0;
+                            {/* Search & Filter Controls */}
+                            <div className="participants-controls">
+                                <div className="search-bar-hud">
+                                    <FontAwesomeIcon icon={faSearch} className="search-icon" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search student / combatant..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                    {searchQuery && (
+                                        <button className="clear-search" onClick={() => setSearchQuery("")}>
+                                            <FontAwesomeIcon icon={faTimes} />
+                                        </button>
+                                    )}
+                                </div>
 
-                            return (
-                                <motion.div
-                                    key={player.userId || idx}
-                                    className={`participant-card ${isMe ? "me" : ""}`}
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    layout
-                                >
-                                    <div className="participant-avatar">
-                                        {(playerName || "C")[0].toUpperCase()}
-                                    </div>
+                                <div className="filter-pill-group">
+                                    <button
+                                        className={`filter-pill ${filterTab === "ALL" ? "active" : ""}`}
+                                        onClick={() => setFilterTab("ALL")}
+                                    >
+                                        All ({participants.length})
+                                    </button>
+                                    <button
+                                        className={`filter-pill ${filterTab === "READY" ? "active" : ""}`}
+                                        onClick={() => setFilterTab("READY")}
+                                    >
+                                        Ready ({readyCount})
+                                    </button>
+                                    <button
+                                        className={`filter-pill ${filterTab === "WAITING" ? "active" : ""}`}
+                                        onClick={() => setFilterTab("WAITING")}
+                                    >
+                                        Waiting ({participants.length - readyCount})
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
-                                    <div className="participant-info">
-                                        <div className="participant-name">
-                                            <span className="participant-name-text" title={playerName}>{playerName}</span>
-                                            {isMe && <span className="me-badge">YOU</span>}
-                                            {isPlayerHost && <span className="host-badge"><FontAwesomeIcon icon={faCrown} /> HOST</span>}
+                        <div className="participants-grid">
+                            {filteredParticipants.map((player, idx) => {
+                                const isPlayerHost = player.userId === room?.hostId || player.userId === room?.host?.id;
+                                const isMe = player.userId === currentUserId;
+                                const playerName =
+                                    player.user?.username ||
+                                    player.username ||
+                                    (isMe ? currentUsername : null) ||
+                                    (player.user?.email ? player.user.email.split('@')[0] : null) ||
+                                    (player.email ? player.email.split('@')[0] : null) ||
+                                    `Combatant ${idx + 1}`;
+                                const playerRating = player.user?.rating ?? player.rating ?? 0;
+
+                                return (
+                                    <motion.div
+                                        key={player.userId || idx}
+                                        className={`participant-card ${isMe ? "me" : ""}`}
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        layout
+                                    >
+                                        <div className="participant-avatar">
+                                            {(playerName || "C")[0].toUpperCase()}
                                         </div>
-                                        <div className="participant-rating" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <RankEmblem rating={playerRating} size={18} glow={false} />
-                                            <span>Rating: {playerRating}</span>
-                                        </div>
-                                    </div>
 
-                                    <div className="participant-status-group">
-                                        <div className="participant-status">
-                                            {player.isReady || isPlayerHost ? (
-                                                <span className="status-pill ready">
-                                                    <FontAwesomeIcon icon={faCheckCircle} /> READY
-                                                </span>
-                                            ) : (
-                                                <span className="status-pill waiting">
-                                                    <FontAwesomeIcon icon={faHourglassHalf} /> WAITING
-                                                </span>
+                                        <div className="participant-info">
+                                            <div className="participant-name">
+                                                <span className="participant-name-text" title={playerName}>{playerName}</span>
+                                                {isMe && <span className="me-badge">YOU</span>}
+                                                {isPlayerHost && <span className="host-badge"><FontAwesomeIcon icon={faCrown} /> HOST</span>}
+                                            </div>
+                                            <div className="participant-rating" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <RankEmblem rating={playerRating} size={18} glow={false} />
+                                                <span>Rating: {playerRating}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="participant-status-group">
+                                            <div className="participant-status">
+                                                {player.isReady || isPlayerHost ? (
+                                                    <span className="status-pill ready">
+                                                        <FontAwesomeIcon icon={faCheckCircle} /> READY
+                                                    </span>
+                                                ) : (
+                                                    <span className="status-pill waiting">
+                                                        <FontAwesomeIcon icon={faHourglassHalf} /> WAITING
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Host Kick Power */}
+                                            {isHost && !isPlayerHost && !isMe && (
+                                                <button
+                                                    className="btn-card-kick"
+                                                    onClick={() => handleKickPlayer(player.userId, playerName)}
+                                                    disabled={kickingUserId === player.userId}
+                                                    title={`Kick ${playerName} from lobby`}
+                                                >
+                                                    <FontAwesomeIcon icon={faUserSlash} />
+                                                    <span>{kickingUserId === player.userId ? "..." : "Kick"}</span>
+                                                </button>
                                             )}
                                         </div>
+                                    </motion.div>
+                                );
+                            })}
 
-                                        {/* Host Kick Power */}
-                                        {isHost && !isPlayerHost && !isMe && (
-                                            <button
-                                                className="btn-card-kick"
-                                                onClick={() => handleKickPlayer(player.userId, playerName)}
-                                                disabled={kickingUserId === player.userId}
-                                                title={`Kick ${playerName} from lobby`}
-                                            >
-                                                <FontAwesomeIcon icon={faUserSlash} />
-                                                <span>{kickingUserId === player.userId ? "..." : "Kick"}</span>
-                                            </button>
-                                        )}
+                            {/* If filtered list is empty due to search */}
+                            {filteredParticipants.length === 0 && (
+                                <div className="no-students-found">
+                                    <FontAwesomeIcon icon={faSearch} />
+                                    <span>No combatants matching "{searchQuery}" in {filterTab.toLowerCase()} category.</span>
+                                </div>
+                            )}
+
+                            {/* Open Capacity Card */}
+                            {participants.length < maxCapacity && (
+                                <div className="capacity-summary-card" onClick={copyCode} title="Click to copy invite code">
+                                    <div className="capacity-icon">
+                                        <FontAwesomeIcon icon={faUserGraduate} />
                                     </div>
-                                </motion.div>
-                            );
-                        })}
-
-                        {/* If filtered list is empty due to search */}
-                        {filteredParticipants.length === 0 && (
-                            <div className="no-students-found">
-                                <FontAwesomeIcon icon={faSearch} />
-                                <span>No combatants matching "{searchQuery}" in {filterTab.toLowerCase()} category.</span>
-                            </div>
-                        )}
-
-                        {/* Open Capacity Card (Streamlined for 50-student rooms rather than 48 individual empty slots) */}
-                        {participants.length < maxCapacity && (
-                            <div className="capacity-summary-card" onClick={copyCode} title="Click to copy invite code">
-                                <div className="capacity-icon">
-                                    <FontAwesomeIcon icon={faUserGraduate} />
+                                    <div className="capacity-info">
+                                        <span className="capacity-title">{maxCapacity - participants.length} Open Seats Available</span>
+                                        <span className="capacity-desc">Share code <b style={{ color: '#00e5ff' }}>{roomCode}</b> with classmates or contestants to join this lobby.</span>
+                                    </div>
                                 </div>
-                                <div className="capacity-info">
-                                    <span className="capacity-title">{maxCapacity - participants.length} Open Seats Available</span>
-                                    <span className="capacity-desc">Share code <b style={{ color: '#00e5ff' }}>{roomCode}</b> with classmates or contestants to join this lobby.</span>
-                                </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Action Bottom Bar */}
                 <div className="lobby-actions-footer">
-                    <button
-                        className={`btn-hud-ready ${isReady ? "is-ready" : ""}`}
-                        onClick={handleToggleReady}
-                        disabled={starting}
-                    >
-                        <FontAwesomeIcon icon={faCheckCircle} /> {isReady ? "SET AS NOT READY" : "READY UP"}
-                    </button>
+                    {isSquadBattle ? (
+                        <>
+                            {isAlphaCaptain && (
+                                <button
+                                    className={`btn-squad-approve-glow ${alphaApproved ? 'retract' : 'approve'}`}
+                                    onClick={handleToggleSquadApproval}
+                                    disabled={starting}
+                                >
+                                    <FontAwesomeIcon icon={alphaApproved ? faTimes : faCheck} />
+                                    <span>{alphaApproved ? 'RETRACT ALPHA APPROVAL' : 'APPROVE SQUAD BATTLE (ALPHA)'}</span>
+                                </button>
+                            )}
 
-                    {isHost && (
-                        <button
-                            className="btn-hud-launch"
-                            onClick={handleStartBattle}
-                            disabled={starting || participants.length < 2}
-                            title={participants.length < 2 ? "Waiting for at least 2 participants" : `Launch match with ${readyCount}/${participants.length} ready`}
-                        >
-                            <FontAwesomeIcon icon={faPlay} />
-                            {starting ? "LAUNCHING..." : `START BATTLE (${readyCount}/${participants.length} Ready)`}
-                        </button>
+                            {isBetaCaptain && (
+                                <button
+                                    className={`btn-squad-approve-glow ${betaApproved ? 'retract' : 'approve'}`}
+                                    onClick={handleToggleSquadApproval}
+                                    disabled={starting}
+                                >
+                                    <FontAwesomeIcon icon={betaApproved ? faTimes : faCheck} />
+                                    <span>{betaApproved ? 'RETRACT BETA APPROVAL' : 'APPROVE SQUAD BATTLE (BETA)'}</span>
+                                </button>
+                            )}
+
+                            {!isAlphaCaptain && !isBetaCaptain && (
+                                <div style={{ padding: '12px 20px', background: 'rgba(0,0,0,0.4)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <FontAwesomeIcon icon={faHourglassHalf} />
+                                    <span>Waiting for Alpha and Beta Captains to approve battle...</span>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <button
+                                className={`btn-hud-ready ${isReady ? "is-ready" : ""}`}
+                                onClick={handleToggleReady}
+                                disabled={starting}
+                            >
+                                <FontAwesomeIcon icon={faCheckCircle} /> {isReady ? "SET AS NOT READY" : "READY UP"}
+                            </button>
+
+                            {isHost && (
+                                <button
+                                    className="btn-hud-launch"
+                                    onClick={handleStartBattle}
+                                    disabled={starting || participants.length < 2}
+                                    title={participants.length < 2 ? "Waiting for at least 2 participants" : `Launch match with ${readyCount}/${participants.length} ready`}
+                                >
+                                    <FontAwesomeIcon icon={faPlay} />
+                                    {starting ? "LAUNCHING..." : `START BATTLE (${readyCount}/${participants.length} Ready)`}
+                                </button>
+                            )}
+                        </>
                     )}
                 </div>
             </div>

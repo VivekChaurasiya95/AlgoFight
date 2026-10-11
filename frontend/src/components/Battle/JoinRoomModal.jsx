@@ -32,6 +32,27 @@ export default function JoinRoomModal({ isOpen, onClose }) {
 
         try {
             setJoining(true);
+            const upperCode = cleanCode.toUpperCase();
+            if (upperCode.startsWith("SQ-")) {
+                const res = await requestJson(`/api/battle/squad/join-team`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        teamCode: upperCode,
+                        userId: user.uid || user.email,
+                    }),
+                    includeAuth: true,
+                });
+                notify({
+                    type: "success",
+                    title: `Joined Team ${res.teamSide || 'Squad'}!`,
+                    message: `Entering squad room ${res.roomCode}...`,
+                });
+                onClose();
+                navigate(`/battle/room/${res.roomCode}`);
+                return;
+            }
+
             await requestJson(`/api/battle/rooms/${encodeURIComponent(cleanCode)}/join`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -93,11 +114,11 @@ export default function JoinRoomModal({ isOpen, onClose }) {
                             <input
                                 type="text"
                                 className="code-input"
-                                placeholder="e.g. BTL-8492"
+                                placeholder="e.g. BTL-8492 or SQ-ALP-3891"
                                 value={roomCode}
                                 onChange={(e) => setRoomCode(e.target.value)}
                                 autoFocus
-                                maxLength={12}
+                                maxLength={16}
                             />
                             <p className="form-group-hint">Have a room code from a friend or instructor? Enter it here to join their live battle lobby.</p>
                         </div>

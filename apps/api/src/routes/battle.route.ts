@@ -7,6 +7,9 @@ import {
     KickPlayerSchema,
     ReadyRoomSchema,
     StartBattleSchema,
+    JoinSquadTeamSchema,
+    SquadApprovalSchema,
+    KickSquadMemberSchema,
 } from "../validators/battle.validator";
 import { requireAuth } from "../plugins/auth.plugin";
 
@@ -25,6 +28,8 @@ export async function battleRoutes(app: FastifyInstance) {
             body.isFriendly,
             body.problemIds,
             body.isPublic,
+            body.battleMode,
+            body.squadSize,
         );
     });
 
@@ -123,5 +128,25 @@ export async function battleRoutes(app: FastifyInstance) {
     app.post("/battle/rooms/:id/finish", { preHandler: [requireAuth] }, async (req) => {
         const { id } = req.params as { id: string };
         return battleController.finishBattle(id);
+    });
+
+    // 8. Squad Battle: Join Squad Team via Team Invitation Code (e.g. SQ-ALP-XXXX or SQ-BET-XXXX)
+    app.post("/battle/squad/join-team", { preHandler: [requireAuth] }, async (req) => {
+        const body = JoinSquadTeamSchema.parse(req.body);
+        return battleController.joinSquadTeam(req.user!, body.teamCode);
+    });
+
+    // 9. Squad Battle: Captain Approval Toggle
+    app.post("/battle/squad/:idOrCode/approve", { preHandler: [requireAuth] }, async (req) => {
+        const { idOrCode } = req.params as { idOrCode: string };
+        const body = SquadApprovalSchema.parse(req.body);
+        return battleController.setSquadApproval(req.user!, idOrCode, body.isApproved);
+    });
+
+    // 10. Squad Battle: Captain Kick Member from Squad
+    app.post("/battle/squad/:idOrCode/kick", { preHandler: [requireAuth] }, async (req) => {
+        const { idOrCode } = req.params as { idOrCode: string };
+        const body = KickSquadMemberSchema.parse(req.body);
+        return battleController.kickSquadMember(req.user!, idOrCode, body.targetUserId);
     });
 }

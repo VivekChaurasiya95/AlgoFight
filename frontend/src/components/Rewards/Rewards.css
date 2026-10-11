@@ -10,7 +10,7 @@
   position: relative;
   z-index: 1;
   font-family: 'Inter', sans-serif;
-  color: #f1f6fd;
+  color: var(--text-primary, #E3E5ED);
   box-sizing: border-box;
 }
 
@@ -251,17 +251,19 @@
   display: grid;
   grid-template-columns: minmax(0, 2.2fr) minmax(320px, 1fr);
   gap: 26px;
+  align-items: start;
 }
 
 /* Catalog Panel */
 .dash-card.rewards-main-panel {
-  background: rgba(10, 14, 23, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-primary, rgba(10, 14, 23, 0.78));
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
   border-radius: 20px;
   padding: 26px 26px 32px;
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  align-self: start;
 }
 
 .panel-headline-row {
@@ -428,7 +430,7 @@
   font-family: 'Space Grotesk', sans-serif;
   font-size: 1.15rem;
   font-weight: 800;
-  color: #00e5ff;
+  color: var(--cta-primary, #00e5ff);
 }
 
 .cost-unit {

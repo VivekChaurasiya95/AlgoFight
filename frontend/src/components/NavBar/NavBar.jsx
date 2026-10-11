@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './NavBar.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBell, faBars, faTimes, faRightFromBracket, faShieldHalved, faUser, faChevronDown, faInfoCircle, faCode, faCompass, faChalkboardUser } from '@fortawesome/free-solid-svg-icons';
+import { faBell, faBars, faTimes, faRightFromBracket, faShieldHalved, faUser, faChevronDown, faInfoCircle, faCode, faCompass, faChalkboardUser, faPalette } from '@fortawesome/free-solid-svg-icons';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotificationInbox } from '../../contexts/NotificationInboxContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { isAdminUser } from '../../constants/admins';
 import InboxDropdown from './InboxDropdown';
+import ThemeSelector from '../Theme/ThemeSelector';
 import logoIcon from '../../assets/algofight-logo.png';
 import mitsLogo from '../../assets/mits-logo.png';
 
@@ -24,6 +26,7 @@ const getInitials = (user) => {
 const Navbar = () => {
   const { user, logout, profileData } = useAuth();
   const { unreadCount } = useNotificationInbox();
+  const { theme, toggleTheme } = useTheme();
   const [isInboxOpen, setIsInboxOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
@@ -60,8 +63,8 @@ const Navbar = () => {
     <>
       <nav className="navbar">
         <div className="navbar-container">
-          {/* Brand Logo */}
-          <Link to="/" className="navbar-brand">
+          {/* Official AlgoFight Brand Logo */}
+          <Link to="/" className="navbar-brand" title="AlgoFight Home">
             <img src={logoIcon} alt="AlgoFight Logo" className="brand-logo-img" />
           </Link>
 
@@ -139,6 +142,9 @@ const Navbar = () => {
 
           {/* Right Action Items */}
           <div className="navbar-actions">
+            {/* Theme Selector Popover & Quick Switch */}
+            <ThemeSelector />
+
             {user ? (
               <div className="user-action-group">
                 {/* Notification Bell */}

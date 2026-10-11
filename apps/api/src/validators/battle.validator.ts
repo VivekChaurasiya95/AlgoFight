@@ -9,6 +9,8 @@ export const CreateBattleRoomSchema = z.object({
     isFriendly: z.boolean().optional(),
     problemIds: z.array(z.string()).optional(),
     isPublic: z.boolean().optional().default(true),
+    battleMode: z.enum(["DUEL_1V1", "SQUAD_BATTLE", "PRACTICE_SOLO"]).optional().default("DUEL_1V1"),
+    squadSize: z.number().int().min(2).max(3).optional().default(2),
 });
 
 export const JoinRoomSchema = z.object({
@@ -43,3 +45,16 @@ export const StartBattleSchema = z.object({
     hostId: z.string(),
     problemId: z.string().uuid().optional(),
 });
+
+export const JoinSquadTeamSchema = z.object({
+    teamCode: z.string().min(4),
+});
+
+export const SquadApprovalSchema = z.object({
+    isApproved: z.boolean(),
+});
+
+export const KickSquadMemberSchema = z.object({
+    targetUserId: z.string(),
+});
+

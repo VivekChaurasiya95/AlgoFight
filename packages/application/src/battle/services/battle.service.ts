@@ -226,13 +226,48 @@ export class BattleService {
             }
 
             const elapsedSeconds = Math.floor((Date.now() - state.startTime) / 1000);
+            const isSquad = state.battleMode === "SQUAD_BATTLE" || Boolean(state.teams);
+            let teamPointsAwarded = 0;
+            let teamSide: string | null = null;
+
+            if (isSquad && player.teamId) {
+                const lockKey = `squad_score_lock:${roomId}:${player.teamId}:${problemId}`;
+                const claimed = await (this.redis as any).set(lockKey, userId, "EX", 86400, "NX");
+
+                const teamObj = (state.teams || []).find((t: any) => t.id === player.teamId || t.teamSide === player.teamSide);
+                teamSide = player.teamSide || teamObj?.teamSide || "ALPHA";
+
+                if (claimed === "OK") {
+                    teamPointsAwarded = points;
+                    if (teamObj) {
+                        teamObj.score = (teamObj.score || 0) + points;
+                        if (!teamObj.solvedProblemIds) teamObj.solvedProblemIds = [];
+                        teamObj.solvedProblemIds.push(problemId);
+                    }
+
+                    // Durable record in PostgreSQL
+                    await prisma.teamProblemScore.create({
+                        data: {
+                            battleRoomId: roomId,
+                            teamId: player.teamId,
+                            problemId,
+                            solvedByUserId: userId,
+                            points,
+                            timeSeconds: elapsedSeconds,
+                        },
+                    }).catch(() => {});
+                }
+            } else {
+                teamPointsAwarded = points;
+            }
 
             player.points += points;
             player.solvedCount += 1;
             player.solvedProblems.push({
                 problemId,
                 timeSeconds: elapsedSeconds,
-                timeString: this.formatTime(elapsedSeconds)
+                timeString: this.formatTime(elapsedSeconds),
+                awardedTeamPoints: teamPointsAwarded,
             });
 
             // Save updated state back to Redis
@@ -240,11 +275,14 @@ export class BattleService {
 
             // Publish an event via Pub/Sub so WebSocket servers can pick it up
             const eventPayload = {
-                event: "PLAYER_SOLVED",
+                event: isSquad ? "SQUAD_PLAYER_SOLVED" : "PLAYER_SOLVED",
                 roomId,
                 userId,
                 username: player.username,
-                pointsAdded: points,
+                slotCode: player.participantCode,
+                teamSide,
+                pointsAdded: teamPointsAwarded,
+                individualPointsAdded: points,
                 totalPoints: player.points,
                 solvedCount: player.solvedCount,
                 problemId,
@@ -253,9 +291,16 @@ export class BattleService {
 
             await this.redis.publish("battle-events", JSON.stringify(eventPayload));
 
-            logger.info({ roomId, userId, problemId }, "Player solved problem in battle, event published");
-            if (player.solvedCount >= state.totalQuestions) {
-                await this.finishBattle(roomId, "ALL_SOLVED", userId)
+            logger.info({ roomId, userId, problemId, teamPointsAwarded }, "Player solved problem in battle, event published");
+
+            if (isSquad && state.teams) {
+                const allProblemsSolved = state.teams.every((t: any) => (t.solvedProblemIds?.length || 0) >= state.totalQuestions);
+                if (allProblemsSolved) {
+                    await this.finishBattle(roomId, "ALL_SQUAD_PROBLEMS_SOLVED");
+                    return;
+                }
+            } else if (player.solvedCount >= state.totalQuestions) {
+                await this.finishBattle(roomId, "ALL_SOLVED", userId);
                 return;
             }
 

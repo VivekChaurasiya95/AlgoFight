@@ -71,7 +71,9 @@ export class BattleController {
         questionCount = 3,
         isFriendly?: boolean,
         problemIds?: string[],
-        isPublic = true
+        isPublic = true,
+        battleMode: "DUEL_1V1" | "SQUAD_BATTLE" | "PRACTICE_SOLO" = "DUEL_1V1",
+        squadSize = 2
     ) {
         const resolvedHostId = await this.resolveUser(authUser);
         const hostUser = await this.userRepository.getUserById(resolvedHostId);
@@ -83,6 +85,8 @@ export class BattleController {
             questionCount,
             isFriendly,
             problemIds,
+            battleMode,
+            squadSize,
         });
 
         if (isPublic) {
@@ -319,6 +323,64 @@ export class BattleController {
                 }));
             }
         } catch {}
+        return result;
+    }
+
+    async joinSquadTeam(authUser: { id: string; email?: string; username?: string }, teamCode: string) {
+        const resolvedUserId = await this.resolveUser(authUser);
+        const result = await this.battleRoomService.joinSquadTeam(resolvedUserId, teamCode);
+
+        try {
+            await this.redis.publish("battle-events", JSON.stringify({
+                event: "SQUAD_ROSTER_UPDATED",
+                roomId: result.room.id,
+                roomCode: result.room.roomCode,
+                action: "MEMBER_JOINED",
+                teamSide: result.team.teamSide,
+                userId: resolvedUserId,
+                participantCode: result.participantCode,
+            }));
+        } catch {}
+
+        return result;
+    }
+
+    async setSquadApproval(authUser: { id: string; email?: string; username?: string }, roomIdOrCode: string, isApproved: boolean) {
+        const resolvedUserId = await this.resolveUser(authUser);
+        const result = await this.battleRoomService.setSquadCaptainApproval(roomIdOrCode, resolvedUserId, isApproved);
+
+        try {
+            await this.redis.publish("battle-events", JSON.stringify({
+                event: "SQUAD_APPROVAL_UPDATED",
+                roomIdOrCode,
+                captainUserId: resolvedUserId,
+                isApproved,
+                alphaApproved: result.alphaApproved,
+                betaApproved: result.betaApproved,
+                canStart: result.canStart,
+                rosterVersion: result.rosterVersion,
+            }));
+        } catch {}
+
+        return result;
+    }
+
+    async kickSquadMember(authUser: { id: string; email?: string; username?: string }, roomIdOrCode: string, targetUserId: string) {
+        const resolvedCaptainId = await this.resolveUser(authUser);
+        const resolvedTargetId = await this.resolveUserId(targetUserId);
+        const result = await this.battleRoomService.kickSquadMember(roomIdOrCode, resolvedCaptainId, resolvedTargetId);
+
+        try {
+            await this.redis.publish("battle-events", JSON.stringify({
+                event: "SQUAD_ROSTER_UPDATED",
+                roomIdOrCode,
+                action: "MEMBER_KICKED",
+                captainUserId: resolvedCaptainId,
+                targetUserId: resolvedTargetId,
+                teamSide: result.teamSide,
+            }));
+        } catch {}
+
         return result;
     }
 }

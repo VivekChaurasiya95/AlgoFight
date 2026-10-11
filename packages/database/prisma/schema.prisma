@@ -37,6 +37,7 @@ model User {
   submissions     Submission[]
   participants    BattleParticipant[]
   hostedRooms     BattleRoom[] @relation("HostedRooms")
+  teamCaptains    BattleTeam[] @relation("TeamCaptains")
   ratingHistories RatingHistory[]
   quizzes         Quiz[]
   arenaPointTransactions ArenaPointTransaction[]
@@ -162,6 +163,17 @@ model Submission {
   @@index([problemId])
 }
 
+enum BattleMode {
+  DUEL_1V1
+  SQUAD_BATTLE
+  PRACTICE_SOLO
+}
+
+enum SquadTeamSide {
+  ALPHA
+  BETA
+}
+
 enum BattleRoomStatus {
   WAITING     // In lobby, waiting for players
   READY       // All players ready, countdown started
@@ -175,6 +187,9 @@ model BattleRoom {
   roomCode         String           @unique
   hostId           String
   host             User             @relation("HostedRooms", fields: [hostId], references: [id])
+  battleMode       BattleMode       @default(DUEL_1V1)
+  squadSize        Int?             @default(2) // 2 for 2v2, 3 for 3v3
+  rosterVersion    Int              @default(1) // Incremented on roster modifications
   maxPlayers       Int              @default(2)
   status           BattleRoomStatus @default(WAITING)
   
@@ -191,6 +206,8 @@ model BattleRoom {
   endedAt          DateTime?
   createdAt        DateTime         @default(now())
   participants     BattleParticipant[]
+  teams            BattleTeam[]
+  teamScores       TeamProblemScore[]
   submissions      Submission[] 
   ratingHistories  RatingHistory[]
   
@@ -199,24 +216,68 @@ model BattleRoom {
   @@index([roomCode])
 }
 
+model BattleTeam {
+  id                 String              @id @default(uuid())
+  battleRoomId       String
+  teamSide           SquadTeamSide
+  captainUserId      String
+  invitationCodeHash String              // SHA-256 hash of team invitation code
+  score              Int                 @default(0)
+  isApproved         Boolean             @default(false)
+  approvedVersion    Int                 @default(0)
+  approvedAt         DateTime?
+
+  battleRoom         BattleRoom          @relation(fields: [battleRoomId], references: [id], onDelete: Cascade)
+  captain            User                @relation("TeamCaptains", fields: [captainUserId], references: [id])
+  participants       BattleParticipant[]
+  problemScores      TeamProblemScore[]
+
+  @@unique([battleRoomId, teamSide])
+  @@index([battleRoomId])
+  @@index([captainUserId])
+}
 
 model BattleParticipant {
   roomId           String
   userId           String
-  joinedAt         DateTime   @default(now())
-  isReady          Boolean    @default(false)
-  score            Int        @default(0)
+  teamId           String?
+  participantCode  String?             // "A-01", "A-02", "B-01", "B-02", etc.
+  joinedAt         DateTime            @default(now())
+  isReady          Boolean             @default(false)
+  score            Int                 @default(0)
   rank             Int?     
   solvedAt         DateTime?  
   
   // ▼ ADD THIS LINE ▼
-  solvedProblemIds String[]   @default([])
+  solvedProblemIds String[]            @default([])
   
-  room             BattleRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room             BattleRoom          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team             BattleTeam?         @relation(fields: [teamId], references: [id], onDelete: SetNull)
   
   @@id([roomId, userId])
   @@index([userId])
+  @@index([teamId])
+}
+
+model TeamProblemScore {
+  id             String      @id @default(uuid())
+  battleRoomId   String
+  teamId         String
+  problemId      String
+  solvedByUserId String
+  submissionId   String?
+  points         Int         @default(100)
+  timeSeconds    Int         @default(0)
+  awardedAt      DateTime    @default(now())
+
+  battleRoom     BattleRoom  @relation(fields: [battleRoomId], references: [id], onDelete: Cascade)
+  team           BattleTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  // Enforces at the database engine level that a team only scores ONCE per problem
+  @@unique([battleRoomId, teamId, problemId])
+  @@index([battleRoomId])
+  @@index([teamId])
 }
 
 model RatingHistory {

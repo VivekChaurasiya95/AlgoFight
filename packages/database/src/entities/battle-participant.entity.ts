@@ -7,6 +7,8 @@ export interface BattleParticipantEntity {
     rank: number | null;
     solvedAt: Date | null;
     solvedProblemIds: string[];
+    teamId?: string | null;
+    participantCode?: string | null;
     user?: {
         id: string;
         username: string;
