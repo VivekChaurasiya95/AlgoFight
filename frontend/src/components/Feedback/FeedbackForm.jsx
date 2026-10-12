@@ -169,7 +169,18 @@ export default function FeedbackForm({ isCompact = false, onSubmitted, onClose }
             </div>
 
             {/* Showcase Checker Toggle */}
-            <div className="feedback-showcase-box" onClick={() => setShowcaseOnWebsite((prev) => !prev)}>
+            <div
+                className={`feedback-showcase-box ${showcaseOnWebsite ? 'is-checked' : ''}`}
+                onClick={() => setShowcaseOnWebsite((prev) => !prev)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setShowcaseOnWebsite((prev) => !prev);
+                    }
+                }}
+            >
                 <input
                     type="checkbox"
                     id="showcaseOnWebsite"

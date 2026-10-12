@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
   faPlus,
+  faMinus,
   faUsers,
   faClock,
   faFire,
@@ -14,12 +15,137 @@ import {
   faInfoCircle,
   faSpinner,
   faBullhorn,
+  faChevronDown,
+  faLock,
 } from "@fortawesome/free-solid-svg-icons";
 import { requestJson, fetchPracticeProblems } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext";
 import { useNavigate } from "react-router-dom";
 import "./CreateRoomModal.css";
+
+const TIME_LIMIT_OPTIONS = [
+  { value: 5, label: "5 Minutes (Blitz Duel)", tag: "⚡ Blitz" },
+  { value: 10, label: "10 Minutes (Rapid Round)", tag: "⏱️ Rapid" },
+  { value: 15, label: "15 Minutes (Standard Match)", tag: "⚔️ Standard" },
+  { value: 20, label: "20 Minutes (Extended Round)", tag: "🎯 Extended" },
+  { value: 30, label: "30 Minutes (Deep Challenge)", tag: "🧠 Deep" },
+  { value: 45, label: "45 Minutes (Classroom Session)", tag: "🎓 Classroom" },
+  { value: 60, label: "60 Minutes (1 Hour Match)", tag: "🏆 1 Hour" },
+  { value: 90, label: "90 Minutes (1.5 Hour Marathon)", tag: "🔥 Marathon" },
+  { value: 120, label: "120 Minutes (2 Hour Grand Finals)", tag: "👑 Finals" },
+];
+
+const PARTICIPANT_OPTIONS = [
+  { value: 2, label: "2 Participants (1v1 Duel)", tag: "1v1" },
+  { value: 3, label: "3 Participants (3-Way Battle)", tag: "FFA" },
+  { value: 4, label: "4 Participants (Small Team)", tag: "Party" },
+  { value: 6, label: "6 Participants (6-Way Arena)", tag: "Arena" },
+  { value: 8, label: "8 Participants (Group Tournament)", tag: "Tourney" },
+  { value: 10, label: "10 Participants (Squad Pool)", tag: "Pool" },
+  { value: 12, label: "12 Participants (Double Squad)", tag: "Squad" },
+  { value: 16, label: "16 Participants (Classroom Round)", tag: "Class" },
+  { value: 20, label: "20 Participants (Classroom Large)", tag: "Hall" },
+  { value: 25, label: "25 Participants (Medium Arena)", tag: "Massive" },
+  { value: 50, label: "50 Participants (Large Arena)", tag: "Mega" },
+  { value: 75, label: "75 Participants (Mega Tournament)", tag: "Colosseum" },
+  { value: 100, label: "100 Participants (Full Hall)", tag: "Max" },
+  { value: "CUSTOM", label: "Custom Player Count...", tag: "Custom" },
+];
+
+function CustomHudSelect({ value, onChange, options, icon }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [openUpwards, setOpenUpwards] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < 240 && rect.top > 240) {
+        setOpenUpwards(true);
+      } else {
+        setOpenUpwards(false);
+      }
+    }
+  }, [isOpen]);
+
+  const selectedOption = options.find((o) => o.value === value) || options[0];
+
+  return (
+    <div className={`custom-hud-select-wrapper ${isOpen ? "open-wrapper" : ""}`} ref={containerRef}>
+      <button
+        type="button"
+        className={`custom-hud-select-trigger ${isOpen ? "open" : ""}`}
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+      >
+        <span className="custom-hud-select-trigger-label">
+          {icon && <FontAwesomeIcon icon={icon} className="custom-hud-select-trigger-icon" />}
+          {selectedOption ? selectedOption.label : "Select..."}
+        </span>
+        <FontAwesomeIcon
+          icon={faChevronDown}
+          className={`custom-hud-select-chevron ${isOpen ? "rotated" : ""}`}
+        />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className={`custom-hud-select-menu ${openUpwards ? "open-upwards" : "open-downwards"}`}
+            initial={{ opacity: 0, y: openUpwards ? 6 : -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: openUpwards ? 6 : -6, scale: 0.98 }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
+            role="listbox"
+          >
+            {options.map((opt) => {
+              const isSelected = opt.value === value;
+              return (
+                <div
+                  key={opt.value}
+                  role="option"
+                  aria-selected={isSelected}
+                  className={`custom-hud-select-item ${isSelected ? "selected" : ""}`}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                >
+                  <div className="custom-hud-select-item-content">
+                    <span className="custom-hud-select-item-label">{opt.label}</span>
+                    {opt.tag && <span className="custom-hud-select-item-tag">{opt.tag}</span>}
+                  </div>
+                  {isSelected && (
+                    <FontAwesomeIcon icon={faCheck} className="custom-hud-select-check" />
+                  )}
+                </div>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function CreateRoomModal({ isOpen, onClose }) {
   const { user } = useAuth();
@@ -28,13 +154,15 @@ export default function CreateRoomModal({ isOpen, onClose }) {
 
   // Mode: "AUTO" (Random Auto-Pick) or "CUSTOM" (User chooses specific problems)
   const [battleMode, setBattleMode] = useState("DUEL_1V1"); // "DUEL_1V1" or "SQUAD_BATTLE"
-  const [squadSize, setSquadSize] = useState(2); // 2 (2v2) or 3 (3v3)
+  const [squadSize, setSquadSize] = useState(2); // 2 (2v2), 3 (3v3), or 4 (4v4)
   const [selectionMode, setSelectionMode] = useState("AUTO");
   const [roomType, setRoomType] = useState("RATED"); // "RATED" or "UNRATED"
   const [maxPlayers, setMaxPlayers] = useState(2);
+  const [isCustomPlayers, setIsCustomPlayers] = useState(false);
   const [timeLimit, setTimeLimit] = useState(15);
   const [difficulty, setDifficulty] = useState("MEDIUM");
   const [questionCount, setQuestionCount] = useState(3);
+  const [isCustomQuestions, setIsCustomQuestions] = useState(false);
   const [isPublic, setIsPublic] = useState(true);
   const [creating, setCreating] = useState(false);
 
@@ -178,7 +306,7 @@ export default function CreateRoomModal({ isOpen, onClose }) {
 
   return (
     <AnimatePresence>
-      <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-overlay create-room-modal-overlay" onClick={onClose}>
         <motion.div
           className="modal-content-hud create-room-modal-hud"
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
@@ -266,40 +394,30 @@ export default function CreateRoomModal({ isOpen, onClose }) {
                   Unrated Friendly Scrimmage
                 </span>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              <div className="squad-format-grid">
                 <button
                   type="button"
+                  className={`squad-format-card ${squadSize === 2 ? "active" : ""}`}
                   onClick={() => setSquadSize(2)}
-                  style={{
-                    padding: "10px",
-                    borderRadius: "6px",
-                    border: squadSize === 2 ? "1px solid #10b981" : "1px solid rgba(255,255,255,0.1)",
-                    background: squadSize === 2 ? "rgba(16, 185, 129, 0.2)" : "rgba(0,0,0,0.3)",
-                    color: squadSize === 2 ? "#6ee7b7" : "#cbd5e1",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    textAlign: "center",
-                  }}
                 >
-                  <div style={{ fontSize: "0.95rem" }}>2 vs 2 (4 Players)</div>
-                  <div style={{ fontSize: "0.7rem", opacity: 0.8, marginTop: "2px" }}>2 per squad • 1 Captain each</div>
+                  <div className="squad-format-title">2 vs 2 (4 Players)</div>
+                  <div className="squad-format-sub">2 per squad • 1 Captain each</div>
                 </button>
                 <button
                   type="button"
+                  className={`squad-format-card ${squadSize === 3 ? "active" : ""}`}
                   onClick={() => setSquadSize(3)}
-                  style={{
-                    padding: "10px",
-                    borderRadius: "6px",
-                    border: squadSize === 3 ? "1px solid #10b981" : "1px solid rgba(255,255,255,0.1)",
-                    background: squadSize === 3 ? "rgba(16, 185, 129, 0.2)" : "rgba(0,0,0,0.3)",
-                    color: squadSize === 3 ? "#6ee7b7" : "#cbd5e1",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    textAlign: "center",
-                  }}
                 >
-                  <div style={{ fontSize: "0.95rem" }}>3 vs 3 (6 Players)</div>
-                  <div style={{ fontSize: "0.7rem", opacity: 0.8, marginTop: "2px" }}>3 per squad • 1 Captain each</div>
+                  <div className="squad-format-title">3 vs 3 (6 Players)</div>
+                  <div className="squad-format-sub">3 per squad • 1 Captain each</div>
+                </button>
+                <button
+                  type="button"
+                  className={`squad-format-card ${squadSize === 4 ? "active" : ""}`}
+                  onClick={() => setSquadSize(4)}
+                >
+                  <div className="squad-format-title">4 vs 4 (8 Players)</div>
+                  <div className="squad-format-sub">4 per squad • 1 Captain each</div>
                 </button>
               </div>
             </div>
@@ -399,20 +517,58 @@ export default function CreateRoomModal({ isOpen, onClose }) {
                       🛡️ Fixed {squadSize}v{squadSize} Squad ({squadSize} Alpha vs {squadSize} Beta)
                     </div>
                   ) : (
-                    <select
-                      className="hud-select"
-                      value={maxPlayers}
-                      onChange={(e) => setMaxPlayers(Number(e.target.value))}
-                    >
-                      <option value={2}>2 Participants (1v1 Duel)</option>
-                      <option value={4}>4 Participants (Small Team)</option>
-                      <option value={8}>8 Participants (Group Tournament)</option>
-                      <option value={16}>16 Participants (Classroom Round)</option>
-                      <option value={25}>25 Participants (Medium Arena)</option>
-                      <option value={50}>50 Participants (Large Arena)</option>
-                      <option value={75}>75 Participants (Mega Tournament)</option>
-                      <option value={100}>100 Participants (Full Hall)</option>
-                    </select>
+                    <>
+                      <CustomHudSelect
+                        value={isCustomPlayers ? "CUSTOM" : maxPlayers}
+                        onChange={(val) => {
+                          if (val === "CUSTOM") {
+                            setIsCustomPlayers(true);
+                          } else {
+                            setIsCustomPlayers(false);
+                            setMaxPlayers(Number(val));
+                          }
+                        }}
+                        options={PARTICIPANT_OPTIONS}
+                        icon={faUsers}
+                      />
+                      {isCustomPlayers && (
+                        <div className="custom-question-stepper-row" style={{ marginTop: "8px" }}>
+                          <button
+                            type="button"
+                            className="stepper-adjust-btn"
+                            onClick={() => setMaxPlayers((prev) => Math.max(2, (Number(prev) || 2) - 1))}
+                            disabled={maxPlayers <= 2}
+                            title="Decrease participants"
+                          >
+                            <FontAwesomeIcon icon={faMinus} />
+                          </button>
+                          <div className="custom-input-with-label">
+                            <input
+                              type="number"
+                              min={2}
+                              max={100}
+                              value={maxPlayers}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value, 10);
+                                if (!isNaN(val)) setMaxPlayers(Math.min(100, Math.max(2, val)));
+                              }}
+                              className="custom-question-num-input"
+                              placeholder="2-100"
+                            />
+                            <span className="custom-input-suffix">Seats (2 - 100)</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="stepper-adjust-btn"
+                            onClick={() => setMaxPlayers((prev) => Math.min(100, (Number(prev) || 2) + 1))}
+                            disabled={maxPlayers >= 100}
+                            title="Increase participants"
+                          >
+                            <FontAwesomeIcon icon={faPlus} />
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -423,21 +579,12 @@ export default function CreateRoomModal({ isOpen, onClose }) {
                     </label>
                     <span className="form-group-value-badge">{timeLimit} Mins</span>
                   </div>
-                  <select
-                    className="hud-select"
+                  <CustomHudSelect
                     value={timeLimit}
-                    onChange={(e) => setTimeLimit(Number(e.target.value))}
-                  >
-                    <option value={5}>5 Minutes (Blitz Duel)</option>
-                    <option value={10}>10 Minutes (Rapid Round)</option>
-                    <option value={15}>15 Minutes (Standard Match)</option>
-                    <option value={20}>20 Minutes (Extended Round)</option>
-                    <option value={30}>30 Minutes (Deep Challenge)</option>
-                    <option value={45}>45 Minutes (Classroom Session)</option>
-                    <option value={60}>60 Minutes (1 Hour Match)</option>
-                    <option value={90}>90 Minutes (1.5 Hour Marathon)</option>
-                    <option value={120}>120 Minutes (2 Hour Grand Finals)</option>
-                  </select>
+                    onChange={(val) => setTimeLimit(Number(val))}
+                    options={TIME_LIMIT_OPTIONS}
+                    icon={faClock}
+                  />
                 </div>
               </div>
 
@@ -452,18 +599,77 @@ export default function CreateRoomModal({ isOpen, onClose }) {
                         </label>
                         <span className="form-group-value-badge">{questionCount} Qs</span>
                       </div>
-                      <div className="pill-grid-3">
+                      <div className="pill-grid-4">
                         {[1, 3, 5].map((num) => (
                           <button
                             key={num}
                             type="button"
-                            className={`pill-btn ${questionCount === num ? "active" : ""}`}
-                            onClick={() => setQuestionCount(num)}
+                            className={`pill-btn ${!isCustomQuestions && questionCount === num ? "active" : ""}`}
+                            onClick={() => {
+                              setIsCustomQuestions(false);
+                              setQuestionCount(num);
+                            }}
                           >
                             {num} Qs
                           </button>
                         ))}
+                        <button
+                          type="button"
+                          className={`pill-btn ${isCustomQuestions ? "active" : ""}`}
+                          onClick={() => {
+                            setIsCustomQuestions(true);
+                            if ([1, 3, 5].includes(questionCount)) {
+                              setQuestionCount(4);
+                            }
+                          }}
+                        >
+                          Custom
+                        </button>
                       </div>
+
+                      {isCustomQuestions && (
+                        <div className="custom-question-stepper-row">
+                          <button
+                            type="button"
+                            className="stepper-adjust-btn"
+                            onClick={() => setQuestionCount((prev) => Math.max(1, (Number(prev) || 1) - 1))}
+                            disabled={questionCount <= 1}
+                            title="Decrease question count"
+                          >
+                            <FontAwesomeIcon icon={faMinus} />
+                          </button>
+                          <div className="custom-input-with-label">
+                            <input
+                              type="number"
+                              min={1}
+                              max={15}
+                              value={questionCount}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value, 10);
+                                if (isNaN(val) || val < 1) {
+                                  setQuestionCount(1);
+                                } else {
+                                  setQuestionCount(Math.min(15, val));
+                                }
+                              }}
+                              className="custom-question-num-input"
+                              placeholder="1 - 15"
+                            />
+                            <span className="custom-input-suffix">
+                              {questionCount === 1 ? "Question" : "Questions"} (Limit: 1 - 15)
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            className="stepper-adjust-btn"
+                            onClick={() => setQuestionCount((prev) => Math.min(15, (Number(prev) || 1) + 1))}
+                            disabled={questionCount >= 15}
+                            title="Increase question count"
+                          >
+                            <FontAwesomeIcon icon={faPlus} />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="form-group-hud">
@@ -619,21 +825,30 @@ export default function CreateRoomModal({ isOpen, onClose }) {
               </div>
             )}
 
-            {/* Public Room Arena Broadcast Toggle */}
-            <div className="form-group-hud public-broadcast-toggle-box">
+            {/* Public vs Private Room Arena Broadcast Toggle */}
+            <div className={`form-group-hud public-broadcast-toggle-box ${!isPublic ? "is-private" : ""}`}>
               <div className="broadcast-toggle-header">
                 <div className="broadcast-toggle-info">
                   <label className="broadcast-toggle-label" onClick={() => setIsPublic((prev) => !prev)}>
-                    <FontAwesomeIcon icon={faBullhorn} className="broadcast-toggle-icon" />
-                    <span>Broadcast Public Challenge to Arena</span>
+                    <FontAwesomeIcon
+                      icon={isPublic ? faBullhorn : faLock}
+                      className={`broadcast-toggle-icon ${isPublic ? "icon-public" : "icon-private"}`}
+                    />
+                    <span>
+                      {isPublic
+                        ? "Broadcast Public Challenge to Arena"
+                        : "Private Challenge (Invite / Room Code Only)"}
+                    </span>
                   </label>
                   <span className="broadcast-toggle-subtext">
-                    Display on Home Screen "Battle Dispatch" &amp; flash live notification to active coders
+                    {isPublic
+                      ? "Display on Home Screen \"Battle Dispatch\" & flash live notification to active coders"
+                      : "Hidden from public arena. Only coders with your room code or direct link can join."}
                   </span>
                 </div>
                 <button
                   type="button"
-                  className={`broadcast-toggle-pill ${isPublic ? "active" : ""}`}
+                  className={`broadcast-toggle-pill ${isPublic ? "active" : "private-active"}`}
                   onClick={() => setIsPublic((prev) => !prev)}
                 >
                   {isPublic ? "PUBLIC" : "PRIVATE"}

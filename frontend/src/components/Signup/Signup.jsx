@@ -7,6 +7,9 @@ import { useNotification } from "../../contexts/NotificationContext.jsx";
 import GoogleAuthButton from "../Common/GoogleAuthButton.jsx";
 import FacultyDetailsModal from "../Faculty/FacultyDetailsModal.jsx";
 import { isGoogleAuthAvailable } from "../../services/googleAuth";
+import BackgroundPaths from "../BackgroundPaths/BackgroundPaths.jsx";
+import "../BackgroundPaths/BackgroundPaths.css";
+import ThemeSelector from "../Theme/ThemeSelector.jsx";
 
 function Signup() {
   const [accountRole, setAccountRole] = useState("STUDENT"); // "STUDENT" | "FACULTY"
@@ -167,15 +170,26 @@ function Signup() {
   };
 
   return (
-    <div className="signup-page">
-      <motion.div
-        key="signup-form-container"
-        initial={{ opacity: 0, scale: 0.96, y: 30 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
-        style={{ width: "100%", display: "flex", justifyContent: "center" }}
-      >
-        <div className="Signup-Container">
+    <BackgroundPaths>
+      <div className="signup-page">
+        {/* Top bar with Brand Link & Live Theme Selector */}
+        <div className="auth-top-bar">
+          <Link to="/" className="auth-brand-link" title="Return to Home">
+            <span className="auth-brand-logo">⚔️ ALGOFIGHT</span>
+          </Link>
+          <div className="auth-theme-wrap">
+            <ThemeSelector />
+          </div>
+        </div>
+
+        <motion.div
+          key="signup-form-container"
+          initial={{ opacity: 0, scale: 0.96, y: 30 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          style={{ width: "100%", display: "flex", justifyContent: "center" }}
+        >
+          <div className="Signup-Container">
           <div className="Signup-Heading">
             <h1>Create an Account</h1>
             <p>
@@ -369,6 +383,7 @@ function Signup() {
         onSubmit={handleFacultyDetailsSubmit}
       />
     </div>
+  </BackgroundPaths>
   );
 }
 

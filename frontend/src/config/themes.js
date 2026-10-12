@@ -14,12 +14,87 @@
 import heroStudioStage from '../assets/hero_studio_stage.png';
 
 export const THEMES = {
-  // 1. TOP-RIGHT: ELECTRIC CYAN / CYBER BLUE
+  // 0. REGULAR (CLASSIC ALGOMATRIX MULTI-ACCENT ARENA)
+  regular: {
+    id: 'regular',
+    name: 'Regular',
+    shortName: 'Regular',
+    tagline: 'Classic AlgoFight cyber arena & multi-accent HUD',
+    accentColor: '#00E5FF',
+    secondaryAccent: '#8B5CF6',
+    swatches: ['#050811', '#00E5FF', '#8B5CF6'],
+    tokens: {
+      '--bg-primary': '#050811',
+      '--bg-secondary': '#0a0f1d',
+      '--bg-deep': '#020408',
+      '--surface-primary': '#111827',
+      '--surface-elevated': '#1e293b',
+      '--surface-highlight': '#334155',
+      '--secondary': '#64748b',
+      '--secondary-muted': '#94a3b8',
+      '--border-primary': 'rgba(0, 229, 255, 0.35)',
+      '--border-subtle': 'rgba(255, 255, 255, 0.08)',
+      '--text-primary': '#f8fafc',
+      '--text-secondary': '#cbd5e1',
+      '--text-muted': '#94a3b8',
+      '--text-disabled': '#64748b',
+      '--cta-primary': '#00e5ff',
+      '--cta-text': '#020617',
+      '--cta-hover': '#38bdf8',
+      '--cta-gradient': 'linear-gradient(90deg, #00e5ff 0%, #3b82f6 100%)',
+      '--cta-shadow': 'rgba(0, 229, 255, 0.45)',
+      '--hero-word-1': '#00e5ff',
+      '--hero-word-2': '#38bdf8',
+      '--hero-glow-1': '0 0 20px rgba(0, 229, 255, 0.65)',
+      '--hero-glow-2': '0 0 22px rgba(56, 189, 248, 0.6)',
+      '--success': '#22c55e',
+      '--warning': '#fbbf24',
+      '--danger': '#ef4444',
+      '--info': '#00e5ff',
+      '--hud-cyan': '#00e5ff',
+      '--hud-cyan-dim': '#00b4d8',
+      '--hud-blue': '#3b82f6',
+      '--hud-purple': '#8b5cf6',
+      '--hud-white': '#ffffff',
+      '--bg-void': '#020408',
+      '--bg-space': '#050811',
+      '--bg-panel': 'rgba(10, 15, 29, 0.85)',
+      '--bg-panel-solid': '#0a0f1d',
+      '--bg-card': 'rgba(10, 14, 23, 0.78)',
+      '--bg-card-hover': 'rgba(17, 24, 39, 0.9)',
+      '--border-dim': 'rgba(255, 255, 255, 0.08)',
+      '--border-default': 'rgba(0, 229, 255, 0.28)',
+      '--border-bright': '#00e5ff',
+      '--border-active': '#00e5ff',
+      '--text-dim': '#94a3b8',
+    },
+    scene: {
+      baseStage: heroStudioStage,
+      atmosphereColor: 'radial-gradient(circle at 50% 60%, rgba(0, 229, 255, 0.22) 0%, rgba(139, 92, 246, 0.15) 45%, transparent 75%)',
+      lightPrimary: 'rgba(0, 229, 255, 0.24)',
+      lightSecondary: 'rgba(139, 92, 246, 0.18)',
+      glowIntensity: 0.75,
+      stageGlow: '0 0 60px rgba(0, 229, 255, 0.32)',
+      vignetteEdge: 'rgba(5, 8, 17, 0.94)',
+      vignetteMid: 'rgba(5, 8, 17, 0.35)',
+      overlayMode: 'screen',
+      particleColor: 'rgba(0, 229, 255, 0.55)',
+      particleCount: 22,
+    },
+    graph: {
+      lineGradient: ['#3b82f6', '#8b5cf6', '#c084fc'],
+      areaColor: '#8b5cf6',
+      areaOpacities: [0.32, 0.04, 0.0],
+      glowColor: 'rgba(139, 92, 246, 0.45)',
+    },
+  },
+
+  // 1. TOP-RIGHT: PULSE (ELECTRIC CYAN)
   original: {
     id: 'original',
-    name: 'Electric Cyan',
-    shortName: 'Cyan',
-    tagline: 'High-voltage neon cyan & deep ocean blue',
+    name: 'Pulse',
+    shortName: 'Pulse',
+    tagline: 'Kinetic electric cyan & cyber grid',
     accentColor: '#00F2FE',
     secondaryAccent: '#0284C7',
     swatches: ['#040914', '#00F2FE', '#0284C7'],
@@ -89,12 +164,12 @@ export const THEMES = {
     },
   },
 
-  // 2. ROYAL AMETHYST (ELEGANT • PREMIUM • CREATIVE)
+  // 2. ROYAL AMETHYST (NEON VIOLET)
   amethyst: {
     id: 'amethyst',
-    name: 'Royal Amethyst',
-    shortName: 'Amethyst',
-    tagline: 'Elegant • Premium • Creative',
+    name: 'Synthwave',
+    shortName: 'Synthwave',
+    tagline: 'Neon violet & dark cyber synthwave',
     accentColor: '#A855F7',
     secondaryAccent: '#7C3AED',
     swatches: ['#0C061A', '#A855F7', '#7C3AED'],
@@ -164,12 +239,12 @@ export const THEMES = {
     },
   },
 
-  // 3. GOLDEN SUNSET (WARM • FRIENDLY • PRODUCTIVE)
+  // 3. GOLDEN SUNSET (WARM AMBER)
   sunset: {
     id: 'sunset',
-    name: 'Golden Sunset',
-    shortName: 'Sunset',
-    tagline: 'Warm • Friendly • Productive',
+    name: 'Solar',
+    shortName: 'Solar',
+    tagline: 'Warm amber glow & radiant twilight',
     accentColor: '#F59E0B',
     secondaryAccent: '#D97706',
     swatches: ['#160F08', '#F59E0B', '#D97706'],
@@ -242,9 +317,9 @@ export const THEMES = {
   // 4. BOTTOM-RIGHT: CLEAN HORIZON / LIGHT MODE
   light: {
     id: 'light',
-    name: 'Clean Horizon',
-    shortName: 'Light',
-    tagline: 'Futuristic high-key white cockpit & royal blue precision',
+    name: 'Horizon',
+    shortName: 'Horizon',
+    tagline: 'Futuristic high-key white cockpit & precision layout',
     accentColor: '#2563EB',
     secondaryAccent: '#3B82F6',
     swatches: ['#F8FAFC', '#2563EB', '#3B82F6'],
@@ -318,8 +393,8 @@ export const THEMES = {
   // 5. STEALTH OBSIDIAN (Monochromatic Default)
   custom: {
     id: 'custom',
-    name: 'Stealth Obsidian',
-    shortName: 'Stealth',
+    name: 'Obsidian',
+    shortName: 'Obsidian',
     tagline: 'Minimalist monochromatic cyber cockpit',
     accentColor: '#E3E5ED',
     secondaryAccent: '#7F808F',
@@ -390,12 +465,12 @@ export const THEMES = {
     },
   },
 
-  // 6. EMERALD STEALTH (CALM • FOCUSED • MODERN)
+  // 6. EMERALD STEALTH (HACKER TERMINAL GREEN)
   emerald: {
     id: 'emerald',
-    name: 'Emerald Stealth',
-    shortName: 'Emerald',
-    tagline: 'Calm • Focused • Modern',
+    name: 'Terminal',
+    shortName: 'Terminal',
+    tagline: 'Dark hacker console & matrix emerald',
     accentColor: '#00F5A0',
     secondaryAccent: '#059669',
     swatches: ['#02120C', '#00F5A0', '#059669'],
@@ -465,12 +540,12 @@ export const THEMES = {
     },
   },
 
-  // 7. CRIMSON MATRIX (INTENSE • COMPETITIVE • BOLD)
+  // 7. CRIMSON MATRIX (COMBAT OVERDRIVE)
   crimson: {
     id: 'crimson',
-    name: 'Crimson Matrix',
-    shortName: 'Crimson',
-    tagline: 'Intense • Competitive • Bold',
+    name: 'Overdrive',
+    shortName: 'Overdrive',
+    tagline: 'High-intensity competitive battle red',
     accentColor: '#FF2A55',
     secondaryAccent: '#DC2626',
     swatches: ['#120407', '#FF2A55', '#DC2626'],
@@ -541,15 +616,10 @@ export const THEMES = {
   },
 };
 
-export const DEFAULT_THEME_ID = 'emerald';
+export const DEFAULT_THEME_ID = 'regular';
 
-// Top 4 themes match the 4 quadrants of the latest design preview:
-// 1. EMERALD STEALTH (Top-Left)
-// 2. ROYAL AMETHYST (Top-Right)
-// 3. CRIMSON MATRIX (Bottom-Left)
-// 4. GOLDEN SUNSET (Bottom-Right)
-// Followed by Electric Cyan, Clean Horizon, and Stealth Obsidian:
 export const THEME_ORDER = [
+  'regular',
   'emerald',
   'amethyst',
   'crimson',

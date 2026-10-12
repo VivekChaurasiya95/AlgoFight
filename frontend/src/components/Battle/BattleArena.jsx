@@ -9,6 +9,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { fetchUserProfile } from "../../services/api";
 import { normalizeUserStats } from "../../utils/playerMetrics";
 import RankEmblem, { getRankTier } from "../Common/gamification/RankEmblem";
+import EloRatingGraph from "../Common/gamification/EloRatingGraph";
 import BackgroundPaths from "../BackgroundPaths/BackgroundPaths";
 import "../BackgroundPaths/BackgroundPaths.css";
 import Footer from "../Common/Footer/Footer";
@@ -88,6 +89,8 @@ export default function BattleArena({ defaultTab }) {
   }, [location.state, user]);
 
   const { rating, matchesWon, winRate, rankTier } = normalizeUserStats(profile || {});
+  const ratingDelta = profile?.ratingDelta ?? user?.ratingDelta ?? 0;
+  const ratingHistory = profile?.ratingHistory || user?.ratingHistory || [];
   const userEmail = (user?.email || profileData?.email || profile?.email || "").toLowerCase().trim();
   const isMitsFaculty = userEmail.endsWith("@mitsgwalior.in") ||
                         userEmail.endsWith(".mitsgwalior.in") ||
@@ -215,70 +218,31 @@ export default function BattleArena({ defaultTab }) {
                     <div className="rating-stat-row">
                       <div className="dash-stat-big">{rating}</div>
                       <div className="rating-trend-badge">
-                        <span className="rating-trend-arrow">▲</span> Active Tier
+                        {ratingDelta > 0 ? (
+                          <>
+                            <span className="rating-trend-arrow">▲</span> +{ratingDelta} pts
+                          </>
+                        ) : ratingDelta < 0 ? (
+                          <>
+                            <span className="rating-trend-arrow" style={{ color: "#f87171" }}>▼</span> {ratingDelta} pts
+                          </>
+                        ) : rating === 0 ? (
+                          <span>Provisional</span>
+                        ) : (
+                          <span>{rankTier?.name || "Active"} Tier</span>
+                        )}
                       </div>
                     </div>
                     <div className="dash-card-subtext">Competitive ELO Ladder</div>
 
-                    {/* SVG ELO Graph */}
+                    {/* Dynamic Real SVG ELO Graph */}
                     <div className="proper-graph-container compact-graph">
-                      <svg className="proper-graph-svg" viewBox="0 0 250 64" preserveAspectRatio="none">
-                        <defs>
-                          <linearGradient id="arenaEloGraphGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#3b82f6" />
-                            <stop offset="45%" stopColor="#8b5cf6" />
-                            <stop offset="100%" stopColor="#c084fc" />
-                          </linearGradient>
-                          <linearGradient id="arenaEloGraphArea" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.3" />
-                            <stop offset="70%" stopColor="#8b5cf6" stopOpacity="0.06" />
-                            <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.0" />
-                          </linearGradient>
-                          <filter id="arenaGraphGlow" x="-20%" y="-20%" width="140%" height="140%">
-                            <feGaussianBlur stdDeviation="2.2" result="blur" />
-                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                          </filter>
-                        </defs>
-
-                        <line x1="28" y1="14" x2="242" y2="14" className="graph-grid-line" />
-                        <line x1="28" y1="30" x2="242" y2="30" className="graph-grid-line" />
-                        <line x1="28" y1="46" x2="242" y2="46" className="graph-grid-line" />
-
-                        <text x="2" y="17" className="graph-axis-text">1.5k</text>
-                        <text x="2" y="33" className="graph-axis-text">1.3k</text>
-                        <text x="2" y="49" className="graph-axis-text">1.1k</text>
-
-                        <line x1="234" y1="10" x2="234" y2="46" className="graph-live-guide" />
-
-                        <path
-                          d="M 32,44 C 48,46 60,42 74,38 C 88,34 98,40 112,36 C 126,32 136,24 152,22 C 168,20 178,28 192,24 C 206,20 218,14 234,11 L 234,46 L 32,46 Z"
-                          fill="url(#arenaEloGraphArea)"
-                        />
-
-                        <path
-                          d="M 32,44 C 48,46 60,42 74,38 C 88,34 98,40 112,36 C 126,32 136,24 152,22 C 168,20 178,28 192,24 C 206,20 218,14 234,11"
-                          fill="none"
-                          stroke="url(#arenaEloGraphGrad)"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          filter="url(#arenaGraphGlow)"
-                        />
-
-                        <circle cx="32" cy="44" r="2.2" className="graph-node-dot" />
-                        <circle cx="74" cy="38" r="2.2" className="graph-node-dot" />
-                        <circle cx="112" cy="36" r="2.2" className="graph-node-dot" />
-                        <circle cx="152" cy="22" r="2.2" className="graph-node-dot" />
-                        <circle cx="192" cy="24" r="2.2" className="graph-node-dot" />
-
-                        <circle cx="234" cy="11" r="5" className="graph-pulse-ring" />
-                        <circle cx="234" cy="11" r="3" fill="#e879f9" className="graph-live-dot" />
-
-                        <text x="32" y="59" textAnchor="middle" className="graph-x-label">M1</text>
-                        <text x="82" y="59" textAnchor="middle" className="graph-x-label">M3</text>
-                        <text x="132" y="59" textAnchor="middle" className="graph-x-label">M5</text>
-                        <text x="182" y="59" textAnchor="middle" className="graph-x-label">M7</text>
-                        <text x="234" y="59" textAnchor="middle" className="graph-x-label graph-x-live">LIVE</text>
-                      </svg>
+                      <EloRatingGraph
+                        rating={rating}
+                        ratingHistory={ratingHistory}
+                        idPrefix="arena-elo"
+                        viewBoxHeight={64}
+                      />
                     </div>
                   </motion.div>
 
@@ -349,7 +313,7 @@ export default function BattleArena({ defaultTab }) {
                       >
                         {/* Mode 1: Quick 1v1 Ranked Match */}
                         <motion.div
-                          className="dash-card arena-mode-card featured-mode-card"
+                          className="dash-card arena-mode-card mode-card-ranked featured-mode-card"
                           whileHover={{ y: -3 }}
                           transition={{ duration: 0.2 }}
                         >
@@ -388,7 +352,7 @@ export default function BattleArena({ defaultTab }) {
 
                         {/* Mode 2: Create Custom Room */}
                         <motion.div
-                          className="dash-card arena-mode-card"
+                          className="dash-card arena-mode-card mode-card-custom"
                           whileHover={{ y: -3 }}
                           transition={{ duration: 0.2 }}
                         >
@@ -427,7 +391,7 @@ export default function BattleArena({ defaultTab }) {
 
                         {/* Mode 3: Join Room with Code */}
                         <motion.div
-                          className="dash-card arena-mode-card"
+                          className="dash-card arena-mode-card mode-card-direct"
                           whileHover={{ y: -3 }}
                           transition={{ duration: 0.2 }}
                         >
@@ -466,7 +430,7 @@ export default function BattleArena({ defaultTab }) {
 
                         {/* Mode 4: Play vs Bot AI */}
                         <motion.div
-                          className="dash-card arena-mode-card"
+                          className="dash-card arena-mode-card mode-card-practice"
                           whileHover={{ y: -3 }}
                           transition={{ duration: 0.2 }}
                         >

@@ -256,6 +256,7 @@ export class AuthController {
                 batchYear: user.batchYear,
                 rating: user.rating,
                 highestRank: user.highestRank,
+                arenaPoints: user.arenaPoints ?? 0,
                 photoURL: googleUser.picture,
             },
         };
@@ -333,6 +334,7 @@ export class AuthController {
                 batchYear: user.batchYear,
                 rating: user.rating,
                 highestRank: user.highestRank,
+                arenaPoints: user.arenaPoints ?? 0,
             },
         };
     }
@@ -480,6 +482,7 @@ export class AuthController {
                 batchYear: user.batchYear,
                 rating: user.rating,
                 highestRank: user.highestRank,
+                arenaPoints: user.arenaPoints ?? 0,
             },
         };
     }

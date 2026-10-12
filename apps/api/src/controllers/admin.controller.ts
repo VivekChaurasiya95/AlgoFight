@@ -67,7 +67,14 @@ export class AdminController {
                 status: "OFFLINE" as const,
                 latencyMs: 0,
             })),
-            fetch(`${pistonUrl}/api/v2/runtimes`, { signal: AbortSignal.timeout(1200) })
+            fetch(
+                pistonUrl.trim().replace(/\/+$/, "").endsWith("/runtimes")
+                    ? pistonUrl.trim().replace(/\/+$/, "")
+                    : (pistonUrl.includes("/api/v2")
+                        ? `${pistonUrl.trim().replace(/\/+$/, "")}/runtimes`
+                        : `${pistonUrl.trim().replace(/\/+$/, "")}/api/v2/runtimes`),
+                { signal: AbortSignal.timeout(1200) }
+            )
                 .then(async (res) => {
                     if (res.ok) {
                         const runtimes = await res.json().catch(() => []) as any[];

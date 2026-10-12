@@ -308,7 +308,6 @@
   stroke-width: 1.5;
   opacity: 0.7;
   animation: graphPulse 2s infinite ease-out;
-  transform-origin: 234px 11px;
 }
 
 @keyframes graphPulse {
@@ -398,14 +397,46 @@
   padding: 16px 18px;
 }
 
+.arena-mode-card.mode-card-ranked,
 .arena-mode-card.featured-mode-card {
-  border-color: rgba(139, 92, 246, 0.35);
-  background: linear-gradient(145deg, rgba(16, 20, 36, 0.85), rgba(10, 14, 23, 0.85));
+  border-color: rgba(139, 92, 246, 0.4);
+  background: linear-gradient(145deg, rgba(16, 14, 32, 0.88), rgba(10, 9, 22, 0.88));
 }
 
+.arena-mode-card.mode-card-ranked:hover,
 .arena-mode-card.featured-mode-card:hover {
-  border-color: rgba(0, 229, 255, 0.45);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6), 0 0 16px rgba(139, 92, 246, 0.2);
+  border-color: rgba(168, 85, 247, 0.75);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(139, 92, 246, 0.25);
+}
+
+.arena-mode-card.mode-card-custom {
+  border-color: rgba(0, 229, 255, 0.35);
+  background: linear-gradient(145deg, rgba(8, 18, 30, 0.88), rgba(6, 13, 22, 0.88));
+}
+
+.arena-mode-card.mode-card-custom:hover {
+  border-color: rgba(0, 229, 255, 0.75);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 229, 255, 0.25);
+}
+
+.arena-mode-card.mode-card-direct {
+  border-color: rgba(255, 213, 0, 0.38);
+  background: linear-gradient(145deg, rgba(22, 17, 8, 0.88), rgba(14, 11, 5, 0.88));
+}
+
+.arena-mode-card.mode-card-direct:hover {
+  border-color: rgba(255, 213, 0, 0.75);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 213, 0, 0.25);
+}
+
+.arena-mode-card.mode-card-practice {
+  border-color: rgba(16, 185, 129, 0.38);
+  background: linear-gradient(145deg, rgba(8, 24, 16, 0.88), rgba(5, 14, 10, 0.88));
+}
+
+.arena-mode-card.mode-card-practice:hover {
+  border-color: rgba(16, 185, 129, 0.75);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(16, 185, 129, 0.25);
 }
 
 .mode-title-row {
@@ -417,11 +448,12 @@
 
 .mode-heading {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   font-weight: 800;
   color: #ffffff;
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .mode-capacity-tag {

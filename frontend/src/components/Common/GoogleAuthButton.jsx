@@ -6,6 +6,7 @@ import {
   renderGoogleButton,
 } from "../../services/googleAuth";
 import { useNotification } from "../../contexts/NotificationContext";
+import { useTheme } from "../../contexts/ThemeContext";
 
 export default function GoogleAuthButton({
   mode = "signin", // "signin" | "signup"
@@ -14,6 +15,7 @@ export default function GoogleAuthButton({
   loading = false,
   onFallbackToManual,
 }) {
+  const { theme } = useTheme();
   const containerRef = useRef(null);
   const [gisRendered, setGisRendered] = useState(false);
   const { notify } = useNotification();
@@ -45,10 +47,12 @@ export default function GoogleAuthButton({
         );
 
         if (containerRef.current && isMounted) {
+          containerRef.current.innerHTML = "";
+          const gisTheme = theme === "light" ? "outline" : "filled_black";
           renderGoogleButton(
             containerRef.current,
             {
-              theme: "filled_black",
+              theme: gisTheme,
               size: "large",
               text: mode === "signup" ? "signup_with" : "signin_with",
               width: 380,
@@ -88,7 +92,7 @@ export default function GoogleAuthButton({
     return () => {
       isMounted = false;
     };
-  }, [mode, notify, onFallbackToManual]);
+  }, [mode, theme, notify, onFallbackToManual]);
 
   const handleManualClick = () => {
     const now = Date.now();
@@ -176,31 +180,13 @@ export default function GoogleAuthButton({
         }}
       />
 
-      {/* Guaranteed Always-Visible Cyber Google Button (Active fallback or primary when GIS iframe is pending) */}
+      {/* Guaranteed Always-Visible Google Button (Active fallback or primary when GIS iframe is pending) */}
       {!gisRendered && (
         <button
           type="button"
           onClick={handleManualClick}
           disabled={loading}
           className="google-auth-button-ui"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "12px",
-            width: "100%",
-            height: "48px",
-            background: "rgba(10, 20, 34, 0.8)",
-            border: "1px solid rgba(0, 229, 255, 0.28)",
-            borderRadius: "50px",
-            color: "#ffffff",
-            fontFamily: "'Inter', sans-serif",
-            fontSize: "0.95rem",
-            fontWeight: 600,
-            cursor: "pointer",
-            transition: "all 0.25s ease",
-            boxShadow: "0 4px 18px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(0, 229, 255, 0.05)",
-          }}
         >
           <GoogleIcon size={20} />
           <span>{loading ? "Authenticating..." : label}</span>

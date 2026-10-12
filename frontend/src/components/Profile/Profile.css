@@ -213,8 +213,8 @@
 .profile-student-card {
   margin: 0 24px 20px;
   padding: 20px 22px;
-  background: rgba(8, 12, 20, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--surface-primary, rgba(8, 12, 20, 0.72));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.07));
   border-radius: 16px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   position: relative;
@@ -228,7 +228,7 @@
   left: 0;
   width: 3px;
   height: 100%;
-  background: linear-gradient(180deg, #00e5ff, #8b5cf6);
+  background: var(--cta-gradient, linear-gradient(180deg, #00e5ff, #8b5cf6));
 }
 
 .student-card-header {
@@ -239,7 +239,7 @@
   gap: 10px;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
 }
 
 .student-card-badge {
@@ -257,7 +257,7 @@
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: #00e5ff;
+  color: var(--cta-primary, #00e5ff);
   text-transform: uppercase;
 }
 
@@ -265,11 +265,11 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.72rem;
   font-weight: 600;
-  color: #94a3b8;
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted, #94a3b8);
+  background: var(--border-subtle, rgba(255, 255, 255, 0.04));
   padding: 3px 10px;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
 }
 
 .student-card-grid {
@@ -282,8 +282,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  background: rgba(4, 8, 16, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--surface-elevated, rgba(4, 8, 16, 0.55));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
   border-radius: 10px;
   padding: 10px 12px;
 }
@@ -291,7 +291,7 @@
 .student-info-item .info-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.68rem;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 700;
@@ -299,7 +299,7 @@
 
 .student-info-item .info-value {
   font-size: 0.92rem;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -474,8 +474,38 @@
   margin-bottom: 18px;
 }
 
+.dash-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-icon-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.dash-icon-box.icon-cyan {
+  background: rgba(0, 229, 255, 0.15);
+  color: #00e5ff;
+  border: 1px solid rgba(0, 229, 255, 0.3);
+}
+
+.dash-icon-box.icon-trophy {
+  background: rgba(255, 213, 0, 0.15);
+  color: #ffd500;
+  border: 1px solid rgba(255, 213, 0, 0.3);
+}
+
 .profile-panel-head .dash-card-title {
   font-size: 1.15rem;
+  margin: 0;
 }
 
 /* Progress List */
@@ -487,9 +517,10 @@
 
 .profile-progress-item {
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(8, 12, 20, 0.6);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  background: var(--surface-primary, rgba(8, 12, 20, 0.6));
   padding: 12px 14px;
+  transition: all 0.2s ease;
 }
 
 .profile-progress-head {
@@ -501,14 +532,14 @@
 }
 
 .profile-progress-head span {
-  color: #94a3b8;
+  color: var(--text-secondary, #94a3b8);
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.84rem;
   font-weight: 600;
 }
 
 .profile-progress-head strong {
-  color: #00e5ff;
+  color: var(--cta-primary, #00e5ff);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
   font-weight: 700;
@@ -518,7 +549,7 @@
   height: 6px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--border-subtle, rgba(255, 255, 255, 0.06));
 }
 
 .profile-progress-fill {
@@ -551,8 +582,8 @@
 
 .profile-achievement-list li {
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(8, 12, 20, 0.6);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  background: var(--surface-primary, rgba(8, 12, 20, 0.6));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -579,15 +610,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted, #94a3b8);
+  background: var(--border-subtle, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
   flex-shrink: 0;
   font-size: 0.85rem;
 }
 
 .is-unlocked .achievement-icon {
-  color: #00ff88;
+  color: var(--success, #00ff88);
   background: rgba(0, 255, 136, 0.15);
   border-color: rgba(0, 255, 136, 0.35);
 }
@@ -597,20 +628,20 @@
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.92rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
 }
 
 .achievement-left p {
   margin: 0;
   font-size: 0.78rem;
-  color: #94a3b8;
+  color: var(--text-muted, #94a3b8);
 }
 
 .achievement-status {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.7rem;
   letter-spacing: 0.04em;
@@ -619,7 +650,7 @@
 }
 
 .is-unlocked .achievement-status {
-  color: #00ff88;
+  color: var(--success, #00ff88);
 }
 
 /* Faculty Profile Overrides */
@@ -766,3 +797,587 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   THEME-SPECIFIC PROFILE DASHBOARD OVERRIDES (All 8 Themes)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CLEAN HORIZON / LIGHT THEME (:root[data-theme="light"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="light"] .profile-page {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .profile-overview-shell {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+}
+
+:root[data-theme="light"] .profile-display-name {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .profile-email-label {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .profile-kicker-tag {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .profile-kicker-tag .kicker-slash {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .profile-kicker-tag .word-glow-cyan {
+  color: #2563eb !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .profile-code-badge {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #2563eb !important;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08) !important;
+}
+
+:root[data-theme="light"] .profile-code-badge:hover {
+  background: #dbeafe !important;
+  border-color: #93c5fd !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.16) !important;
+}
+
+:root[data-theme="light"] .profile-avatar-shell {
+  border-color: #bfdbfe !important;
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.12) !important;
+}
+
+:root[data-theme="light"] .profile-avatar-initial {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .profile-stat-grid {
+  border-top-color: #f1f5f9 !important;
+}
+
+:root[data-theme="light"] .profile-stat-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03) !important;
+}
+
+:root[data-theme="light"] .profile-stat-card:hover {
+  background: #ffffff !important;
+  border-color: #bfdbfe !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08) !important;
+}
+
+:root[data-theme="light"] .profile-stat-content p {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .profile-stat-content h3 {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .profile-stat-content span {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .profile-stat-icon.tone-gold {
+  color: #d97706 !important;
+  background: #fef3c7 !important;
+  border-color: #fde68a !important;
+}
+
+:root[data-theme="light"] .profile-stat-icon.tone-cyan {
+  color: #2563eb !important;
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+
+:root[data-theme="light"] .profile-stat-icon.tone-green {
+  color: #16a34a !important;
+  background: #f0fdf4 !important;
+  border-color: #bbf7d0 !important;
+}
+
+:root[data-theme="light"] .profile-stat-icon.tone-purple {
+  color: #7c3aed !important;
+  background: #faf5ff !important;
+  border-color: #ddd6fe !important;
+}
+
+:root[data-theme="light"] .dash-card.profile-panel {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+}
+
+:root[data-theme="light"] .profile-panel-head .dash-card-title {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .dash-pill-tag.tag-cyan {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .dash-pill-tag.tag-purple {
+  background: #faf5ff !important;
+  border-color: #ddd6fe !important;
+  color: #7c3aed !important;
+}
+
+:root[data-theme="light"] .dash-icon-box.icon-cyan,
+:root[data-theme="light"] .dash-icon-box.icon-trophy {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #2563eb !important;
+}
+
+/* --- Progress Items in Light Mode --- */
+:root[data-theme="light"] .profile-progress-item {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02) !important;
+}
+
+:root[data-theme="light"] .profile-progress-item:hover {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04) !important;
+}
+
+:root[data-theme="light"] .profile-progress-head span {
+  color: #334155 !important;
+}
+
+:root[data-theme="light"] .profile-progress-head strong {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .profile-progress-track {
+  background: #e2e8f0 !important;
+}
+
+/* --- Achievements in Light Mode --- */
+:root[data-theme="light"] .profile-achievement-list li {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02) !important;
+}
+
+:root[data-theme="light"] .profile-achievement-list li:hover {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04) !important;
+}
+
+:root[data-theme="light"] .profile-achievement-list li.is-unlocked {
+  background: #f0fdf4 !important;
+  border-color: #bbf7d0 !important;
+}
+
+:root[data-theme="light"] .achievement-left h4 {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .achievement-left p {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .achievement-icon {
+  color: #64748b !important;
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .is-unlocked .achievement-icon {
+  color: #16a34a !important;
+  background: #dcfce7 !important;
+  border-color: #86efac !important;
+}
+
+:root[data-theme="light"] .achievement-status {
+  color: #94a3b8 !important;
+}
+
+:root[data-theme="light"] .is-unlocked .achievement-status {
+  color: #16a34a !important;
+}
+
+/* --- Student Card in Light Mode --- */
+:root[data-theme="light"] .profile-student-card {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03) !important;
+}
+
+:root[data-theme="light"] .student-card-header {
+  border-bottom-color: #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .student-card-title {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .academic-session-tag {
+  color: #64748b !important;
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .student-info-item {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .student-info-item .info-label {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .student-info-item .info-value {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .student-info-item .highlight-cyan {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .student-info-item .font-mono {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .student-card-note {
+  border-top-color: #e2e8f0 !important;
+  color: #b45309 !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. MATRIX TERMINAL / EMERALD (:root[data-theme="emerald"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="emerald"] .profile-progress-item,
+:root[data-theme="emerald"] .profile-achievement-list li {
+  background: rgba(9, 44, 31, 0.55);
+  border-color: rgba(0, 245, 160, 0.22);
+}
+
+:root[data-theme="emerald"] .profile-progress-item:hover,
+:root[data-theme="emerald"] .profile-achievement-list li:hover {
+  border-color: rgba(0, 245, 160, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 245, 160, 0.12);
+}
+
+:root[data-theme="emerald"] .profile-progress-head span {
+  color: #a7f3d0;
+}
+
+:root[data-theme="emerald"] .profile-progress-head strong {
+  color: #00f5a0;
+}
+
+:root[data-theme="emerald"] .profile-progress-track {
+  background: rgba(0, 245, 160, 0.12);
+}
+
+:root[data-theme="emerald"] .achievement-left h4 {
+  color: #f0fdf4;
+}
+
+:root[data-theme="emerald"] .achievement-left p {
+  color: #6ee7b7;
+}
+
+:root[data-theme="emerald"] .achievement-icon {
+  color: #00f5a0;
+  background: rgba(0, 245, 160, 0.12);
+  border-color: rgba(0, 245, 160, 0.25);
+}
+
+:root[data-theme="emerald"] .student-info-item {
+  background: rgba(9, 44, 31, 0.6);
+  border-color: rgba(0, 245, 160, 0.18);
+}
+
+/* --------------------------------------------------------------------------
+   3. CRIMSON SYNDICATE / OVERDRIVE (:root[data-theme="crimson"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="crimson"] .profile-progress-item,
+:root[data-theme="crimson"] .profile-achievement-list li {
+  background: rgba(42, 10, 17, 0.55);
+  border-color: rgba(255, 42, 85, 0.22);
+}
+
+:root[data-theme="crimson"] .profile-progress-item:hover,
+:root[data-theme="crimson"] .profile-achievement-list li:hover {
+  border-color: rgba(255, 42, 85, 0.45);
+  box-shadow: 0 4px 14px rgba(255, 42, 85, 0.14);
+}
+
+:root[data-theme="crimson"] .profile-progress-head span {
+  color: #fecdd3;
+}
+
+:root[data-theme="crimson"] .profile-progress-head strong {
+  color: #ff2a55;
+}
+
+:root[data-theme="crimson"] .profile-progress-track {
+  background: rgba(255, 42, 85, 0.12);
+}
+
+:root[data-theme="crimson"] .achievement-left h4 {
+  color: #fff1f2;
+}
+
+:root[data-theme="crimson"] .achievement-left p {
+  color: #fda4af;
+}
+
+:root[data-theme="crimson"] .achievement-icon {
+  color: #ff2a55;
+  background: rgba(255, 42, 85, 0.12);
+  border-color: rgba(255, 42, 85, 0.25);
+}
+
+:root[data-theme="crimson"] .student-info-item {
+  background: rgba(42, 10, 17, 0.6);
+  border-color: rgba(255, 42, 85, 0.18);
+}
+
+/* --------------------------------------------------------------------------
+   4. ROYAL AMETHYST / SYNTHWAVE (:root[data-theme="amethyst"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="amethyst"] .profile-progress-item,
+:root[data-theme="amethyst"] .profile-achievement-list li {
+  background: rgba(30, 16, 62, 0.55);
+  border-color: rgba(168, 85, 247, 0.22);
+}
+
+:root[data-theme="amethyst"] .profile-progress-item:hover,
+:root[data-theme="amethyst"] .profile-achievement-list li:hover {
+  border-color: rgba(168, 85, 247, 0.45);
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.14);
+}
+
+:root[data-theme="amethyst"] .profile-progress-head span {
+  color: #e9d5ff;
+}
+
+:root[data-theme="amethyst"] .profile-progress-head strong {
+  color: #c084fc;
+}
+
+:root[data-theme="amethyst"] .profile-progress-track {
+  background: rgba(168, 85, 247, 0.12);
+}
+
+:root[data-theme="amethyst"] .achievement-left h4 {
+  color: #faf5ff;
+}
+
+:root[data-theme="amethyst"] .achievement-left p {
+  color: #d8b4fe;
+}
+
+:root[data-theme="amethyst"] .achievement-icon {
+  color: #c084fc;
+  background: rgba(168, 85, 247, 0.12);
+  border-color: rgba(168, 85, 247, 0.25);
+}
+
+:root[data-theme="amethyst"] .student-info-item {
+  background: rgba(30, 16, 62, 0.6);
+  border-color: rgba(168, 85, 247, 0.18);
+}
+
+/* --------------------------------------------------------------------------
+   5. GOLDEN SUNSET / SOLAR (:root[data-theme="sunset"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="sunset"] .profile-progress-item,
+:root[data-theme="sunset"] .profile-achievement-list li {
+  background: rgba(49, 33, 17, 0.55);
+  border-color: rgba(245, 158, 11, 0.22);
+}
+
+:root[data-theme="sunset"] .profile-progress-item:hover,
+:root[data-theme="sunset"] .profile-achievement-list li:hover {
+  border-color: rgba(245, 158, 11, 0.45);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.14);
+}
+
+:root[data-theme="sunset"] .profile-progress-head span {
+  color: #fed7aa;
+}
+
+:root[data-theme="sunset"] .profile-progress-head strong {
+  color: #fbbf24;
+}
+
+:root[data-theme="sunset"] .profile-progress-track {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+:root[data-theme="sunset"] .achievement-left h4 {
+  color: #fffbeb;
+}
+
+:root[data-theme="sunset"] .achievement-left p {
+  color: #fdba74;
+}
+
+:root[data-theme="sunset"] .achievement-icon {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+:root[data-theme="sunset"] .student-info-item {
+  background: rgba(49, 33, 17, 0.6);
+  border-color: rgba(245, 158, 11, 0.18);
+}
+
+/* --------------------------------------------------------------------------
+   6. STEALTH OBSIDIAN / CUSTOM (:root[data-theme="custom"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="custom"] .profile-progress-item,
+:root[data-theme="custom"] .profile-achievement-list li {
+  background: rgba(26, 29, 37, 0.6);
+  border-color: rgba(52, 54, 64, 0.6);
+}
+
+:root[data-theme="custom"] .profile-progress-item:hover,
+:root[data-theme="custom"] .profile-achievement-list li:hover {
+  border-color: rgba(127, 128, 143, 0.5);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="custom"] .profile-progress-head span {
+  color: #aeb2c0;
+}
+
+:root[data-theme="custom"] .profile-progress-head strong {
+  color: #e3e5ed;
+}
+
+:root[data-theme="custom"] .profile-progress-track {
+  background: rgba(52, 54, 64, 0.4);
+}
+
+:root[data-theme="custom"] .achievement-left h4 {
+  color: #e3e5ed;
+}
+
+:root[data-theme="custom"] .achievement-left p {
+  color: #7f808f;
+}
+
+:root[data-theme="custom"] .achievement-icon {
+  color: #e3e5ed;
+  background: rgba(43, 47, 59, 0.5);
+  border-color: rgba(52, 54, 64, 0.6);
+}
+
+:root[data-theme="custom"] .student-info-item {
+  background: rgba(26, 29, 37, 0.65);
+  border-color: rgba(52, 54, 64, 0.6);
+}
+
+/* --------------------------------------------------------------------------
+   7. ELECTRIC CYAN / PULSE (:root[data-theme="original"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="original"] .profile-progress-item,
+:root[data-theme="original"] .profile-achievement-list li {
+  background: rgba(13, 28, 52, 0.55);
+  border-color: rgba(0, 242, 254, 0.22);
+}
+
+:root[data-theme="original"] .profile-progress-item:hover,
+:root[data-theme="original"] .profile-achievement-list li:hover {
+  border-color: rgba(0, 242, 254, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 242, 254, 0.14);
+}
+
+:root[data-theme="original"] .profile-progress-head span {
+  color: #bae6fd;
+}
+
+:root[data-theme="original"] .profile-progress-head strong {
+  color: #00f2fe;
+}
+
+:root[data-theme="original"] .profile-progress-track {
+  background: rgba(0, 242, 254, 0.12);
+}
+
+:root[data-theme="original"] .achievement-left h4 {
+  color: #f0f9ff;
+}
+
+:root[data-theme="original"] .achievement-left p {
+  color: #7dd3fc;
+}
+
+:root[data-theme="original"] .achievement-icon {
+  color: #00f2fe;
+  background: rgba(0, 242, 254, 0.12);
+  border-color: rgba(0, 242, 254, 0.25);
+}
+
+:root[data-theme="original"] .student-info-item {
+  background: rgba(13, 28, 52, 0.6);
+  border-color: rgba(0, 242, 254, 0.18);
+}
+
+/* --------------------------------------------------------------------------
+   8. REGULAR ARENA (:root[data-theme="regular"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="regular"] .profile-progress-item,
+:root[data-theme="regular"] .profile-achievement-list li {
+  background: rgba(17, 24, 39, 0.7);
+  border-color: rgba(0, 229, 255, 0.18);
+}
+
+:root[data-theme="regular"] .profile-progress-item:hover,
+:root[data-theme="regular"] .profile-achievement-list li:hover {
+  border-color: rgba(0, 229, 255, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 229, 255, 0.12);
+}
+
+:root[data-theme="regular"] .profile-progress-head span {
+  color: #94a3b8;
+}
+
+:root[data-theme="regular"] .profile-progress-head strong {
+  color: #00e5ff;
+}
+
+:root[data-theme="regular"] .profile-progress-track {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="regular"] .achievement-left h4 {
+  color: #ffffff;
+}
+
+:root[data-theme="regular"] .achievement-left p {
+  color: #94a3b8;
+}
+
+:root[data-theme="regular"] .achievement-icon {
+  color: #00e5ff;
+  background: rgba(0, 229, 255, 0.1);
+  border-color: rgba(0, 229, 255, 0.25);
+}
+
+:root[data-theme="regular"] .student-info-item {
+  background: rgba(17, 24, 39, 0.65);
+  border-color: rgba(0, 229, 255, 0.15);
+}
+

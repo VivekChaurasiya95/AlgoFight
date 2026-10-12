@@ -6,7 +6,7 @@
   max-width: 1400px;
   margin: 0 auto;
   font-family: 'Inter', sans-serif;
-  color: #f1f5f9;
+  color: var(--text-primary, #f1f5f9);
 }
 
 /* Header Section */
@@ -28,9 +28,9 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(168, 85, 247, 0.14);
-  border: 1px solid rgba(168, 85, 247, 0.35);
-  color: #c084fc;
+  background: var(--surface-highlight, rgba(168, 85, 247, 0.14));
+  border: 1px solid var(--border-primary, rgba(168, 85, 247, 0.35));
+  color: var(--cta-primary, #c084fc);
   padding: 6px 14px;
   border-radius: 999px;
   font-size: 0.76rem;
@@ -44,8 +44,8 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #c084fc;
-  box-shadow: 0 0 10px #c084fc;
+  background: var(--cta-primary, #c084fc);
+  box-shadow: 0 0 10px var(--cta-shadow, #c084fc);
   animation: pulseDot 2s infinite ease-in-out;
 }
 
@@ -59,12 +59,12 @@
   font-size: 2.2rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   margin: 0 0 8px;
 }
 
 .faculty-hub-subtitle {
-  color: #94a3b8;
+  color: var(--text-secondary, #94a3b8);
   font-size: 0.95rem;
   max-width: 680px;
   line-height: 1.5;
@@ -73,8 +73,8 @@
 
 /* Faculty Info Card */
 .faculty-identity-card {
-  background: rgba(18, 24, 38, 0.75);
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  background: var(--surface-primary, rgba(18, 24, 38, 0.75));
+  border: 1px solid var(--border-primary, rgba(168, 85, 247, 0.3));
   backdrop-filter: blur(16px);
   border-radius: 16px;
   padding: 16px 22px;
@@ -88,13 +88,13 @@
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(0, 229, 255, 0.3));
-  border: 1px solid rgba(168, 85, 247, 0.5);
+  background: var(--surface-highlight, linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(0, 229, 255, 0.3)));
+  border: 1px solid var(--border-primary, rgba(168, 85, 247, 0.5));
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.3rem;
-  color: #c084fc;
+  color: var(--cta-primary, #c084fc);
   flex-shrink: 0;
 }
 
@@ -103,14 +103,14 @@
   font-family: 'Space Grotesk', sans-serif;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   letter-spacing: 0.02em;
 }
 
 .faculty-identity-meta p {
   margin: 0;
   font-size: 0.82rem;
-  color: #a855f7;
+  color: var(--cta-primary, #a855f7);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -137,8 +137,8 @@
 }
 
 .faculty-stat-card {
-  background: rgba(14, 19, 32, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: var(--surface-primary, rgba(14, 19, 32, 0.75));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.09));
   border-radius: 16px;
   padding: 20px;
   display: flex;
@@ -151,8 +151,8 @@
 
 .faculty-stat-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(168, 85, 247, 0.4);
-  box-shadow: 0 10px 25px rgba(168, 85, 247, 0.15);
+  border-color: var(--border-primary, rgba(168, 85, 247, 0.4));
+  box-shadow: 0 10px 25px var(--cta-shadow, rgba(168, 85, 247, 0.15));
 }
 
 .stat-icon-wrapper {
@@ -211,8 +211,8 @@
 .faculty-tabs-nav {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  background: rgba(10, 14, 26, 0.75);
-  border: 1px solid rgba(168, 85, 247, 0.2);
+  background: var(--surface-primary, rgba(10, 14, 26, 0.75));
+  border: 1px solid var(--border-subtle, rgba(168, 85, 247, 0.2));
   border-radius: 16px;
   padding: 6px;
   gap: 8px;
@@ -230,7 +230,7 @@
   border-radius: 12px;
   background: transparent;
   border: 1px solid transparent;
-  color: #94a3b8;
+  color: var(--text-secondary, #94a3b8);
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.88rem;
   font-weight: 700;
@@ -249,26 +249,26 @@
 }
 
 .faculty-tab-btn:hover {
-  color: #f1f5f9;
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary, #f1f5f9);
+  background: var(--surface-highlight, rgba(255, 255, 255, 0.04));
+  border-color: var(--border-subtle, rgba(255, 255, 255, 0.06));
 }
 
 .faculty-tab-btn:hover svg {
-  color: #00e5ff;
+  color: var(--cta-primary, #00e5ff);
   transform: scale(1.1);
 }
 
 .faculty-tab-btn.active {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(0, 229, 255, 0.16));
-  border: 1px solid rgba(168, 85, 247, 0.5);
-  color: #ffffff;
-  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  background: var(--surface-highlight, linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(0, 229, 255, 0.16)));
+  border: 1px solid var(--border-primary, rgba(168, 85, 247, 0.5));
+  color: var(--text-primary, #ffffff);
+  box-shadow: 0 4px 20px var(--cta-shadow, rgba(168, 85, 247, 0.25)), inset 0 1px 1px rgba(255, 255, 255, 0.15);
 }
 
 .faculty-tab-btn.active svg {
-  color: #00e5ff;
-  filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.6));
+  color: var(--cta-primary, #00e5ff);
+  filter: drop-shadow(0 0 6px var(--cta-shadow, rgba(0, 229, 255, 0.6)));
 }
 
 .tab-count-badge {
@@ -348,12 +348,13 @@
 
 /* Common Faculty Panels */
 .faculty-panel {
-  background: rgba(12, 16, 28, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-primary, rgba(12, 16, 28, 0.85));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
   border-radius: 20px;
   padding: 30px;
   backdrop-filter: blur(20px);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  color: var(--text-primary, #ffffff);
 }
 
 .faculty-panel-header {
@@ -369,14 +370,14 @@
   font-family: 'Space Grotesk', sans-serif;
   font-size: 1.3rem;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   margin: 0 0 4px;
 }
 
 .panel-title-wrap p {
   margin: 0;
   font-size: 0.86rem;
-  color: #94a3b8;
+  color: var(--text-secondary, #94a3b8);
 }
 
 /* Two-column layout for Reminders */
@@ -418,10 +419,10 @@
 .faculty-textarea {
   width: 100%;
   padding: 11px 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--bg-secondary, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
   border-radius: 10px;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-family: 'Inter', sans-serif;
   font-size: 0.9rem;
   outline: none;
@@ -432,9 +433,9 @@
 .faculty-input:focus,
 .faculty-select:focus,
 .faculty-textarea:focus {
-  border-color: #a855f7;
-  box-shadow: 0 0 14px rgba(168, 85, 247, 0.25);
-  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--cta-primary, #a855f7);
+  box-shadow: 0 0 14px var(--cta-shadow, rgba(168, 85, 247, 0.25));
+  background: var(--surface-highlight, rgba(255, 255, 255, 0.07));
 }
 
 .faculty-select option {
@@ -449,20 +450,20 @@
   gap: 8px;
   padding: 12px 20px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #a855f7, #6366f1);
+  background: var(--cta-gradient, linear-gradient(135deg, #a855f7, #6366f1));
   border: none;
-  color: #ffffff;
+  color: var(--cta-text, #ffffff);
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.35);
+  box-shadow: 0 4px 16px var(--cta-shadow, rgba(168, 85, 247, 0.35));
 }
 
 .faculty-btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(168, 85, 247, 0.5);
+  box-shadow: 0 6px 24px var(--cta-shadow, rgba(168, 85, 247, 0.5));
   filter: brightness(1.1);
 }
 
@@ -529,7 +530,7 @@
   font-family: 'Space Grotesk', sans-serif;
   font-size: 1rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   margin: 0;
 }
 
@@ -627,12 +628,12 @@
   font-family: 'Space Grotesk', sans-serif;
   font-size: 1.15rem;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   margin: 0 0 6px;
 }
 
 .quiz-card-top p {
-  color: #94a3b8;
+  color: var(--text-secondary, #94a3b8);
   font-size: 0.84rem;
   line-height: 1.4;
   margin: 0;
@@ -765,7 +766,7 @@
 
 .student-name-group .student-name {
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   display: block;
 }
 
@@ -836,8 +837,8 @@
   flex-wrap: wrap;
   padding: 16px 20px;
   border-radius: 16px;
-  background: rgba(18, 24, 38, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-primary, rgba(18, 24, 38, 0.65));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
 }
 
 .directory-search-box {
@@ -851,7 +852,7 @@
 .directory-search-box .search-icon {
   position: absolute;
   left: 14px;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   font-size: 0.9rem;
   pointer-events: none;
 }
@@ -860,18 +861,22 @@
   width: 100%;
   padding: 10px 14px 10px 40px;
   border-radius: 10px;
-  background: rgba(5, 8, 17, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--bg-deep, rgba(5, 8, 17, 0.7));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  color: var(--text-primary, #ffffff);
   font-size: 0.88rem;
   font-family: inherit;
   transition: all 0.2s ease;
 }
 
+.directory-search-input::placeholder {
+  color: var(--text-muted, #64748b);
+}
+
 .directory-search-input:focus {
   outline: none;
-  border-color: #00e5ff;
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
+  border-color: var(--cta-primary, #00e5ff);
+  box-shadow: 0 0 12px var(--cta-shadow, rgba(0, 229, 255, 0.2));
 }
 
 .directory-filter-box {
@@ -883,7 +888,7 @@
 .directory-filter-box .filter-icon {
   position: absolute;
   left: 14px;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   font-size: 0.85rem;
   pointer-events: none;
 }
@@ -891,9 +896,9 @@
 .directory-filter-select {
   padding: 10px 32px 10px 38px;
   border-radius: 10px;
-  background: rgba(5, 8, 17, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #cbd5e1;
+  background: var(--bg-deep, rgba(5, 8, 17, 0.7));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  color: var(--text-secondary, #cbd5e1);
   font-size: 0.85rem;
   font-family: inherit;
   cursor: pointer;
@@ -902,7 +907,7 @@
 
 .directory-filter-select:focus {
   outline: none;
-  border-color: #00e5ff;
+  border-color: var(--cta-primary, #00e5ff);
 }
 
 .refresh-directory-btn {
@@ -910,9 +915,9 @@
   font-size: 0.85rem;
   font-weight: 700;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #cbd5e1;
+  background: var(--surface-highlight, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  color: var(--text-secondary, #cbd5e1);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -922,14 +927,14 @@
 
 .refresh-directory-btn:hover:not(:disabled) {
   background: rgba(0, 229, 255, 0.12);
-  border-color: rgba(0, 229, 255, 0.35);
-  color: #00e5ff;
+  border-color: var(--border-primary, rgba(0, 229, 255, 0.35));
+  color: var(--cta-primary, #00e5ff);
 }
 
 .faculty-directory-table-wrap {
   border-radius: 20px;
-  background: rgba(18, 24, 38, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-primary, rgba(18, 24, 38, 0.65));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
   padding: 24px;
   overflow: hidden;
 }
@@ -948,12 +953,12 @@
   font-family: 'Space Grotesk', sans-serif;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
 }
 
 .table-header-tip {
   font-size: 0.78rem;
-  color: #00e5ff;
+  color: var(--cta-primary, #00e5ff);
   letter-spacing: 0.02em;
 }
 
@@ -973,17 +978,18 @@
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.72rem;
   font-weight: 800;
-  color: #8494ad;
+  color: var(--text-muted, #8494ad);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(8, 12, 20, 0.6);
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: var(--surface-highlight, rgba(8, 12, 20, 0.6));
 }
 
 .faculty-directory-table td {
   padding: 14px 14px;
   font-size: 0.84rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.04));
+  color: var(--text-secondary, #cbd5e1);
   vertical-align: middle;
 }
 
@@ -1025,13 +1031,13 @@
 }
 
 .faculty-cell-name {
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-size: 0.9rem;
 }
 
 .faculty-cell-email {
   font-size: 0.74rem;
-  color: #8494ad;
+  color: var(--text-muted, #8494ad);
 }
 
 .faculty-dept-badge {
@@ -1088,9 +1094,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(0, 229, 255, 0.1);
-  border: 1px solid rgba(0, 229, 255, 0.3);
-  color: #00e5ff;
+  background: var(--surface-highlight, rgba(0, 229, 255, 0.1));
+  border: 1px solid var(--border-primary, rgba(0, 229, 255, 0.3));
+  color: var(--cta-primary, #00e5ff);
   padding: 6px 12px;
   border-radius: 8px;
   font-size: 0.76rem;
@@ -1100,16 +1106,16 @@
 }
 
 .open-faculty-hub-btn:hover {
-  background: #00e5ff;
-  color: #020912;
-  box-shadow: 0 0 14px rgba(0, 229, 255, 0.4);
+  background: var(--cta-primary, #00e5ff);
+  color: var(--cta-text, #020912);
+  box-shadow: 0 0 14px var(--cta-shadow, rgba(0, 229, 255, 0.4));
 }
 
 .table-loading-cell,
 .table-empty-cell {
   text-align: center;
   padding: 36px 20px;
-  color: #8494ad;
+  color: var(--text-muted, #8494ad);
   font-size: 0.88rem;
 }
 
@@ -1179,11 +1185,11 @@
 
 .inspecting-label {
   font-size: 0.85rem;
-  color: #e2e8f0;
+  color: var(--text-secondary, #e2e8f0);
 }
 
 .inspecting-label strong {
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
 }
 
 .inspection-banner-right .faculty-dept-pill {
@@ -1194,4 +1200,77 @@
   background: rgba(168, 85, 247, 0.15);
   border: 1px solid rgba(168, 85, 247, 0.35);
   color: #c084fc;
+}
+
+/* Quiz Drawer & Problem Picker */
+.faculty-quiz-drawer {
+  background: var(--surface-primary, rgba(18, 24, 38, 0.7));
+  border: 1px solid var(--border-primary, rgba(168, 85, 247, 0.3));
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 28px;
+}
+
+.faculty-quiz-drawer-title {
+  margin: 0 0 16px;
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--cta-primary, #00e5ff);
+}
+
+.quiz-problems-picker {
+  max-height: 180px;
+  overflow-y: auto;
+  background: var(--bg-deep, rgba(0, 0, 0, 0.3));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.quiz-problem-title {
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+}
+
+/* Archive Features Grid */
+.archive-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.archive-feature-box {
+  background: var(--surface-primary, rgba(18, 24, 38, 0.6));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.archive-feature-box.cyan-feature {
+  border-color: var(--border-primary, rgba(0, 229, 255, 0.25));
+}
+
+.archive-feature-box.cyan-feature .archive-feature-title {
+  color: var(--cta-primary, #00e5ff);
+  margin: 0 0 10px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.archive-feature-box.purple-feature {
+  border-color: var(--border-primary, rgba(168, 85, 247, 0.25));
+}
+
+.archive-feature-box.purple-feature .archive-feature-title {
+  color: var(--cta-primary, #c084fc);
+  margin: 0 0 10px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.archive-feature-box p {
+  font-size: 0.86rem;
+  color: var(--text-secondary, #94a3b8);
+  line-height: 1.5;
+  margin: 0 0 16px;
 }

@@ -1,29 +1,45 @@
 /* ==========================================================================
    SYSTEM BROADCAST FLASH BANNER (ALGOFIGHT TOP FLASH HUD)
+   Adapts dynamically to all platform themes & announcement categories
    ========================================================================== */
 
+/* --- Base Flash Banner Wrapper --- */
 .system-flash-banner-wrapper {
   position: relative;
   z-index: 99999;
   width: 100%;
-  background: rgba(3, 8, 16, 0.95);
-  border-bottom: 1px solid rgba(0, 229, 255, 0.35);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 15px rgba(0, 229, 255, 0.12);
+  background: var(--bg-panel-solid, var(--bg-secondary, rgba(3, 8, 16, 0.95)));
+  border-bottom: 1px solid var(--border-primary, rgba(0, 229, 255, 0.35));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px var(--cta-shadow, rgba(0, 229, 255, 0.12));
   backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   padding: 8px 16px;
   overflow: hidden;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* Category Variations (Default / Dark Fallback) */
 .system-flash-banner-wrapper.type-warning {
-  border-bottom-color: rgba(255, 95, 86, 0.5);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 15px rgba(255, 95, 86, 0.15);
+  border-bottom-color: var(--warning, #ff5f56);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(251, 191, 36, 0.2);
 }
 
 .system-flash-banner-wrapper.type-feedback {
-  border-bottom-color: rgba(56, 189, 248, 0.55);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 15px rgba(56, 189, 248, 0.2);
+  border-bottom-color: var(--hud-cyan, var(--secondary, #38bdf8));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.22);
 }
 
+.system-flash-banner-wrapper.type-maintenance {
+  border-bottom-color: var(--warning, #fbbf24);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(251, 191, 36, 0.2);
+}
+
+.system-flash-banner-wrapper.type-event {
+  border-bottom-color: var(--hud-purple, #a855f7);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(168, 85, 247, 0.22);
+}
+
+/* Inner Layout */
 .flash-banner-inner {
   max-width: 1300px;
   margin: 0 auto;
@@ -33,6 +49,7 @@
   min-height: 28px;
 }
 
+/* Badge */
 .flash-banner-badge {
   display: inline-flex;
   align-items: center;
@@ -42,25 +59,38 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #00e5ff;
+  color: var(--cta-primary, #00e5ff);
   background: rgba(0, 229, 255, 0.14);
-  border: 1px solid rgba(0, 229, 255, 0.35);
+  border: 1px solid var(--border-primary, rgba(0, 229, 255, 0.35));
   padding: 2px 8px;
   border-radius: 4px;
   white-space: nowrap;
   flex-shrink: 0;
+  transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease;
 }
 
 .type-warning .flash-banner-badge {
-  color: #ff5f56;
+  color: var(--warning, #ff5f56);
   background: rgba(255, 95, 86, 0.15);
   border-color: rgba(255, 95, 86, 0.4);
 }
 
 .type-feedback .flash-banner-badge {
-  color: #38bdf8;
+  color: var(--hud-cyan, var(--secondary, #38bdf8));
   background: rgba(56, 189, 248, 0.15);
   border-color: rgba(56, 189, 248, 0.4);
+}
+
+.type-maintenance .flash-banner-badge {
+  color: var(--warning, #fbbf24);
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.type-event .flash-banner-badge {
+  color: var(--hud-purple, #a855f7);
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.4);
 }
 
 .banner-icon-pulse {
@@ -72,13 +102,14 @@
   100% { transform: scale(1.15); opacity: 1; }
 }
 
+/* Text Content */
 .flash-banner-text-content {
   display: flex;
   align-items: center;
   gap: 8px;
   font-family: 'Inter', sans-serif;
   font-size: 0.82rem;
-  color: #e2e8f0;
+  color: var(--text-primary, #e2e8f0);
   flex-grow: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -86,16 +117,18 @@
 }
 
 .flash-banner-title {
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-weight: 700;
   white-space: nowrap;
+  transition: color 0.25s ease;
 }
 
 .flash-banner-message {
-  color: #94a3b8;
+  color: var(--text-secondary, #94a3b8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.25s ease;
 }
 
 /* Action button inside banner */
@@ -112,22 +145,22 @@
   border: none;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.25s ease, color 0.25s ease;
 }
 
 .flash-banner-action-btn.btn-ext {
-  background: linear-gradient(90deg, #0099ff 0%, #00e5ff 100%);
-  color: #000000;
-  box-shadow: 0 2px 10px rgba(0, 229, 255, 0.3);
+  background: var(--cta-gradient, linear-gradient(90deg, #0099ff 0%, #00e5ff 100%));
+  color: var(--cta-text, #000000);
+  box-shadow: 0 2px 10px var(--cta-shadow, rgba(0, 229, 255, 0.3));
 }
 
 .flash-banner-action-btn.btn-ext:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(0, 229, 255, 0.5);
+  box-shadow: 0 4px 14px var(--cta-shadow, rgba(0, 229, 255, 0.5));
 }
 
 .flash-banner-action-btn.btn-int {
-  background: linear-gradient(90deg, #b50d4d 0%, #f63256 100%);
+  background: linear-gradient(90deg, var(--hud-purple, #b50d4d) 0%, var(--secondary, #f63256) 100%);
   color: #ffffff;
   box-shadow: 0 2px 10px rgba(246, 50, 86, 0.3);
 }
@@ -141,11 +174,11 @@
   font-size: 0.68rem;
 }
 
-/* Dismiss */
+/* Dismiss Close Button */
 .flash-banner-close-btn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted, rgba(255, 255, 255, 0.4));
   font-size: 0.95rem;
   cursor: pointer;
   padding: 4px;
@@ -157,10 +190,451 @@
 }
 
 .flash-banner-close-btn:hover {
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   transform: scale(1.15);
 }
 
+/* ==========================================================================
+   THEME-SPECIFIC SYSTEM BROADCAST OVERRIDES
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CLEAN HORIZON / LIGHT THEME (:root[data-theme="light"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="light"] .system-flash-banner-wrapper {
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+:root[data-theme="light"] .system-flash-banner-wrapper.type-feedback {
+  border-bottom-color: #bae6fd;
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08);
+}
+
+:root[data-theme="light"] .system-flash-banner-wrapper.type-warning,
+:root[data-theme="light"] .system-flash-banner-wrapper.type-maintenance {
+  border-bottom-color: #fde68a;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.08);
+}
+
+:root[data-theme="light"] .system-flash-banner-wrapper.type-event {
+  border-bottom-color: #ddd6fe;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.08);
+}
+
+:root[data-theme="light"] .flash-banner-title {
+  color: #0f172a;
+}
+
+:root[data-theme="light"] .flash-banner-message {
+  color: #475569;
+}
+
+:root[data-theme="light"] .flash-banner-badge {
+  color: #2563eb;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+:root[data-theme="light"] .type-feedback .flash-banner-badge {
+  color: #0284c7;
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+:root[data-theme="light"] .type-warning .flash-banner-badge {
+  color: #b45309;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+:root[data-theme="light"] .type-maintenance .flash-banner-badge {
+  color: #d97706;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+:root[data-theme="light"] .type-event .flash-banner-badge {
+  color: #7c3aed;
+  background: #faf5ff;
+  border-color: #ddd6fe;
+}
+
+:root[data-theme="light"] .flash-banner-action-btn.btn-ext {
+  background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+}
+
+:root[data-theme="light"] .flash-banner-action-btn.btn-ext:hover {
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+}
+
+:root[data-theme="light"] .flash-banner-action-btn.btn-int {
+  background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
+}
+
+:root[data-theme="light"] .flash-banner-close-btn {
+  color: #64748b;
+}
+
+:root[data-theme="light"] .flash-banner-close-btn:hover {
+  color: #0f172a;
+}
+
+/* --------------------------------------------------------------------------
+   2. MATRIX TERMINAL / EMERALD (:root[data-theme="emerald"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="emerald"] .system-flash-banner-wrapper {
+  background: rgba(5, 32, 22, 0.96);
+  border-bottom-color: rgba(0, 245, 160, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 245, 160, 0.16);
+}
+
+:root[data-theme="emerald"] .system-flash-banner-wrapper.type-feedback {
+  border-bottom-color: rgba(0, 245, 160, 0.45);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 18px rgba(0, 245, 160, 0.22);
+}
+
+:root[data-theme="emerald"] .flash-banner-title {
+  color: #f0fdf4;
+}
+
+:root[data-theme="emerald"] .flash-banner-message {
+  color: #bbf7d0;
+}
+
+:root[data-theme="emerald"] .flash-banner-badge,
+:root[data-theme="emerald"] .type-feedback .flash-banner-badge {
+  color: #00f5a0;
+  background: rgba(0, 245, 160, 0.15);
+  border-color: rgba(0, 245, 160, 0.42);
+}
+
+:root[data-theme="emerald"] .flash-banner-action-btn.btn-ext {
+  background: linear-gradient(90deg, #00f5a0 0%, #059669 100%);
+  color: #02120c;
+  box-shadow: 0 2px 10px rgba(0, 245, 160, 0.38);
+}
+
+:root[data-theme="emerald"] .flash-banner-action-btn.btn-ext:hover {
+  box-shadow: 0 4px 15px rgba(0, 245, 160, 0.58);
+}
+
+:root[data-theme="emerald"] .flash-banner-close-btn {
+  color: rgba(187, 247, 208, 0.5);
+}
+
+:root[data-theme="emerald"] .flash-banner-close-btn:hover {
+  color: #f0fdf4;
+}
+
+/* --------------------------------------------------------------------------
+   3. CRIMSON SYNDICATE / OVERDRIVE (:root[data-theme="crimson"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="crimson"] .system-flash-banner-wrapper {
+  background: rgba(30, 7, 12, 0.96);
+  border-bottom-color: rgba(255, 42, 85, 0.38);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(255, 42, 85, 0.18);
+}
+
+:root[data-theme="crimson"] .system-flash-banner-wrapper.type-feedback {
+  border-bottom-color: rgba(251, 113, 133, 0.45);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 18px rgba(251, 113, 133, 0.22);
+}
+
+:root[data-theme="crimson"] .flash-banner-title {
+  color: #fff1f2;
+}
+
+:root[data-theme="crimson"] .flash-banner-message {
+  color: #fecdd3;
+}
+
+:root[data-theme="crimson"] .flash-banner-badge {
+  color: #ff2a55;
+  background: rgba(255, 42, 85, 0.15);
+  border-color: rgba(255, 42, 85, 0.45);
+}
+
+:root[data-theme="crimson"] .type-feedback .flash-banner-badge {
+  color: #fb7185;
+  background: rgba(251, 113, 133, 0.16);
+  border-color: rgba(251, 113, 133, 0.45);
+}
+
+:root[data-theme="crimson"] .flash-banner-action-btn.btn-ext {
+  background: linear-gradient(90deg, #ff2a55 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(255, 42, 85, 0.42);
+}
+
+:root[data-theme="crimson"] .flash-banner-action-btn.btn-ext:hover {
+  box-shadow: 0 4px 15px rgba(255, 42, 85, 0.65);
+}
+
+:root[data-theme="crimson"] .flash-banner-close-btn {
+  color: rgba(254, 205, 211, 0.5);
+}
+
+:root[data-theme="crimson"] .flash-banner-close-btn:hover {
+  color: #fff1f2;
+}
+
+/* --------------------------------------------------------------------------
+   4. ROYAL AMETHYST / SYNTHWAVE (:root[data-theme="amethyst"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="amethyst"] .system-flash-banner-wrapper {
+  background: rgba(21, 11, 45, 0.96);
+  border-bottom-color: rgba(168, 85, 247, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(168, 85, 247, 0.18);
+}
+
+:root[data-theme="amethyst"] .system-flash-banner-wrapper.type-feedback {
+  border-bottom-color: rgba(192, 132, 252, 0.48);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 18px rgba(192, 132, 252, 0.22);
+}
+
+:root[data-theme="amethyst"] .flash-banner-title {
+  color: #faf5ff;
+}
+
+:root[data-theme="amethyst"] .flash-banner-message {
+  color: #e9d5ff;
+}
+
+:root[data-theme="amethyst"] .flash-banner-badge {
+  color: #a855f7;
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.45);
+}
+
+:root[data-theme="amethyst"] .type-feedback .flash-banner-badge {
+  color: #c084fc;
+  background: rgba(192, 132, 252, 0.16);
+  border-color: rgba(192, 132, 252, 0.45);
+}
+
+:root[data-theme="amethyst"] .flash-banner-action-btn.btn-ext {
+  background: linear-gradient(90deg, #a855f7 0%, #7c3aed 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(168, 85, 247, 0.42);
+}
+
+:root[data-theme="amethyst"] .flash-banner-action-btn.btn-ext:hover {
+  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.62);
+}
+
+:root[data-theme="amethyst"] .flash-banner-close-btn {
+  color: rgba(233, 213, 255, 0.5);
+}
+
+:root[data-theme="amethyst"] .flash-banner-close-btn:hover {
+  color: #faf5ff;
+}
+
+/* --------------------------------------------------------------------------
+   5. GOLDEN SUNSET / SOLAR (:root[data-theme="sunset"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="sunset"] .system-flash-banner-wrapper {
+  background: rgba(36, 24, 13, 0.96);
+  border-bottom-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(245, 158, 11, 0.18);
+}
+
+:root[data-theme="sunset"] .system-flash-banner-wrapper.type-feedback {
+  border-bottom-color: rgba(251, 191, 36, 0.48);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 18px rgba(251, 191, 36, 0.22);
+}
+
+:root[data-theme="sunset"] .flash-banner-title {
+  color: #fffbeb;
+}
+
+:root[data-theme="sunset"] .flash-banner-message {
+  color: #fef3c7;
+}
+
+:root[data-theme="sunset"] .flash-banner-badge {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+:root[data-theme="sunset"] .type-feedback .flash-banner-badge {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.16);
+  border-color: rgba(251, 191, 36, 0.45);
+}
+
+:root[data-theme="sunset"] .flash-banner-action-btn.btn-ext {
+  background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+  color: #0d0804;
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
+}
+
+:root[data-theme="sunset"] .flash-banner-action-btn.btn-ext:hover {
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.6);
+}
+
+:root[data-theme="sunset"] .flash-banner-close-btn {
+  color: rgba(254, 243, 199, 0.5);
+}
+
+:root[data-theme="sunset"] .flash-banner-close-btn:hover {
+  color: #fffbeb;
+}
+
+/* --------------------------------------------------------------------------
+   6. STEALTH OBSIDIAN / CUSTOM (:root[data-theme="custom"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="custom"] .system-flash-banner-wrapper {
+  background: rgba(13, 14, 16, 0.96);
+  border-bottom-color: rgba(52, 54, 64, 0.7);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 12px rgba(227, 229, 237, 0.08);
+}
+
+:root[data-theme="custom"] .system-flash-banner-wrapper.type-feedback {
+  border-bottom-color: rgba(127, 128, 143, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 14px rgba(227, 229, 237, 0.12);
+}
+
+:root[data-theme="custom"] .flash-banner-title {
+  color: #e3e5ed;
+}
+
+:root[data-theme="custom"] .flash-banner-message {
+  color: #aeb2c0;
+}
+
+:root[data-theme="custom"] .flash-banner-badge,
+:root[data-theme="custom"] .type-feedback .flash-banner-badge {
+  color: #e3e5ed;
+  background: rgba(227, 229, 237, 0.12);
+  border-color: rgba(227, 229, 237, 0.32);
+}
+
+:root[data-theme="custom"] .flash-banner-action-btn.btn-ext {
+  background: linear-gradient(90deg, #e3e5ed 0%, #aeb2c0 100%);
+  color: #0a0b0d;
+  box-shadow: 0 2px 10px rgba(227, 229, 237, 0.25);
+}
+
+:root[data-theme="custom"] .flash-banner-action-btn.btn-ext:hover {
+  box-shadow: 0 4px 14px rgba(227, 229, 237, 0.42);
+}
+
+:root[data-theme="custom"] .flash-banner-close-btn {
+  color: rgba(174, 178, 192, 0.5);
+}
+
+:root[data-theme="custom"] .flash-banner-close-btn:hover {
+  color: #e3e5ed;
+}
+
+/* --------------------------------------------------------------------------
+   7. ELECTRIC CYAN / PULSE (:root[data-theme="original"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="original"] .system-flash-banner-wrapper {
+  background: rgba(8, 19, 38, 0.96);
+  border-bottom-color: rgba(0, 242, 254, 0.38);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 242, 254, 0.18);
+}
+
+:root[data-theme="original"] .system-flash-banner-wrapper.type-feedback {
+  border-bottom-color: rgba(0, 242, 254, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 18px rgba(0, 242, 254, 0.25);
+}
+
+:root[data-theme="original"] .flash-banner-title {
+  color: #f0f9ff;
+}
+
+:root[data-theme="original"] .flash-banner-message {
+  color: #bae6fd;
+}
+
+:root[data-theme="original"] .flash-banner-badge,
+:root[data-theme="original"] .type-feedback .flash-banner-badge {
+  color: #00f2fe;
+  background: rgba(0, 242, 254, 0.15);
+  border-color: rgba(0, 242, 254, 0.42);
+}
+
+:root[data-theme="original"] .flash-banner-action-btn.btn-ext {
+  background: linear-gradient(90deg, #00f2fe 0%, #0284c7 100%);
+  color: #020617;
+  box-shadow: 0 2px 10px rgba(0, 242, 254, 0.4);
+}
+
+:root[data-theme="original"] .flash-banner-action-btn.btn-ext:hover {
+  box-shadow: 0 4px 15px rgba(0, 242, 254, 0.6);
+}
+
+:root[data-theme="original"] .flash-banner-close-btn {
+  color: rgba(186, 230, 253, 0.5);
+}
+
+:root[data-theme="original"] .flash-banner-close-btn:hover {
+  color: #f0f9ff;
+}
+
+/* --------------------------------------------------------------------------
+   8. REGULAR ARENA (:root[data-theme="regular"])
+   -------------------------------------------------------------------------- */
+:root[data-theme="regular"] .system-flash-banner-wrapper {
+  background: rgba(10, 15, 29, 0.96);
+  border-bottom-color: rgba(0, 229, 255, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 15px rgba(0, 229, 255, 0.14);
+}
+
+:root[data-theme="regular"] .system-flash-banner-wrapper.type-feedback {
+  border-bottom-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 18px rgba(56, 189, 248, 0.22);
+}
+
+:root[data-theme="regular"] .flash-banner-title {
+  color: #f8fafc;
+}
+
+:root[data-theme="regular"] .flash-banner-message {
+  color: #94a3b8;
+}
+
+:root[data-theme="regular"] .flash-banner-badge {
+  color: #00e5ff;
+  background: rgba(0, 229, 255, 0.14);
+  border-color: rgba(0, 229, 255, 0.35);
+}
+
+:root[data-theme="regular"] .type-feedback .flash-banner-badge {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+:root[data-theme="regular"] .flash-banner-action-btn.btn-ext {
+  background: linear-gradient(90deg, #00e5ff 0%, #3b82f6 100%);
+  color: #020617;
+  box-shadow: 0 2px 10px rgba(0, 229, 255, 0.35);
+}
+
+:root[data-theme="regular"] .flash-banner-action-btn.btn-ext:hover {
+  box-shadow: 0 4px 14px rgba(0, 229, 255, 0.55);
+}
+
+:root[data-theme="regular"] .flash-banner-close-btn {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+:root[data-theme="regular"] .flash-banner-close-btn:hover {
+  color: #ffffff;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .flash-banner-inner {
     flex-wrap: wrap;

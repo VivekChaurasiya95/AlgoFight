@@ -57,6 +57,7 @@ export const formatUser = (userData, token) => {
     rating: Number(userData.rating ?? 0),
     highestRating: Number(userData.highestRating ?? userData.rating ?? 0),
     highestRank: userData.highestRank || "ROOKIE",
+    arenaPoints: Number(userData.arenaPoints ?? 0),
     wins: Number(userData.wins ?? userData.matchesWon ?? 0),
     losses: Number(userData.losses ?? userData.lossCount ?? 0),
     matchesWon: Number(userData.matchesWon ?? userData.wins ?? 0),

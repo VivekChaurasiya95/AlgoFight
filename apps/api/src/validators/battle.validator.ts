@@ -3,14 +3,14 @@ import { z } from "zod";
 export const CreateBattleRoomSchema = z.object({
     hostId: z.string(),
     maxPlayers: z.number().int().min(2).max(100).optional().default(2),
-    timeLimitMinutes: z.number().int().min(1).max(60).optional().default(15),
+    timeLimitMinutes: z.number().int().min(1).max(180).optional().default(15),
     difficulty: z.string().optional().default("Mix"),
-    questionCount: z.number().int().min(1).max(10).optional().default(3),
+    questionCount: z.number().int().min(1).max(20).optional().default(3),
     isFriendly: z.boolean().optional(),
     problemIds: z.array(z.string()).optional(),
     isPublic: z.boolean().optional().default(true),
     battleMode: z.enum(["DUEL_1V1", "SQUAD_BATTLE", "PRACTICE_SOLO"]).optional().default("DUEL_1V1"),
-    squadSize: z.number().int().min(2).max(3).optional().default(2),
+    squadSize: z.number().int().min(2).max(6).optional().default(2),
 });
 
 export const JoinRoomSchema = z.object({

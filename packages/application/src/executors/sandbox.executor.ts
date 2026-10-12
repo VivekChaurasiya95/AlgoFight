@@ -6,7 +6,7 @@ import { logger } from "@algofight/logger";
 import { RuntimePoolManager } from "../runtime-pool/runtime-pool.manager";
 import vm from "node:vm";
 
-const PISTON_URL = process.env.PISTON_URL || "http://127.0.0.1:2000";
+const PISTON_URL = process.env.PISTON_URL || (process.env.NODE_ENV === "production" ? "http://piston-1:2000" : "http://127.0.0.1:2001");
 const MAX_OUTPUT_BYTES = 512 * 1024; // 512 KB Output Limit
 
 type SandboxResult = {
@@ -269,10 +269,10 @@ export class SandboxExecutor implements CodeExecutor {
 
         for (const candidate of candidates) {
             let executeUrl = candidate.trim().replace(/\/+$/, "");
-            if (executeUrl.endsWith("/api/v2/execute")) {
+            if (executeUrl.endsWith("/api/v2/execute") || executeUrl.endsWith("/execute")) {
                 // Already full execute path
-            } else if (executeUrl.endsWith("/execute")) {
-                // Keep path as is
+            } else if (executeUrl.endsWith("/api/v2/piston") || executeUrl.endsWith("/api/v2")) {
+                executeUrl = `${executeUrl}/execute`;
             } else {
                 executeUrl = `${executeUrl}/api/v2/execute`;
             }

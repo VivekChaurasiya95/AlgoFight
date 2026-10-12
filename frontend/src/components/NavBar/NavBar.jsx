@@ -85,7 +85,7 @@ const Navbar = () => {
                 <>
                   <li><Link to="/battle" className={`nav-link-pill ${isActive('/battle')}`}>Battle</Link></li>
                   <li><Link to="/practice" className={`nav-link-pill ${isActive('/practice')}`}>Practice</Link></li>
-                  <li><Link to="/leaderboard" className={`nav-link-pill ${isActive('/leaderboard')}`}>Leaderboard</Link></li>
+                  <li><Link to="/leaderboard" className={`nav-link-pill ${isActive('/leaderboard')}`}>Ranking</Link></li>
                   <li><Link to="/rewards" className={`nav-link-pill ${isActive('/rewards')}`}>Rewards</Link></li>
                 </>
               )}
@@ -259,7 +259,7 @@ const Navbar = () => {
                   <>
                     <li><Link to="/practice" className={isActive('/practice')}>Practice</Link></li>
                     <li><Link to="/battle" className={isActive('/battle')}>Battle</Link></li>
-                    <li><Link to="/leaderboard" className={isActive('/leaderboard')}>Leaderboard</Link></li>
+                    <li><Link to="/leaderboard" className={isActive('/leaderboard')}>Ranking</Link></li>
                     <li><Link to="/rewards" className={isActive('/rewards')}>Rewards</Link></li>
                   </>
                 )}

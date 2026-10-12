@@ -61,7 +61,17 @@ export default function UsersTab({
 
       {/* 2. Student Sub-Batches & Institutions */}
       <div className="admin-section">
-        <h3 className="section-title">Top Registered Institutions & Sub-Batches</h3>
+        <div className="section-head-bar">
+          <div>
+            <h3 className="section-title">
+              <FontAwesomeIcon icon={faBuildingColumns} className="section-icon" />
+              Top Registered Institutions & Sub-Batches
+            </h3>
+            <p className="section-subtitle">
+              Cohort breakdown and student enrollment statistics per verified academic organization.
+            </p>
+          </div>
+        </div>
         <div className="institutions-grid">
           {metrics?.subBatches?.length > 0 ? (
             metrics.subBatches.map((inst, i) => (
@@ -75,6 +85,7 @@ export default function UsersTab({
             ))
           ) : (
             <div className="no-data-notice glass-panel">
+              <FontAwesomeIcon icon={faBuildingColumns} className="no-data-icon" />
               <span>No institution batches registered yet.</span>
             </div>
           )}
