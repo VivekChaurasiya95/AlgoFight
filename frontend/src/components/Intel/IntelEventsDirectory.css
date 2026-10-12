@@ -1,0 +1,42 @@
+/* ==========================================================================
+   ALGOFIGHT INTEL EVENTS DIRECTORY STYLING
+   ========================================================================== */
+
+.intel-breadcrumb-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.breadcrumb-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cta-primary, #00e5ff);
+  text-decoration: none;
+  transition: gap 0.18s ease;
+}
+
+.breadcrumb-back-btn:hover {
+  gap: 11px;
+}
+
+.breadcrumb-separator {
+  color: var(--text-muted, #64748b);
+}
+
+.breadcrumb-current {
+  color: var(--text-secondary, #94a3b8);
+}
+
+.events-directory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+  margin-top: 8px;
+}

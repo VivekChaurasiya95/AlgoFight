@@ -57,7 +57,7 @@ const Navbar = () => {
                         userEmail.includes("mitsgwalior.in");
   const isFacultyUser = profileData?.userType === "FACULTY" || user?.userType === "FACULTY" || user?.role === "FACULTY" || isMitsFaculty;
   const hasFacultyAccess = isFacultyUser || isAdmin;
-  const isExploreActive = ['/about', '/admin', '/faculty'].includes(location.pathname);
+  const isExploreActive = ['/about', '/admin', '/faculty'].includes(location.pathname) || location.pathname.startsWith('/intel');
 
   return (
     <>
@@ -117,6 +117,10 @@ const Navbar = () => {
                       exit={{ opacity: 0, y: 8, scale: 0.95 }}
                       transition={{ duration: 0.18, ease: "easeOut" }}
                     >
+                      <Link to="/intel" className={`explore-item ${location.pathname.startsWith('/intel') ? 'active-link' : ''}`}>
+                        <FontAwesomeIcon icon={faCompass} className="explore-icon" style={{ color: "var(--cta-primary, #00e5ff)" }} />
+                        <span>Intel & Roadmap</span>
+                      </Link>
                       <Link to="/about" className={`explore-item ${isActive('/about')}`}>
                         <FontAwesomeIcon icon={faInfoCircle} className="explore-icon" />
                         <span>About</span>
@@ -263,6 +267,12 @@ const Navbar = () => {
                     <li><Link to="/rewards" className={isActive('/rewards')}>Rewards</Link></li>
                   </>
                 )}
+                <li>
+                  <Link to="/intel" className={`mobile-intel-link ${location.pathname.startsWith('/intel') ? 'active-link' : ''}`}>
+                    <FontAwesomeIcon icon={faCompass} style={{ marginRight: '8px', color: 'var(--cta-primary, #00e5ff)' }} />
+                    Intel & Roadmap
+                  </Link>
+                </li>
                 <li><Link to="/about" className={isActive('/about')}>About</Link></li>
                 <li>
                   <Link to="/developer" className={`mobile-dev-link ${isActive('/developer')}`}>

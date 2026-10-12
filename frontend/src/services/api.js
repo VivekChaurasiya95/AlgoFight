@@ -661,3 +661,114 @@ export async function fetchShowcaseFeedback() {
     ttlMs: 30000,
   });
 }
+
+// ==========================================
+// ALGOFIGHT INTEL API HELPERS
+// ==========================================
+
+export async function fetchIntelFeed({ category = "ALL", search = "", page = 1, limit = 9 } = {}) {
+  const params = new URLSearchParams();
+  if (category && category !== "ALL") params.set("category", category);
+  if (search) params.set("search", search);
+  params.set("page", String(page));
+  params.set("limit", String(limit));
+
+  return requestJson(`/api/intel?${params.toString()}`, {
+    method: "GET",
+    ttlMs: 15000,
+  });
+}
+
+export async function fetchIntelFeatured() {
+  return requestJson("/api/intel/featured", {
+    method: "GET",
+    ttlMs: 20000,
+  });
+}
+
+export async function fetchIntelEvents({ type = "ALL" } = {}) {
+  const params = new URLSearchParams();
+  if (type && type !== "ALL") params.set("type", type);
+
+  return requestJson(`/api/intel/events?${params.toString()}`, {
+    method: "GET",
+    ttlMs: 15000,
+  });
+}
+
+export async function fetchIntelPostBySlug(slug, adminKey = null) {
+  const headers = {};
+  if (adminKey) headers["x-admin-key"] = adminKey;
+
+  return requestJson(`/api/intel/${slug}`, {
+    method: "GET",
+    headers,
+    cache: "no-store",
+    skipCache: true,
+  });
+}
+
+export async function fetchAdminIntelPosts(adminKey, { status = "ALL", category = "ALL", search = "", page = 1, limit = 20 } = {}) {
+  const params = new URLSearchParams();
+  if (status && status !== "ALL") params.set("status", status);
+  if (category && category !== "ALL") params.set("category", category);
+  if (search) params.set("search", search);
+  params.set("page", String(page));
+  params.set("limit", String(limit));
+
+  return requestJson(`/api/admin/intel?${params.toString()}`, {
+    method: "GET",
+    headers: { "x-admin-key": adminKey },
+    cache: "no-store",
+    skipCache: true,
+  });
+}
+
+export async function createAdminIntelPost(adminKey, payload) {
+  invalidateApiCache("/api/intel");
+  return requestJson("/api/admin/intel", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-key": adminKey,
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAdminIntelPost(adminKey, id, payload) {
+  invalidateApiCache("/api/intel");
+  return requestJson(`/api/admin/intel/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-key": adminKey,
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function publishAdminIntelPost(adminKey, id) {
+  invalidateApiCache("/api/intel");
+  return requestJson(`/api/admin/intel/${id}/publish`, {
+    method: "POST",
+    headers: { "x-admin-key": adminKey },
+  });
+}
+
+export async function unpublishAdminIntelPost(adminKey, id) {
+  invalidateApiCache("/api/intel");
+  return requestJson(`/api/admin/intel/${id}/unpublish`, {
+    method: "POST",
+    headers: { "x-admin-key": adminKey },
+  });
+}
+
+export async function deleteAdminIntelPost(adminKey, id) {
+  invalidateApiCache("/api/intel");
+  return requestJson(`/api/admin/intel/${id}`, {
+    method: "DELETE",
+    headers: { "x-admin-key": adminKey },
+  });
+}
+

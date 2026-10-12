@@ -22,7 +22,8 @@ import {
   faChevronRight,
   faRightFromBracket,
   faDatabase,
-  faNetworkWired
+  faNetworkWired,
+  faCompass
 } from "@fortawesome/free-solid-svg-icons";
 
 import { useNotification } from "../../contexts/NotificationContext.jsx";
@@ -49,6 +50,7 @@ import BroadcastsTab from "./tabs/BroadcastsTab.jsx";
 import AnalyticsTab from "./tabs/AnalyticsTab.jsx";
 import AuditTab from "./tabs/AuditTab.jsx";
 import LinuxHostTab from "./tabs/LinuxHostTab.jsx";
+import IntelTab from "./tabs/IntelTab.jsx";
 
 import "./ControlHub.css";
 
@@ -116,6 +118,12 @@ const SIDEBAR_SECTIONS = [
         icon: faBullhorn,
         title: "System Broadcasts",
         desc: "Interactive global announcements, alert dispatching, and time-bound push notifications."
+      },
+      {
+        id: "intel",
+        icon: faCompass,
+        title: "Intel & Releases",
+        desc: "Editorial transmissions, product launches, event roadmaps, and community announcements."
       },
     ],
   },
@@ -1097,6 +1105,10 @@ export default function ControlHub() {
                   handleRevokeBroadcast={handleRevokeBroadcast}
                   formatRemaining={formatRemaining}
                 />
+              )}
+
+              {activeTab === "intel" && (
+                <IntelTab adminKey={adminKey} />
               )}
 
               {activeTab === "analytics" && (

@@ -23,6 +23,7 @@ import { facultyRoutes } from "./routes/faculty.route";
 import { authRoutes } from "./routes/auth.route";
 import { feedbackRoutes } from "./routes/feedback.route";
 import { rewardRoutes } from "./routes/reward.route";
+import { intelRoutes } from "./routes/intel.route";
 import { extractClientIp } from "./utils/ip.util";
 import { auditService, AuditCategory, AuditSeverity } from "./services/audit.service";
 
@@ -195,6 +196,7 @@ const start = async () => {
             instance.register(facultyRoutes);
             instance.register(feedbackRoutes);
             instance.register(rewardRoutes);
+            instance.register(intelRoutes);
         };
 
         // Register both under /api and root

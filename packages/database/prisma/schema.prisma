@@ -386,5 +386,83 @@ model WeeklyActivity {
   @@index([userId])
 }
 
+enum IntelCategory {
+  ANNOUNCEMENT
+  PRODUCT_UPDATE
+  EVENT
+  COMMUNITY
+  ENGINEERING
+}
+
+enum IntelPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum IntelEventType {
+  TOURNAMENT
+  WORKSHOP
+  FEATURE_LAUNCH
+  SEASON_RESET
+  COMMUNITY
+}
+
+enum LaunchStatus {
+  UPCOMING
+  ROLLING_OUT
+  LIVE
+  POSTPONED
+  CANCELLED
+}
+
+model IntelPost {
+  id             String          @id @default(uuid())
+  slug           String          @unique
+  title          String
+  summary        String
+  content        String
+  category       IntelCategory
+  coverImageUrl  String?
+  authorName     String          @default("AlgoFight Team")
+  authorAvatar   String?
+  status         IntelPostStatus @default(DRAFT)
+  isFeatured     Boolean         @default(false)
+  views          Int             @default(0)
+  readingTimeMin Int             @default(3)
+  publishedAt    DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  eventDetails   IntelEvent?
+
+  @@index([status, publishedAt])
+  @@index([category])
+  @@index([isFeatured])
+  @@index([slug])
+}
+
+model IntelEvent {
+  id                   String         @id @default(uuid())
+  postId               String         @unique
+  post                 IntelPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  eventType            IntelEventType @default(FEATURE_LAUNCH)
+  versionTag           String?
+  startsAt             DateTime
+  endsAt               DateTime?
+  timezone             String         @default("UTC")
+  registrationOpensAt  DateTime?
+  registrationClosesAt DateTime?
+  actionUrl            String?
+  actionLabel          String?
+  location             String?
+  isOnline             Boolean        @default(true)
+  launchStatus         LaunchStatus   @default(UPCOMING)
+
+  @@index([eventType])
+  @@index([startsAt])
+  @@index([launchStatus])
+}
+
 
 

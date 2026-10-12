@@ -8,12 +8,43 @@ import React, {
   useState,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faCheckCircle,
+  faTriangleExclamation,
+  faCircleExclamation,
+  faInfoCircle,
+  faXmark,
+} from "@fortawesome/free-solid-svg-icons";
 import "./NotificationContext.css";
 
 const NotificationContext = createContext(null);
 
 const DEFAULT_DURATION = 4200;
 const MAX_VISIBLE_NOTIFICATIONS = 4;
+
+function normalizeType(type) {
+  const t = (type || "info").toLowerCase();
+  if (t === "danger" || t === "err") return "error";
+  if (t === "warn") return "warning";
+  if (t === "success" || t === "warning" || t === "error") return t;
+  return "info";
+}
+
+function getNotificationIcon(type) {
+  const t = normalizeType(type);
+  switch (t) {
+    case "success":
+      return faCheckCircle;
+    case "warning":
+      return faTriangleExclamation;
+    case "error":
+      return faCircleExclamation;
+    case "info":
+    default:
+      return faInfoCircle;
+  }
+}
 
 export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
@@ -36,7 +67,8 @@ export function NotificationProvider({ children }) {
         id,
         title,
         message,
-        type,
+        type: normalizeType(type),
+        duration,
         onClick,
       };
 
@@ -78,44 +110,58 @@ export function NotificationProvider({ children }) {
 
       <div className="app-notification-root" aria-live="polite" aria-atomic="false">
         <AnimatePresence initial={false}>
-          {notifications.map((item) => (
-            <motion.article
-              key={item.id}
-              layout
-              initial={{ opacity: 0, x: 24, y: -10, scale: 0.96 }}
-              animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 30, y: -10, scale: 0.96 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-              className={`app-notification-card app-notification-${item.type} ${item.onClick ? "is-clickable" : ""}`}
-              role="status"
-              style={{ cursor: item.onClick ? "pointer" : "default" }}
-              onClick={(e) => {
-                if (item.onClick) {
-                  item.onClick(e);
-                  dismiss(item.id);
-                }
-              }}
-            >
-              <span className="app-notification-accent" />
-
-              <div className="app-notification-body">
-                <h4>{item.title}</h4>
-                {item.message ? <p>{item.message}</p> : null}
-              </div>
-
-              <button
-                type="button"
-                className="app-notification-close"
-                aria-label="Dismiss notification"
+          {notifications.map((item) => {
+            const normType = normalizeType(item.type);
+            return (
+              <motion.article
+                key={item.id}
+                layout
+                initial={{ opacity: 0, x: 28, y: -8, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 32, y: -8, scale: 0.95 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className={`app-notification-card app-notification-${normType} ${item.onClick ? "is-clickable" : ""}`}
+                role="status"
+                style={{ cursor: item.onClick ? "pointer" : "default" }}
                 onClick={(e) => {
-                  e.stopPropagation();
-                  dismiss(item.id);
+                  if (item.onClick) {
+                    item.onClick(e);
+                    dismiss(item.id);
+                  }
                 }}
               >
-                x
-              </button>
-            </motion.article>
-          ))}
+                <span className="app-notification-accent" />
+
+                <div className="app-notification-icon-wrap" aria-hidden="true">
+                  <FontAwesomeIcon icon={getNotificationIcon(item.type)} />
+                </div>
+
+                <div className="app-notification-body">
+                  <h4>{item.title}</h4>
+                  {item.message ? <p>{item.message}</p> : null}
+                </div>
+
+                <button
+                  type="button"
+                  className="app-notification-close"
+                  aria-label="Dismiss notification"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    dismiss(item.id);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faXmark} />
+                </button>
+
+                {item.duration > 0 && (
+                  <div
+                    className="app-notification-progress-bar"
+                    style={{ animationDuration: `${item.duration}ms` }}
+                  />
+                )}
+              </motion.article>
+            );
+          })}
         </AnimatePresence>
       </div>
     </NotificationContext.Provider>

@@ -1,0 +1,219 @@
+/* ==========================================================================
+   ALGOFIGHT INTEL ARTICLE VIEW STYLING (dash-card extension)
+   ========================================================================== */
+
+.intel-article-wrapper {
+  max-width: 980px;
+}
+
+.intel-article-reader-card {
+  padding: 32px 36px;
+}
+
+@media (max-width: 768px) {
+  .intel-article-reader-card {
+    padding: 22px 18px;
+  }
+}
+
+.article-reader-header {
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  padding-bottom: 22px;
+  margin-bottom: 24px;
+}
+
+.article-reader-title {
+  margin: 0 0 14px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(1.8rem, 3.2vw, 2.5rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--text-primary, #ffffff);
+}
+
+.article-reader-lead {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--text-secondary, #94a3b8);
+  margin-bottom: 20px;
+}
+
+.article-reader-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.article-reader-pills {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reader-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted, #7f808f);
+}
+
+.article-cover-media {
+  width: 100%;
+  max-height: 420px;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 28px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Attached Milestone Widget */
+.article-event-widget {
+  padding: 18px 22px;
+  margin-bottom: 28px;
+  border-radius: 14px;
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.widget-info-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.widget-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.widget-info-item .widget-icon {
+  color: var(--cta-primary, #00e5ff);
+}
+
+/* Markdown Reader Body */
+.article-markdown-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--text-primary, #E3E5ED);
+}
+
+.article-h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--text-primary, #ffffff);
+  margin: 18px 0 6px;
+  letter-spacing: -0.01em;
+}
+
+.article-h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  margin: 14px 0 4px;
+}
+
+.article-p {
+  margin: 0;
+  color: var(--text-secondary, #cbd5e1);
+}
+
+.article-blockquote {
+  margin: 8px 0;
+  padding: 14px 20px;
+  border-left: 3px solid var(--cta-primary, #00e5ff);
+  background: var(--surface-primary, rgba(10, 14, 23, 0.65));
+  border-radius: 0 10px 10px 0;
+  font-style: italic;
+  color: var(--text-primary, #f1f5f9);
+}
+
+.article-ul {
+  margin: 0 0 10px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.article-ul li {
+  color: var(--text-secondary, #cbd5e1);
+}
+
+/* Code Block */
+.article-code-block {
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 10px 0;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: var(--surface-elevated, #0d1117);
+}
+
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: var(--surface-primary, rgba(10, 14, 23, 0.9));
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+.code-lang-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--cta-primary, #00e5ff);
+  text-transform: uppercase;
+}
+
+.code-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.code-dots .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.code-pre {
+  margin: 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: #38bdf8;
+}
+
+.intel-related-section {
+  margin-top: 14px;
+}

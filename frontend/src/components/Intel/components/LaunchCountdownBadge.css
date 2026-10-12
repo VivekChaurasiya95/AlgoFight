@@ -1,0 +1,106 @@
+.intel-launch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.intel-launch-badge.upcoming {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--warning, #fbbf24);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+}
+
+.intel-launch-badge.live {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: var(--success, #22c55e);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.15);
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success, #22c55e);
+  box-shadow: 0 0 8px var(--success, #22c55e);
+  animation: liveDotPulse 1.6s infinite ease-in-out;
+}
+
+@keyframes liveDotPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.3);
+  }
+}
+
+.rocket-pulse {
+  animation: rocketBob 2s infinite ease-in-out;
+}
+
+@keyframes rocketBob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.intel-launch-badge .version-tag {
+  background: var(--surface-highlight, rgba(255, 255, 255, 0.12));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
+  color: var(--text-primary, #ffffff);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  margin-left: 2px;
+}
+
+.intel-badge-cancelled {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: var(--danger, #ef4444);
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 0.75rem;
+}
+
+.intel-badge-postponed {
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: var(--text-muted, #94a3b8);
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 0.75rem;
+}
+
+:root[data-theme="light"] .intel-launch-badge.upcoming {
+  background: rgba(217, 119, 6, 0.1);
+  border-color: rgba(217, 119, 6, 0.3);
+  color: #b45309;
+}
+
+:root[data-theme="light"] .intel-launch-badge.live {
+  background: rgba(22, 163, 74, 0.1);
+  border-color: rgba(22, 163, 74, 0.3);
+  color: #15803d;
+}
+
+:root[data-theme="light"] .intel-launch-badge .version-tag {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}

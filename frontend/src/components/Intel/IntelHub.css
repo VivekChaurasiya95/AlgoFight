@@ -1,0 +1,280 @@
+/* ==========================================================================
+   ALGOFIGHT INTEL HUB STYLING
+   Aesthetic: Cyberpunk Dark Glassmorphic Dashboard (aligned with Leaderboard/Developer/Home)
+   ========================================================================== */
+
+.intel-dashboard-wrapper {
+  width: 100%;
+  max-width: 1340px;
+  margin: 22px auto 0;
+  padding: 16px 3.5% 80px;
+  position: relative;
+  z-index: 1;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary, #E3E5ED);
+  box-sizing: border-box;
+}
+
+.intel-inner-container {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: 100%;
+}
+
+/* ================= COMPACT HERO HEADER ================= */
+.intel-hero-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 6px;
+}
+
+.intel-header-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.intel-kicker-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.intel-kicker-tag .kicker-slash {
+  color: var(--cta-primary, #00e5ff);
+}
+
+.intel-kicker-tag .kicker-cross {
+  color: var(--warning, #f59e0b);
+}
+
+.intel-hero-title {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(2rem, 3.8vw, 2.85rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--text-primary, #ffffff);
+}
+
+.intel-hero-desc {
+  margin: 0;
+  font-size: 0.96rem;
+  color: var(--text-secondary, #94a3b8);
+  max-width: 820px;
+  line-height: 1.6;
+}
+
+.intel-telemetry-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--surface-primary, rgba(10, 14, 23, 0.75));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.intel-telemetry-bar .text-cyan {
+  color: var(--cta-primary, #00e5ff);
+}
+
+.telemetry-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cta-primary, #00e5ff);
+  text-decoration: none;
+  font-weight: 700;
+  transition: opacity 0.2s ease;
+}
+
+.telemetry-link:hover {
+  opacity: 0.85;
+}
+
+/* ================= SECTION HEADERS ================= */
+.intel-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title-icon {
+  color: var(--cta-primary, #00e5ff);
+  font-size: 1.1rem;
+}
+
+.section-title-wrap h2 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-primary, #ffffff);
+}
+
+/* ================= EVENTS STRIP ================= */
+.intel-events-strip-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.intel-events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 380px));
+  gap: 20px;
+}
+
+/* ================= FILTER & SEARCH BAR ================= */
+.intel-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.intel-categories-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.intel-filter-pill {
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: var(--surface-primary, rgba(10, 14, 23, 0.7));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  color: var(--text-secondary, #94a3b8);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.intel-filter-pill:hover {
+  color: var(--text-primary, #ffffff);
+  border-color: var(--border-default, rgba(255, 255, 255, 0.18));
+}
+
+.intel-filter-pill.active {
+  background: var(--surface-highlight, rgba(0, 229, 255, 0.12));
+  border-color: var(--cta-primary, #00e5ff);
+  color: var(--cta-primary, #00e5ff);
+  box-shadow: 0 0 14px var(--cta-shadow, rgba(0, 229, 255, 0.2));
+}
+
+.intel-search-form {
+  min-width: 280px;
+}
+
+.intel-search-input {
+  width: 100%;
+  padding: 9px 14px 9px 38px;
+  background: var(--surface-primary, rgba(10, 14, 23, 0.78));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  color: var(--text-primary, #ffffff);
+  font-size: 0.84rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.intel-search-input:focus {
+  border-color: var(--cta-primary, #00e5ff);
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
+}
+
+/* ================= FEED GRID ================= */
+.intel-posts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 1024px) {
+  .intel-posts-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .intel-posts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ================= STATUS BOXES (LOADING / ERROR / EMPTY) ================= */
+.intel-status-box {
+  padding: 48px 24px;
+  text-align: center;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.intel-spinner {
+  font-size: 2rem;
+  color: var(--cta-primary, #00e5ff);
+}
+
+.empty-icon {
+  font-size: 2.2rem;
+  color: var(--text-muted, #64748b);
+  opacity: 0.6;
+}
+
+.intel-status-box h3 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.2rem;
+  color: var(--text-primary, #ffffff);
+}
+
+.intel-status-box p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* ================= PAGINATION ================= */
+.intel-pagination-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.intel-page-indicator {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary, #94a3b8);
+}

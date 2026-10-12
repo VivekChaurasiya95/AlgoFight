@@ -37,6 +37,9 @@ const Cookies = lazy(() => import('./components/Legal/Cookies.jsx'));
 const RoomLobby = lazy(() => import("./components/Battle/RoomLobby.jsx"));
 const ControlHub = lazy(() => import('./components/Admin/ControlHub.jsx'));
 const FacultyControlHub = lazy(() => import('./components/Faculty/FacultyControlHub.jsx'));
+const IntelHub = lazy(() => import('./components/Intel/IntelHub.jsx'));
+const IntelArticleView = lazy(() => import('./components/Intel/IntelArticleView.jsx'));
+const IntelEventsDirectory = lazy(() => import('./components/Intel/IntelEventsDirectory.jsx'));
 
 // Fast, non-blocking loading placeholder
 function PageLoader() {
@@ -142,6 +145,9 @@ function App() {
             <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
 
             {/* ✅ Public Informational Routes (No Login Required) */}
+            <Route path="/intel" element={<IntelHub />} />
+            <Route path="/intel/events" element={<IntelEventsDirectory />} />
+            <Route path="/intel/:slug" element={<IntelArticleView />} />
             <Route path="/about" element={<About />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/careers" element={<Careers />} />

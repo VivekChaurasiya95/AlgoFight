@@ -1,0 +1,130 @@
+/* ==========================================================================
+   INTEL FEED CARD STYLING (dash-card extension)
+   ========================================================================== */
+
+.intel-feed-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.intel-card-cat-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.intel-card-thumb-link {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 10px 0 12px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.intel-card-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.intel-feed-card:hover .intel-card-thumb-img {
+  transform: scale(1.04);
+}
+
+.intel-card-countdown-wrap {
+  margin: 8px 0 10px;
+}
+
+.intel-card-title {
+  margin: 6px 0 8px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.intel-card-title a {
+  color: var(--text-primary, #ffffff);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.intel-card-title a:hover {
+  color: var(--cta-primary, #00e5ff);
+}
+
+.intel-card-summary {
+  margin: 0 0 18px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text-secondary, #94a3b8);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex-grow: 1;
+}
+
+.intel-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+.intel-card-author-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.intel-author-avatar-chip {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-highlight, rgba(0, 229, 255, 0.1));
+  border: 1px solid var(--border-subtle, rgba(0, 229, 255, 0.25));
+  color: var(--cta-primary, #00e5ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+}
+
+.intel-author-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.intel-author-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+}
+
+.intel-publish-date {
+  font-size: 0.72rem;
+  color: var(--text-muted, #7f808f);
+}
+
+.intel-card-read-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cta-primary, #00e5ff);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: transform 0.18s ease;
+}
+
+.intel-card-read-link:hover {
+  transform: translateX(3px);
+}
