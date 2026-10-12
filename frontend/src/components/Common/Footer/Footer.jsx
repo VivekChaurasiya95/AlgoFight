@@ -102,7 +102,7 @@ export default function Footer() {
                     <ul className="footer-list">
                       <li><a onClick={() => handlePlatformNav('/practice')}>Practice Arena</a></li>
                       <li><a onClick={() => handlePlatformNav('/battle')}>Battle Zone</a></li>
-                      <li><a onClick={() => handlePlatformNav('/leaderboard')}>Global Leaderboard</a></li>
+                      <li><a onClick={() => handlePlatformNav('/leaderboard')}>Global Ranking</a></li>
                       <li><a onClick={() => handlePlatformNav('/rewards')}>Season Rewards</a></li>
                     </ul>
                   </motion.div>

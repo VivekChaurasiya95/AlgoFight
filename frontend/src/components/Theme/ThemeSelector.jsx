@@ -3,7 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import './ThemeSelector.css';
 import { useTheme } from '../../contexts/ThemeContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPalette, faCheck, faChevronDown, faTimes } from '@fortawesome/free-solid-svg-icons';
+import {
+  faPalette,
+  faCheck,
+  faChevronDown,
+  faTimes,
+} from '@fortawesome/free-solid-svg-icons';
 
 export default function ThemeSelector() {
   const { theme, setTheme, themes, activeThemeConfig } = useTheme();
@@ -43,21 +48,26 @@ export default function ThemeSelector() {
 
   return (
     <div className="theme-selector-wrapper" ref={containerRef}>
-      {/* Trigger Button in Nav */}
+      {/* Trigger Button in Nav - Paint icon & glowing accent dot with zero color name text */}
       <button
         type="button"
-        className="theme-selector-trigger-btn"
+        className={`theme-selector-trigger-btn ${isOpen ? 'is-active' : ''}`}
         onClick={() => setIsOpen((prev) => !prev)}
-        aria-label="Select Visual Theme"
+        aria-label="Select Arena Theme"
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        title={`Visual Theme: ${activeThemeConfig.name} — Click to customize`}
+        title="Arena Themes — Click to customize"
       >
-        <span
-          className="theme-trigger-swatch"
-          style={{ backgroundColor: activeThemeConfig.accentColor }}
-        />
-        <span className="theme-trigger-name">{activeThemeConfig.shortName || 'Theme'}</span>
+        <div className="theme-trigger-icon-wrap">
+          <FontAwesomeIcon icon={faPalette} className="theme-trigger-paint-icon" />
+          <span
+            className="theme-trigger-dot"
+            style={{
+              backgroundColor: activeThemeConfig.accentColor,
+              boxShadow: `0 0 10px ${activeThemeConfig.accentColor}`,
+            }}
+          />
+        </div>
         <FontAwesomeIcon
           icon={faChevronDown}
           className={`theme-trigger-chevron ${isOpen ? 'is-open' : ''}`}
@@ -70,7 +80,7 @@ export default function ThemeSelector() {
           <motion.div
             className="theme-selector-popover"
             role="dialog"
-            aria-label="Visual Theme Selection"
+            aria-label="Arena Theme Selection"
             initial={{ opacity: 0, y: 10, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
@@ -79,7 +89,7 @@ export default function ThemeSelector() {
             <div className="theme-selector-header">
               <div className="theme-selector-title-wrap">
                 <FontAwesomeIcon icon={faPalette} className="theme-palette-icon" />
-                <span className="theme-selector-title">VISUAL IDENTITIES</span>
+                <span className="theme-selector-title">ARENA THEMES</span>
               </div>
               <button
                 type="button"
@@ -92,38 +102,62 @@ export default function ThemeSelector() {
             </div>
 
             <div className="theme-selector-grid">
-              {themes.map((t) => {
+              {themes.map((t, idx) => {
                 const isCurrent = t.id === theme;
+                const isSpanFull = idx === themes.length - 1 && themes.length % 2 !== 0;
                 return (
                   <button
                     key={t.id}
                     type="button"
-                    className={`theme-card-option ${isCurrent ? 'is-active' : ''}`}
+                    className={`theme-card-option ${isCurrent ? 'is-active' : ''} ${isSpanFull ? 'is-span-full' : ''}`}
                     onClick={() => handleSelectTheme(t.id)}
                     style={{
                       '--theme-accent': t.accentColor,
                     }}
                     title={`${t.name} — ${t.tagline}`}
                   >
-                    <div className="theme-card-header-mini">
+                    <div className="theme-card-top-row">
                       <div className="theme-card-swatches">
-                        {t.swatches?.map((color, i) => (
-                          <span
-                            key={i}
-                            className="theme-card-dot"
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
+                        <span
+                          className="theme-swatch-dot"
+                          style={{ backgroundColor: t.swatches?.[0] || '#050608' }}
+                        />
+                        <span
+                          className="theme-swatch-dot"
+                          style={{
+                            backgroundColor: t.swatches?.[1] || t.accentColor,
+                            boxShadow: isCurrent ? `0 0 8px ${t.accentColor}` : 'none',
+                          }}
+                        />
+                        <span
+                          className="theme-swatch-dot"
+                          style={{ backgroundColor: t.swatches?.[2] || t.secondaryAccent || t.accentColor }}
+                        />
                       </div>
-                      {isCurrent ? (
-                        <div className="theme-active-badge-mini">
-                          <FontAwesomeIcon icon={faCheck} />
-                        </div>
-                      ) : (
-                        <span className="theme-radio-dot" />
+                      {!isSpanFull && (
+                        isCurrent ? (
+                          <div className="theme-active-badge-mini">
+                            <FontAwesomeIcon icon={faCheck} />
+                          </div>
+                        ) : (
+                          <span className="theme-radio-dot" />
+                        )
                       )}
                     </div>
-                    <span className="theme-card-name">{t.name}</span>
+                    <div className="theme-card-bottom-row">
+                      <span className="theme-card-name">{t.name}</span>
+                    </div>
+                    {isSpanFull && (
+                      <div className="theme-card-span-action">
+                        {isCurrent ? (
+                          <div className="theme-active-badge-mini">
+                            <FontAwesomeIcon icon={faCheck} />
+                          </div>
+                        ) : (
+                          <span className="theme-radio-dot" />
+                        )}
+                      </div>
+                    )}
                   </button>
                 );
               })}

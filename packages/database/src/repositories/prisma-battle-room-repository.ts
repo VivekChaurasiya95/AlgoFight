@@ -403,9 +403,16 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
     }
 
     async getOpenWaitingRooms(limit = 20): Promise<BattleRoomEntity[]> {
+        const cutoff = new Date(Date.now() - 30 * 60 * 1000); // Exclude stale rooms older than 30 mins
         const rooms = await prisma.battleRoom.findMany({
             where: {
                 status: "WAITING",
+                createdAt: {
+                    gte: cutoff,
+                },
+                participants: {
+                    some: {},
+                },
             },
             orderBy: {
                 createdAt: "desc",
@@ -415,5 +422,29 @@ export class PrismaBattleRoomRepository implements BattleRoomRepository {
         });
 
         return rooms.map((r: any) => this.mapToEntity(r));
+    }
+
+    async getActiveRunningRooms(limit = 10): Promise<BattleRoomEntity[]> {
+        const runningRooms = await prisma.battleRoom.findMany({
+            where: {
+                status: "RUNNING",
+                startedAt: { not: null },
+            },
+            orderBy: {
+                startedAt: "desc",
+            },
+            take: limit,
+            include: battleRoomInclude,
+        });
+
+        const now = Date.now();
+        const nonExpired = runningRooms.filter((r: any) => {
+            if (!r.startedAt) return false;
+            const elapsed = now - new Date(r.startedAt).getTime();
+            const maxDuration = (r.timeLimitMinutes || 15) * 60 * 1000;
+            return elapsed < maxDuration;
+        });
+
+        return nonExpired.map((r: any) => this.mapToEntity(r));
     }
 }

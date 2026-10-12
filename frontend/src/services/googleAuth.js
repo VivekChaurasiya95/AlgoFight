@@ -150,6 +150,9 @@ export function renderGoogleButton(containerElement, options = {}, onMissingClie
 
   if (!window.google?.accounts?.id) return;
 
+  // Clear previous button content (crucial when switching between light and dark themes)
+  containerElement.innerHTML = "";
+
   // GIS button width must be an integer between 200 and 400 (pixels), or undefined
   const validWidth = typeof options.width === "number" ? Math.min(Math.max(options.width, 200), 400) : 360;
 

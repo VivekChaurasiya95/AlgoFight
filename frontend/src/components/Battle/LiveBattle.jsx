@@ -124,7 +124,7 @@ const PostBattleSummaryModal = ({ battleResult, liveState, problems, ratingUpdat
           })()}
           
           <div className="summary-leaderboard">
-            <h3 className="summary-section-title">Final Leaderboard</h3>
+            <h3 className="summary-section-title">Final Rankings</h3>
             <div className="leaderboard-grid">
               <div className="lb-header">Player</div>
               <div className="lb-header">Points</div>

@@ -269,9 +269,21 @@ export class RuntimePoolManager {
         return Array.from(this.runtimes.values());
     }
 
+    private resolveRuntimesUrl(endpoint: string): string {
+        const clean = endpoint.trim().replace(/\/+$/, "");
+        if (clean.endsWith("/api/v2/runtimes") || clean.endsWith("/runtimes")) {
+            return clean;
+        }
+        if (clean.endsWith("/api/v2/piston") || clean.endsWith("/api/v2")) {
+            return `${clean}/runtimes`;
+        }
+        return `${clean}/api/v2/runtimes`;
+    }
+
     public async checkRuntimeHealth(url: string): Promise<boolean> {
         try {
-            const res = await fetch(`${url}/api/v2/runtimes`, { signal: AbortSignal.timeout(1200) });
+            const probeUrl = this.resolveRuntimesUrl(url);
+            const res = await fetch(probeUrl, { signal: AbortSignal.timeout(1200) });
             const runtime = this.runtimes.get(url);
             if (runtime) {
                 runtime.status = res.ok ? "HEALTHY" : "OFFLINE";
@@ -294,7 +306,8 @@ export class RuntimePoolManager {
                 const start = Date.now();
                 let reachable = false;
                 try {
-                    const res = await fetch(`${runtime.url}/api/v2/runtimes`, { signal: AbortSignal.timeout(1500) });
+                    const probeUrl = this.resolveRuntimesUrl(runtime.url);
+                    const res = await fetch(probeUrl, { signal: AbortSignal.timeout(1500) });
                     reachable = res.ok;
                     runtime.status = reachable ? "HEALTHY" : "OFFLINE";
                 } catch {

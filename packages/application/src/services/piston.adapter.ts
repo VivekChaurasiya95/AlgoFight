@@ -1,5 +1,6 @@
 import { Verdict } from "@algofight/types";
 import { CodeHarness } from "../judge/harness/code-harness";
+import vm from "node:vm";
 
 // Types matching Piston's API format
 interface PistonExecuteRequest {
@@ -59,7 +60,7 @@ export interface NormalizedExecutionResult {
 }
 
 export class PistonAdapter {
-    private readonly PISTON_URL = process.env.PISTON_URL || (process.env.NODE_ENV === "production" ? "http://piston-1:2000" : "http://127.0.0.1:2000");
+    private readonly PISTON_URL = process.env.PISTON_URL || (process.env.NODE_ENV === "production" ? "http://piston-1:2000" : "http://127.0.0.1:2001");
 
     // Maps AlgoFight languages to Piston (language, version)
     private languageMap: Record<string, { language: string; version: string; fileExtension: string }> = {
@@ -79,11 +80,11 @@ export class PistonAdapter {
 
     private resolveExecutionUrl(endpoint: string): string {
         const clean = endpoint.trim().replace(/\/+$/, "");
-        if (clean.endsWith("/api/v2/execute")) {
+        if (clean.endsWith("/api/v2/execute") || clean.endsWith("/execute")) {
             return clean;
         }
-        if (clean.endsWith("/execute")) {
-            return clean;
+        if (clean.endsWith("/api/v2/piston") || clean.endsWith("/api/v2")) {
+            return `${clean}/execute`;
         }
         return `${clean}/api/v2/execute`;
     }
@@ -174,12 +175,166 @@ export class PistonAdapter {
                 continue;
             }
         }
+ 
+        // In-process resilient fallback for JavaScript / TypeScript if Piston runtime is uninstalled/unknown
+        const langLower = language.toLowerCase().trim();
+        if (["javascript", "js", "typescript", "ts", "node"].includes(langLower)) {
+            return this.executeInProcessVm(langLower, prepared.code, stdin, timeLimitMs);
+        }
+
+        let userFriendlyMsg = lastError?.message || "Unknown error";
+        if (userFriendlyMsg.includes("runtime is unknown")) {
+            userFriendlyMsg = `Language runtime for ${language.toUpperCase()} is not yet installed on the sandbox cluster. (Currently ready: C++, C, Python, JavaScript, TypeScript).`;
+        }
 
         // If all candidate runtimes failed, return normalized system error
         return this.createErrorResult(
             Verdict.SYSTEM_ERROR,
-            `Sandbox execution engine unreachable across all nodes. Last error: ${lastError?.message || "Unknown"}`
+            `Sandbox execution engine unreachable across all nodes. Last error: ${userFriendlyMsg}`
         );
+    }
+
+    private executeInProcessVm(
+        language: string,
+        preparedCode: string,
+        stdin: string,
+        timeLimitMs: number
+    ): NormalizedExecutionResult {
+        const langLower = language.toLowerCase().trim();
+        let runnableCode = preparedCode;
+
+        if (langLower.includes("type") || langLower === "ts") {
+            try {
+                let ts: any;
+                try {
+                    ts = require("typescript");
+                } catch {
+                    ts = require("d:/AlgoFight/node_modules/typescript");
+                }
+                const transpiled = ts.transpileModule(preparedCode, {
+                    compilerOptions: {
+                        module: ts.ModuleKind.CommonJS,
+                        target: ts.ScriptTarget.ES2020,
+                    },
+                });
+                runnableCode = transpiled.outputText;
+            } catch (err: any) {
+                return {
+                    compile: {
+                        success: false,
+                        output: "",
+                        error: `TypeScript transpilation error: ${err.message}`,
+                    },
+                    run: {
+                        success: false,
+                        stdout: "",
+                        stderr: err.message,
+                        code: 1,
+                        signal: null,
+                        isTimeout: false,
+                        isMemoryLimit: false,
+                        isRuntimeError: false,
+                        timeMs: 0,
+                        memoryBytes: 0,
+                    },
+                };
+            }
+        }
+
+        let stdoutBuffer = "";
+        let stderrBuffer = "";
+
+        const customConsole = {
+            log: (...args: any[]) => {
+                stdoutBuffer += args.map((a) => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" ") + "\n";
+            },
+            error: (...args: any[]) => {
+                stderrBuffer += args.map((a) => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" ") + "\n";
+            },
+            warn: (...args: any[]) => {
+                stderrBuffer += args.map((a) => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" ") + "\n";
+            },
+        };
+
+        const customFs = {
+            readFileSync: (_fd: any, _enc?: string) => stdin,
+        };
+
+        const sandbox = {
+            console: customConsole,
+            require: (mod: string) => {
+                if (mod === "fs") return customFs;
+                return {};
+            },
+            Buffer,
+            setTimeout,
+            clearTimeout,
+            setInterval,
+            clearInterval,
+            process: {
+                stdin: {
+                    read: () => stdin,
+                },
+                stdout: {
+                    write: (chunk: string) => {
+                        stdoutBuffer += chunk;
+                    },
+                },
+                stderr: {
+                    write: (chunk: string) => {
+                        stderrBuffer += chunk;
+                    },
+                },
+            },
+        };
+
+        const start = Date.now();
+        try {
+            const context = vm.createContext(sandbox);
+            const script = new vm.Script(runnableCode);
+            script.runInContext(context, { timeout: timeLimitMs });
+            const timeMs = Date.now() - start;
+
+            return {
+                compile: {
+                    success: true,
+                    output: "",
+                },
+                run: {
+                    success: true,
+                    stdout: stdoutBuffer.trim(),
+                    stderr: stderrBuffer.trim(),
+                    code: 0,
+                    signal: null,
+                    isTimeout: false,
+                    isMemoryLimit: false,
+                    isRuntimeError: false,
+                    timeMs,
+                    memoryBytes: 15 * 1024 * 1024,
+                },
+            };
+        } catch (err: any) {
+            const timedOut = err.code === "ERR_SCRIPT_EXECUTION_TIMEOUT";
+            const timeMs = Date.now() - start;
+            return {
+                compile: {
+                    success: true,
+                    output: "",
+                },
+                run: {
+                    success: false,
+                    stdout: stdoutBuffer.trim(),
+                    stderr: (stderrBuffer + "\n" + (timedOut ? "Time Limit Exceeded" : err.message)).trim(),
+                    code: 1,
+                    signal: timedOut ? "SIGXCPU" : null,
+                    isTimeout: timedOut,
+                    isMemoryLimit: false,
+                    isRuntimeError: !timedOut,
+                    timeMs,
+                    memoryBytes: 15 * 1024 * 1024,
+                },
+            };
+        }
     }
 
     private normalizeMemoryLimitBytes(memoryLimitBytes: number): number {

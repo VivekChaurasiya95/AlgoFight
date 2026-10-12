@@ -15,10 +15,10 @@ export class ExecutionPipeline {
         const urls: string[] = [];
         if (targetRuntimeUrl) urls.push(targetRuntimeUrl);
         
-        const primary = process.env.PISTON_URL || (process.env.NODE_ENV === "production" ? "http://piston-1:2000" : "http://127.0.0.1:2000");
+        const primary = process.env.PISTON_URL || (process.env.NODE_ENV === "production" ? "http://piston-1:2000" : "http://127.0.0.1:2001");
         if (!urls.includes(primary)) urls.push(primary);
 
-        const backups = (process.env.PISTON_BACKUP_URLS || (process.env.NODE_ENV === "production" ? "http://piston-2:2000" : "http://127.0.0.1:2001"))
+        const backups = (process.env.PISTON_BACKUP_URLS || (process.env.NODE_ENV === "production" ? "http://piston-2:2000" : "http://127.0.0.1:2002"))
             .split(",")
             .map(u => u.trim())
             .filter(Boolean);

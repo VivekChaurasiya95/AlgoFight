@@ -15,6 +15,10 @@
     background-size: 44px 44px;
 }
 
+.background-paths-wrapper:has(.wait-mode) {
+    overflow: visible;
+}
+
 .background-paths-wrapper::after {
     content: '';
     position: absolute;

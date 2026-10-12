@@ -325,3 +325,150 @@
   cursor: not-allowed;
   box-shadow: none;
 }
+
+/* =========================================================
+   Clean Horizon (Light Theme) Overrides for Faculty Modal
+   ========================================================= */
+:root[data-theme="light"] .faculty-modal-overlay {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+:root[data-theme="light"] .faculty-modal-container {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.16) !important;
+}
+
+:root[data-theme="light"] .faculty-modal-container::before {
+  background: linear-gradient(90deg, #2563eb, #3b82f6, #6366f1) !important;
+}
+
+:root[data-theme="light"] .faculty-modal-header {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+:root[data-theme="light"] .faculty-modal-badge {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .faculty-modal-close-btn {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .faculty-modal-close-btn:hover {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border-color: #fecaca !important;
+}
+
+:root[data-theme="light"] .faculty-modal-title {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .faculty-modal-subtitle {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .faculty-form-label {
+  color: #334155 !important;
+}
+
+:root[data-theme="light"] .faculty-form-label svg {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .required-tag {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .optional-tag {
+  color: #94a3b8 !important;
+}
+
+:root[data-theme="light"] .faculty-form-select,
+:root[data-theme="light"] .faculty-form-input {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .faculty-form-select:focus,
+:root[data-theme="light"] .faculty-form-input:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+  background: #ffffff !important;
+}
+
+:root[data-theme="light"] .faculty-form-select option {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .field-hint {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .faculty-card-preview {
+  background: #f8fafc !important;
+  border: 1.5px dashed #93c5fd !important;
+}
+
+:root[data-theme="light"] .preview-label {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .preview-badge-icon {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .preview-designation {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .preview-school {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .preview-department {
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .preview-institute {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .faculty-btn-cancel,
+:root[data-theme="light"] .faculty-btn-skip {
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+  background: #ffffff !important;
+}
+
+:root[data-theme="light"] .faculty-btn-cancel:hover,
+:root[data-theme="light"] .faculty-btn-skip:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .faculty-btn-submit {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3) !important;
+}
+
+:root[data-theme="light"] .faculty-btn-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45) !important;
+}
+

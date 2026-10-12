@@ -35,6 +35,7 @@ import { connectSocket } from '../../services/socket';
 import { getSessionToken } from '../../services/authStorage';
 import CreateRoomModal from '../Battle/CreateRoomModal';
 import { calculateArenaPointBreakdown } from '../../utils/playerMetrics';
+import EloRatingGraph from '../Common/gamification/EloRatingGraph';
 
 const coderTestimonialsData = [
   {
@@ -79,40 +80,6 @@ const coderTestimonialsData = [
   },
 ];
 
-const publicNewsData = [
-  {
-    id: 1,
-    tag: "TOURNAMENT",
-    title: "Weekend 1v1 Blitz Series",
-    desc: "Ranked algorithmic duels open Saturday 8 PM IST. Earn Season 4 title banners.",
-    action: "Join Duel",
-    link: "/battle",
-  },
-  {
-    id: 2,
-    tag: "ARENA 2.0",
-    title: "Direct 1v1 Battles Active",
-    desc: "Real-time presence directory, sub-second execution sandboxes, and Elo telemetry are live.",
-    action: "View Players",
-    link: "/battle",
-  },
-  {
-    id: 3,
-    tag: "INTEGRITY",
-    title: "Anti-Cheat Engine v2.4",
-    desc: "Automated plagiarism detection & sealed judging test suites deployed.",
-    action: "Practice Now",
-    link: "/practice",
-  },
-  {
-    id: 4,
-    tag: "COMMUNITY",
-    title: "Global Hall of Fame",
-    desc: "Climb from Rookie to Grandmaster with live match analytics and seasonal badges.",
-    action: "Leaderboard",
-    link: "/leaderboard",
-  },
-];
 
 const coderOffersData = [
   {
@@ -297,15 +264,42 @@ function Home() {
     return () => clearInterval(timer);
   }, [allTestimonials.length]);
 
-  // Fetch active public rooms on mount
+  // Fetch active public rooms on mount and continuously poll every 7 seconds
   useEffect(() => {
-    fetchPublicRooms()
-      .then((res) => {
-        if (Array.isArray(res)) {
-          setPublicChallenges(res);
-        }
-      })
-      .catch(() => {});
+    let mounted = true;
+
+    const loadPublicRooms = () => {
+      fetchPublicRooms()
+        .then((res) => {
+          if (!mounted) return;
+          if (Array.isArray(res)) {
+            const now = Date.now();
+            const valid = res.filter((c) => {
+              if (c.status === "CANCELLED" || c.status === "FINISHED") return false;
+              const createdMs = new Date(c.createdAt).getTime();
+              // Waiting rooms must be created within last 25 mins
+              if (c.status === "WAITING" && now - createdMs > 25 * 60 * 1000) return false;
+              // Running rooms must not exceed match duration
+              if (c.status === "RUNNING" && c.startedAt) {
+                const startedMs = new Date(c.startedAt).getTime();
+                const limitMs = (c.timeLimitMinutes || 15) * 60 * 1000;
+                if (now - startedMs >= limitMs) return false;
+              }
+              return true;
+            });
+            setPublicChallenges(valid);
+          }
+        })
+        .catch(() => {});
+    };
+
+    loadPublicRooms();
+    const pollInterval = setInterval(loadPublicRooms, 7000);
+
+    return () => {
+      mounted = false;
+      clearInterval(pollInterval);
+    };
   }, []);
 
   // Listen for real-time public challenge broadcasts
@@ -354,33 +348,45 @@ function Home() {
     };
   }, [user]);
 
-  // Combine live public challenges with platform news dispatches
-  const publicChallengeItems = publicChallenges.map((c) => ({
-    id: `chal_${c.roomCode}`,
-    tag: `⚔️ ${c.difficulty || "MIX"} DUEL`,
-    title: `${c.hostUsername}'s Arena Challenge`,
-    desc: `${c.questionCount || 3} Questions • ${c.timeLimitMinutes || 15} Mins • Host ELO: ${c.hostRating || 1200}`,
-    action: "Join Duel",
-    link: `/battle/room/${c.roomCode}`,
-    isPublicChallenge: true,
-    raw: c,
-  }));
+  // Real, active battles ONLY - zero fake/hardcoded news
+  const liveBattleItems = useMemo(() => {
+    return publicChallenges.map((c) => {
+      const isRunning = c.status === "RUNNING";
+      return {
+        id: `battle_${c.roomCode}`,
+        tag: isRunning ? "🔴 LIVE MATCH" : `⚔️ ${c.difficulty || "MIX"} DUEL`,
+        statusLabel: isRunning ? "In Progress" : `Seats: ${c.currentPlayers || 1}/${c.maxPlayers || 2}`,
+        title: isRunning
+          ? `${c.player1 || c.hostUsername} vs ${c.player2 || "Opponent"}`
+          : `${c.hostUsername}'s Arena Challenge`,
+        desc: isRunning
+          ? `Live 1v1 Battle In Progress • ${c.questionCount || 3} Problems • ${c.timeLimitMinutes || 15} Mins`
+          : `${c.questionCount || 3} Questions • ${c.timeLimitMinutes || 15} Mins • Host ELO: ${c.hostRating || 1200}`,
+        action: isRunning ? "Spectate Duel" : "Join Duel",
+        link: `/battle/room/${c.roomCode}`,
+        isLiveBattle: true,
+        isRunning,
+        raw: c,
+      };
+    });
+  }, [publicChallenges]);
 
-  const combinedItems = [...publicChallengeItems, ...publicNewsData];
-  const safeIndex = newsIndex >= combinedItems.length ? 0 : newsIndex;
-  const currentItem = combinedItems[safeIndex] || publicNewsData[0];
-  const hasActivePublicChallenge = publicChallenges.length > 0;
+  const hasActiveBattles = liveBattleItems.length > 0;
+  const safeIndex = newsIndex >= liveBattleItems.length ? 0 : newsIndex;
+  const currentBattle = hasActiveBattles ? liveBattleItems[safeIndex] : null;
 
   useEffect(() => {
-    if (combinedItems.length <= 1) return;
+    if (liveBattleItems.length <= 1) return;
     const timer = setInterval(() => {
-      setNewsIndex((prev) => (prev + 1) % combinedItems.length);
+      setNewsIndex((prev) => (prev + 1) % liveBattleItems.length);
     }, 4500);
     return () => clearInterval(timer);
-  }, [combinedItems.length]);
+  }, [liveBattleItems.length]);
 
   // Compute live user stats or sensible defaults
   const userRating = user?.rating ?? 0;
+  const userRatingDelta = user?.ratingDelta ?? 0;
+  const userRatingHistory = user?.ratingHistory || [];
   const userWins = user?.wins ?? 0;
   const userLosses = user?.losses ?? 0;
   const totalBattles = userWins + userLosses;
@@ -456,82 +462,37 @@ function Home() {
               <div className="rating-stat-row">
                 <div className="dash-stat-big">{userRating}</div>
                 <div className="rating-trend-badge">
-                  <span className="rating-trend-arrow">▲</span> {user?.ratingDelta ? `+${user.ratingDelta} pts` : `+${userRating > 0 ? Math.min(142, userRating) : 0} pts`}
+                  {userRatingDelta > 0 ? (
+                    <>
+                      <span className="rating-trend-arrow">▲</span> +{userRatingDelta} pts
+                    </>
+                  ) : userRatingDelta < 0 ? (
+                    <>
+                      <span className="rating-trend-arrow" style={{ color: "#f87171" }}>▼</span> {userRatingDelta} pts
+                    </>
+                  ) : userRating === 0 ? (
+                    <span>Provisional</span>
+                  ) : (
+                    <span>Active Tier</span>
+                  )}
                 </div>
               </div>
               <div className="dash-card-subtext">Compete • Improve • Climb</div>
 
-              {/* Proper Graph Structure with Coordinates, Axes, and Grid Lines */}
+              {/* Dynamic Real SVG ELO Graph */}
               <div className="proper-graph-container">
-                <svg key={`graph-svg-${theme}`} className="proper-graph-svg" viewBox="0 0 250 74" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id={`eloGraphGrad-${theme}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor={graphConfig.lineGradient[0]} />
-                      <stop offset="50%" stopColor={graphConfig.lineGradient[1]} />
-                      <stop offset="100%" stopColor={graphConfig.lineGradient[2]} />
-                    </linearGradient>
-                    <linearGradient id={`eloGraphArea-${theme}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor={graphConfig.areaColor} stopOpacity={graphConfig.areaOpacities[0]} />
-                      <stop offset="70%" stopColor={graphConfig.areaColor} stopOpacity={graphConfig.areaOpacities[1]} />
-                      <stop offset="100%" stopColor={graphConfig.areaColor} stopOpacity={graphConfig.areaOpacities[2]} />
-                    </linearGradient>
-                    <filter id="graphGlow" x="-20%" y="-20%" width="140%" height="140%">
-                      <feGaussianBlur stdDeviation="2.5" result="blur" />
-                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                    </filter>
-                  </defs>
-
-                  {/* Horizontal Grid lines */}
-                  <line x1="32" y1="16" x2="242" y2="16" className="graph-grid-line" />
-                  <line x1="32" y1="34" x2="242" y2="34" className="graph-grid-line" />
-                  <line x1="32" y1="52" x2="242" y2="52" className="graph-grid-line" />
-
-                  {/* Y-axis Ticks & Labels */}
-                  <text x="4" y="19" className="graph-axis-text">1.5k</text>
-                  <text x="4" y="37" className="graph-axis-text">1.3k</text>
-                  <text x="4" y="55" className="graph-axis-text">1.1k</text>
-
-                  {/* Vertical Guideline at Live Match */}
-                  <line x1="234" y1="12" x2="234" y2="52" className="graph-live-guide" />
-
-                  {/* Gradient Area Fill Under Curve */}
-                  <path
-                    d="M 36,50 C 52,52 64,48 78,44 C 92,40 102,46 116,42 C 130,38 140,28 156,26 C 172,24 182,32 196,28 C 210,24 220,16 234,13 L 234,52 L 36,52 Z"
-                    fill={`url(#eloGraphArea-${theme})`}
-                  />
-
-                  {/* Main Metric Trajectory Curve */}
-                  <path
-                    d="M 36,50 C 52,52 64,48 78,44 C 92,40 102,46 116,42 C 130,38 140,28 156,26 C 172,24 182,32 196,28 C 210,24 220,16 234,13"
-                    fill="none"
-                    stroke={`url(#eloGraphGrad-${theme})`}
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    filter="url(#graphGlow)"
-                  />
-
-                  {/* Match Data Points */}
-                  <circle cx="36" cy="50" r="2.5" className="graph-node-dot" />
-                  <circle cx="78" cy="44" r="2.5" className="graph-node-dot" />
-                  <circle cx="116" cy="42" r="2.5" className="graph-node-dot" />
-                  <circle cx="156" cy="26" r="2.5" className="graph-node-dot" />
-                  <circle cx="196" cy="28" r="2.5" className="graph-node-dot" />
-
-                  {/* Live Endpoint Pulse */}
-                  <circle cx="234" cy="13" r="6" className="graph-pulse-ring" />
-                  <circle cx="234" cy="13" r="3.5" fill={theme === 'original' ? "#e879f9" : "#ffffff"} className="graph-live-dot" />
-
-                  {/* X-axis Match Ticks & Labels */}
-                  <text x="36" y="67" textAnchor="middle" className="graph-x-label">M1</text>
-                  <text x="88" y="67" textAnchor="middle" className="graph-x-label">M3</text>
-                  <text x="140" y="67" textAnchor="middle" className="graph-x-label">M5</text>
-                  <text x="190" y="67" textAnchor="middle" className="graph-x-label">M7</text>
-                  <text x="234" y="67" textAnchor="middle" className="graph-x-label graph-x-live">LIVE</text>
-                </svg>
+                <EloRatingGraph
+                  rating={userRating}
+                  ratingHistory={userRatingHistory}
+                  graphConfig={graphConfig}
+                  theme={theme}
+                  idPrefix="home-elo"
+                  viewBoxHeight={74}
+                />
               </div>
             </motion.div>
 
-            {/* Card 2: Public News & Battle Updates Dispatch */}
+            {/* Card 2: Real Active Battle Dispatch (Zero Hardcoded / Zero Stale) */}
             <motion.div 
               className="dash-card news-dispatch-card"
               initial={{ opacity: 0, x: -20 }}
@@ -546,51 +507,104 @@ function Home() {
                   </div>
                   <span className="dash-card-title">Battle Dispatch</span>
                 </div>
-                <span className={`dash-pill-tag ${hasActivePublicChallenge ? "tag-gold live-duel-tag" : "tag-cyan live-news-tag"}`}>
-                  <span className={hasActivePublicChallenge ? "live-duel-pulse" : "live-news-pulse"} />
-                  {hasActivePublicChallenge ? "LIVE DUEL" : "NEWS"}
+                <span className={`dash-pill-tag ${hasActiveBattles ? "tag-gold live-duel-tag" : "tag-cyan live-news-tag"}`}>
+                  <span className={hasActiveBattles ? "live-duel-pulse" : "live-news-pulse"} />
+                  {hasActiveBattles ? `LIVE DUEL (${liveBattleItems.length})` : "ARENA RADAR"}
                 </span>
               </div>
 
-              {/* Dynamic News Item with AnimatePresence */}
+              {/* Dynamic Real Active Battle Item or Live Radar Standby */}
               <div className="news-content-box">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentItem.id || safeIndex}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.28, ease: "easeOut" }}
-                    className="news-item-body"
-                  >
+                {hasActiveBattles && currentBattle ? (
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentBattle.id || safeIndex}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.28, ease: "easeOut" }}
+                      className="news-item-body"
+                    >
+                      <div className="news-badge-row">
+                        <span className="news-category-badge public-challenge-badge">
+                          {currentBattle.tag}
+                        </span>
+                        <span className="news-time-label">
+                          {currentBattle.statusLabel}
+                        </span>
+                      </div>
+
+                      <h4 className="news-title" title={currentBattle.title}>
+                        {currentBattle.title}
+                      </h4>
+
+                      <p className="news-snippet">
+                        {currentBattle.desc}
+                      </p>
+
+                      <div className="news-footer-row">
+                        <div className="news-dots-group">
+                          {liveBattleItems.slice(0, 5).map((item, idx) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              className={`news-dot-btn ${idx === (safeIndex % Math.min(5, liveBattleItems.length)) ? 'active' : ''}`}
+                              onClick={() => setNewsIndex(idx)}
+                              aria-label={`Show battle ${idx + 1}`}
+                            />
+                          ))}
+                        </div>
+
+                        <div className="news-footer-actions">
+                          <button
+                            type="button"
+                            className="home-host-duel-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!user) {
+                                navigate('/login');
+                                return;
+                              }
+                              setShowCreateRoomModal(true);
+                            }}
+                            title="Host an open public room"
+                          >
+                            <FontAwesomeIcon icon={faPlus} /> Host
+                          </button>
+
+                          <button
+                            type="button"
+                            className="news-action-btn action-btn-duel"
+                            onClick={() => navigate(currentBattle.link)}
+                          >
+                            <span>{currentBattle.action}</span>
+                            <FontAwesomeIcon icon={faArrowRight} className="news-btn-icon" />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+                ) : (
+                  <div className="news-item-body arena-standby-body">
                     <div className="news-badge-row">
-                      <span className={`news-category-badge ${currentItem.isPublicChallenge ? "public-challenge-badge" : ""}`}>
-                        {currentItem.tag}
+                      <span className="news-category-badge arena-radar-badge">
+                        ACTIVE RADAR
                       </span>
-                      <span className="news-time-label">
-                        {currentItem.isPublicChallenge ? `Seats: ${currentItem.raw?.currentPlayers || 1}/${currentItem.raw?.maxPlayers || 2}` : "Active"}
-                      </span>
+                      <span className="news-time-label">0 Open Duels</span>
                     </div>
 
-                    <h4 className="news-title" title={currentItem.title}>
-                      {currentItem.title}
+                    <h4 className="news-title">
+                      No Active Battles Right Now
                     </h4>
 
                     <p className="news-snippet">
-                      {currentItem.desc}
+                      All arena duels are closed or completed. Host a custom room or enter matchmaking to start a live 1v1 battle!
                     </p>
 
                     <div className="news-footer-row">
-                      <div className="news-dots-group">
-                        {combinedItems.slice(0, 5).map((item, idx) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            className={`news-dot-btn ${idx === (safeIndex % Math.min(5, combinedItems.length)) ? 'active' : ''}`}
-                            onClick={() => setNewsIndex(idx)}
-                            aria-label={`Show item ${idx + 1}`}
-                          />
-                        ))}
+                      <div className="news-standby-pulse-wrap">
+                        <span className="standby-radar-dot" />
+                        <span className="standby-radar-text">Radar active • 0 duels</span>
                       </div>
 
                       <div className="news-footer-actions">
@@ -605,23 +619,23 @@ function Home() {
                             }
                             setShowCreateRoomModal(true);
                           }}
-                          title="Host an open public room"
+                          title="Host a public battle room"
                         >
                           <FontAwesomeIcon icon={faPlus} /> Host
                         </button>
 
                         <button
                           type="button"
-                          className={`news-action-btn ${currentItem.isPublicChallenge ? "action-btn-duel" : ""}`}
-                          onClick={() => navigate(currentItem.link)}
+                          className="news-action-btn action-btn-duel"
+                          onClick={() => navigate('/battle')}
                         >
-                          <span>{currentItem.action}</span>
+                          <span>Find Match</span>
                           <FontAwesomeIcon icon={faArrowRight} className="news-btn-icon" />
                         </button>
                       </div>
                     </div>
-                  </motion.div>
-                </AnimatePresence>
+                  </div>
+                )}
               </div>
             </motion.div>
 
@@ -707,21 +721,6 @@ function Home() {
           {/* ========== CENTER COLUMN: HERO HEADLINE & 3D ANIMATED CHARACTERS ========== */}
           <div className="hero-center-col">
             
-            {/* Monospace Hacker Kicker */}
-            <motion.div 
-              className="hero-kicker-tag"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <span className="kicker-slash">//</span>
-              <span>CODE</span>
-              <span className="kicker-cross">×</span>
-              <span>COMPETE</span>
-              <span className="kicker-cross">×</span>
-              <span>GROW</span>
-              <span className="kicker-slash">//</span>
-            </motion.div>
 
             {/* Main Title */}
             <motion.h1 
@@ -762,7 +761,7 @@ function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.25 }}
             >
-              Solve problems. Earn points. Climb the leaderboard.<br />
+              Solve problems. Earn points. Climb the rankings.<br />
               Show the world what you're made of.
             </motion.p>
 

@@ -271,7 +271,6 @@
   stroke-width: 1.5;
   opacity: 0.7;
   animation: graphPulse 2s infinite ease-out;
-  transform-origin: 234px 13px;
 }
 
 @keyframes graphPulse {
@@ -481,6 +480,38 @@
 .action-btn-duel:hover {
   color: var(--cta-hover, #F2F3F7) !important;
   transform: translateX(2px);
+}
+
+/* Standby Radar State */
+.arena-standby-body {
+  justify-content: space-between;
+}
+
+.arena-radar-badge {
+  color: var(--cta-primary, #00F2FE) !important;
+  border-color: rgba(0, 242, 254, 0.3) !important;
+}
+
+.news-standby-pulse-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.standby-radar-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cta-primary, #00F2FE);
+  box-shadow: 0 0 8px var(--cta-primary, #00F2FE);
+  animation: newsBlink 1.8s infinite ease-in-out;
+}
+
+.standby-radar-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--text-muted, #7F808F);
+  letter-spacing: 0.02em;
 }
 
 .news-btn-icon {

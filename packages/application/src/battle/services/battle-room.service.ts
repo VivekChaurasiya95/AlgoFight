@@ -19,6 +19,14 @@ export interface CreateRoomDto {
     squadSize?: number;
 }
 
+function shuffleArray<T>(array: T[]): T[] {
+    const copy = [...array];
+    for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+}
 
 export class BattleRoomService {
     constructor(
@@ -45,6 +53,10 @@ export class BattleRoomService {
             const qCount = dto.questionCount ?? 3;
             const diff = (dto.difficulty || "MIX").toUpperCase();
 
+            const hardPool = shuffleArray(problems.filter((p: any) => p.difficulty === "HARD"));
+            const medPool = shuffleArray(problems.filter((p: any) => p.difficulty === "MEDIUM"));
+            const easyPool = shuffleArray(problems.filter((p: any) => p.difficulty === "EASY"));
+
             let selectedProblems: any[] = [];
             if (diff === "MIX") {
                 const hardCount = Math.max(1, Math.floor(qCount * 0.3));
@@ -52,15 +64,16 @@ export class BattleRoomService {
                 const medCount = Math.max(0, qCount - hardCount - easyCount);
 
                 selectedProblems = [
-                    ...problems.filter((p: any) => p.difficulty === "HARD").slice(0, hardCount),
-                    ...problems.filter((p: any) => p.difficulty === "MEDIUM").slice(0, medCount),
-                    ...problems.filter((p: any) => p.difficulty === "EASY").slice(0, easyCount)
+                    ...hardPool.slice(0, hardCount),
+                    ...medPool.slice(0, medCount),
+                    ...easyPool.slice(0, easyCount)
                 ];
             } else {
-                selectedProblems = problems.filter((p: any) => p.difficulty === diff).slice(0, qCount);
+                const pool = shuffleArray(problems.filter((p: any) => p.difficulty === diff));
+                selectedProblems = pool.slice(0, qCount);
             }
 
-            if (selectedProblems.length === 0) selectedProblems = problems.slice(0, qCount);
+            if (selectedProblems.length === 0) selectedProblems = shuffleArray(problems).slice(0, qCount);
             selectedProblemIds = selectedProblems.map(p => p.id);
         }
 
@@ -500,5 +513,9 @@ export class BattleRoomService {
 
     async getOpenWaitingRooms(limit = 20): Promise<BattleRoomEntity[]> {
         return this.battleRoomRepository.getOpenWaitingRooms(limit);
+    }
+
+    async getActiveRunningRooms(limit = 10): Promise<BattleRoomEntity[]> {
+        return this.battleRoomRepository.getActiveRunningRooms(limit);
     }
 }

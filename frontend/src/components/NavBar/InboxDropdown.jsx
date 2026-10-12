@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -82,6 +82,14 @@ export default function InboxDropdown({ isOpen, onClose }) {
     const navigate = useNavigate();
     const { notifications, unreadCount, markAsRead, markAllAsRead, clearInbox } = useNotificationInbox();
     const [filter, setFilter] = useState('ALL');
+    const listRef = useRef(null);
+
+    // Forward mouse wheel events anywhere on panel to the notification scroll area
+    const handlePanelWheel = (e) => {
+        if (listRef.current && !listRef.current.contains(e.target)) {
+            listRef.current.scrollTop += e.deltaY;
+        }
+    };
 
     // Close on Escape key
     useEffect(() => {
@@ -138,6 +146,7 @@ export default function InboxDropdown({ isOpen, onClose }) {
                     exit={{ opacity: 0, y: -10, scale: 0.98 }}
                     transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                     onClick={(e) => e.stopPropagation()}
+                    onWheel={handlePanelWheel}
                 >
                     {/* Header */}
                     <div className="inbox-panel-header">
@@ -204,7 +213,7 @@ export default function InboxDropdown({ isOpen, onClose }) {
                     </div>
 
                     {/* Notification List */}
-                    <div className="inbox-notification-list">
+                    <div className="inbox-notification-list" ref={listRef}>
                         {filteredNotifications.length === 0 ? (
                             <div className="inbox-empty-state">
                                 <div className="inbox-empty-icon-wrap">

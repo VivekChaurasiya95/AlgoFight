@@ -315,6 +315,14 @@
   font-weight: 800;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
   border: 2px solid transparent;
+  overflow: hidden;
+}
+
+.podium-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .pillar-gold .podium-avatar {
@@ -435,9 +443,39 @@
 .leaderboard-table-card {
   padding: 0;
   overflow: hidden;
+  position: relative;
+}
+
+.leaderboard-table-scroll-container {
+  max-height: clamp(380px, 58vh, 560px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color, rgba(255, 255, 255, 0.2)) transparent;
+}
+
+.leaderboard-table-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.leaderboard-table-scroll-container::-webkit-scrollbar-track {
+  background: rgba(10, 14, 23, 0.35);
+}
+
+.leaderboard-table-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--border-color, rgba(255, 255, 255, 0.18));
+  border-radius: 999px;
+}
+
+.leaderboard-table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--cta-primary, #00e5ff);
 }
 
 .leaderboard-table-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: grid;
   grid-template-columns: 80px minmax(200px, 1.8fr) 110px 140px 100px 120px 120px;
   align-items: center;
@@ -449,8 +487,11 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-family: 'JetBrains Mono', monospace;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(8, 12, 20, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-secondary, rgba(10, 14, 23, 0.94));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .leaderboard-table-header > div {
@@ -470,6 +511,7 @@
 .leaderboard-table-body {
   display: flex;
   flex-direction: column;
+  padding-bottom: 4px;
 }
 
 .leaderboard-row {
@@ -494,6 +536,16 @@
   border-left-color: #ffd500;
 }
 
+.leaderboard-row.is-current-user {
+  background: rgba(0, 229, 255, 0.06);
+  border-left-color: var(--cta-primary, #00e5ff);
+}
+
+.leaderboard-row.is-current-user:hover {
+  background: rgba(0, 229, 255, 0.09);
+  border-left-color: #ffd500;
+}
+
 .col-rank {
   display: flex;
   align-items: center;
@@ -504,6 +556,21 @@
   font-size: 0.95rem;
   font-weight: 800;
   color: #00e5ff;
+}
+
+.rank-badge.rank-1 {
+  color: #ffd500;
+  text-shadow: 0 0 10px rgba(255, 213, 0, 0.4);
+}
+
+.rank-badge.rank-2 {
+  color: #e2e8f0;
+  text-shadow: 0 0 8px rgba(226, 232, 240, 0.3);
+}
+
+.rank-badge.rank-3 {
+  color: #f59e0b;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
 }
 
 .col-combatant {
@@ -525,6 +592,15 @@
   font-size: 0.85rem;
   font-weight: 800;
   color: #ffffff;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.row-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .row-username {
@@ -533,6 +609,19 @@
   font-weight: 700;
   color: #f1f5f9;
   transition: color 0.15s ease;
+}
+
+.you-pill {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(0, 229, 255, 0.16);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  color: #00e5ff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin-left: 6px;
 }
 
 .leaderboard-row:hover .row-username {
@@ -838,6 +927,10 @@
 
   .podium-avatar { width: 46px; height: 46px; font-size: 1.15rem; }
   .pillar-gold .podium-avatar { width: 56px; height: 56px; font-size: 1.35rem; }
+
+  .leaderboard-table-scroll-container {
+    max-height: 480px;
+  }
 
   .leaderboard-table-header {
     display: none;

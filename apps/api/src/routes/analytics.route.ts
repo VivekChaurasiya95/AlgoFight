@@ -168,7 +168,7 @@ export async function analyticsRoutes(app: FastifyInstance) {
         "/admin/analytics",
         { preHandler: [verifyAdminAccess] },
         async (_request: FastifyRequest, reply: FastifyReply) => {
-            const snapshot = analyticsService.getSnapshot();
+            const snapshot = await analyticsService.getSnapshot();
             return reply.send(snapshot);
         }
     );

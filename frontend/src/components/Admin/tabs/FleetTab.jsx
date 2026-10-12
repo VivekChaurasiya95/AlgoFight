@@ -140,7 +140,7 @@ export default function FleetTab({
           <div className="admission-sla-bar-wrap">
             <div className="sla-labels">
               <span>Gateway Security & Admission SLA</span>
-              <strong style={{ color: "#4ade80" }}>
+              <strong className="sla-rate-text">
                 {metrics?.traffic?.admissionRatePercent !== undefined
                   ? `${metrics.traffic.admissionRatePercent}% Admitted`
                   : "100% Admitted"}

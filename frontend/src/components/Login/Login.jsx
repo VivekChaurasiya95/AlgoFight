@@ -6,6 +6,9 @@ import { useAuth } from "../../contexts/AuthContext.jsx";
 import { useNotification } from "../../contexts/NotificationContext.jsx";
 import GoogleAuthButton from "../Common/GoogleAuthButton.jsx";
 import { isGoogleAuthAvailable } from "../../services/googleAuth";
+import BackgroundPaths from "../BackgroundPaths/BackgroundPaths.jsx";
+import "../BackgroundPaths/BackgroundPaths.css";
+import ThemeSelector from "../Theme/ThemeSelector.jsx";
 
 function Login() {
   const [authMethod, setAuthMethod] = useState(() => isGoogleAuthAvailable() ? "google" : "manual");
@@ -94,15 +97,26 @@ function Login() {
   };
 
   return (
-    <div className="login-page">
-      <motion.div
-        key="login-form-container"
-        initial={{ opacity: 0, scale: 0.96, y: 30 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
-        style={{ width: "100%", display: "flex", justifyContent: "center" }}
-      >
-        <div className="Login-Container">
+    <BackgroundPaths>
+      <div className="login-page">
+        {/* Top bar with Brand Link & Live Theme Selector */}
+        <div className="auth-top-bar">
+          <Link to="/" className="auth-brand-link" title="Return to Home">
+            <span className="auth-brand-logo">⚔️ ALGOFIGHT</span>
+          </Link>
+          <div className="auth-theme-wrap">
+            <ThemeSelector />
+          </div>
+        </div>
+
+        <motion.div
+          key="login-form-container"
+          initial={{ opacity: 0, scale: 0.96, y: 30 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          style={{ width: "100%", display: "flex", justifyContent: "center" }}
+        >
+          <div className="Login-Container">
           <div className="Login-Heading">
             <h1>Welcome Back</h1>
             <p>Enter the competitive coding arena</p>
@@ -207,16 +221,16 @@ function Login() {
             )}
           </AnimatePresence>
 
-          {/* Bottom Switch to Sign Up */}
-          <div className="auth-switch-text" style={{ marginTop: "20px" }}>
-            <span>Don't have an account?</span>
-            <Link to="/signup" className="signup-link">
-              Sign Up
-            </Link>
+            <div className="auth-switch-text" style={{ marginTop: "20px" }}>
+              <span>Don't have an account?</span>
+              <Link to="/signup" className="signup-link">
+                Sign Up
+              </Link>
+            </div>
           </div>
-        </div>
-      </motion.div>
-    </div>
+        </motion.div>
+      </div>
+    </BackgroundPaths>
   );
 }
 

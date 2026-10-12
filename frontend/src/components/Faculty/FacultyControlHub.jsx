@@ -888,16 +888,8 @@ export default function FacultyControlHub() {
 
             {/* Quiz Creator Inline Drawer */}
             {showQuizModal && (
-              <div
-                style={{
-                  background: "rgba(18, 24, 38, 0.7)",
-                  border: "1px solid rgba(168, 85, 247, 0.3)",
-                  borderRadius: "16px",
-                  padding: "24px",
-                  marginBottom: "28px",
-                }}
-              >
-                <h4 style={{ margin: "0 0 16px", fontFamily: "'Space Grotesk', sans-serif", color: "#00e5ff" }}>
+              <div className="faculty-quiz-drawer">
+                <h4 className="faculty-quiz-drawer-title">
                   Configure New Coding Assessment
                 </h4>
 
@@ -978,19 +970,7 @@ export default function FacultyControlHub() {
                     <label>
                       Select Quiz Problems ({quizForm.selectedProblemIds.length} Selected)
                     </label>
-                    <div
-                      style={{
-                        maxHeight: "180px",
-                        overflowY: "auto",
-                        background: "rgba(0, 0, 0, 0.3)",
-                        border: "1px solid rgba(255, 255, 255, 0.1)",
-                        borderRadius: "10px",
-                        padding: "10px",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "6px",
-                      }}
-                    >
+                    <div className="quiz-problems-picker">
                       {allProblems.map((prob) => {
                         const pid = String(prob.id || prob._id);
                         const isChecked = quizForm.selectedProblemIds.includes(pid);
@@ -1020,7 +1000,7 @@ export default function FacultyControlHub() {
                                 });
                               }}
                             />
-                            <span style={{ fontWeight: 600, color: "#ffffff" }}>{prob.title}</span>
+                            <span className="quiz-problem-title">{prob.title}</span>
                             <span style={{ color: "#00e5ff", fontSize: "0.75rem", marginLeft: "auto" }}>
                               {prob.difficulty}
                             </span>
@@ -1242,19 +1222,12 @@ export default function FacultyControlHub() {
               </button>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
-              <div
-                style={{
-                  background: "rgba(18, 24, 38, 0.6)",
-                  border: "1px solid rgba(0, 229, 255, 0.2)",
-                  borderRadius: "14px",
-                  padding: "20px",
-                }}
-              >
-                <h4 style={{ margin: "0 0 10px", color: "#00e5ff", fontFamily: "'Space Grotesk', sans-serif" }}>
+            <div className="archive-features-grid">
+              <div className="archive-feature-box cyan-feature">
+                <h4 className="archive-feature-title">
                   Excel & Document Import
                 </h4>
-                <p style={{ fontSize: "0.86rem", color: "#94a3b8", lineHeight: 1.5, margin: "0 0 16px" }}>
+                <p>
                   Download the AlgoFight standardized Excel template, fill out problem statements and test cases, then upload directly to the archive.
                 </p>
                 <button
@@ -1267,18 +1240,11 @@ export default function FacultyControlHub() {
                 </button>
               </div>
 
-              <div
-                style={{
-                  background: "rgba(18, 24, 38, 0.6)",
-                  border: "1px solid rgba(168, 85, 247, 0.2)",
-                  borderRadius: "14px",
-                  padding: "20px",
-                }}
-              >
-                <h4 style={{ margin: "0 0 10px", color: "#c084fc", fontFamily: "'Space Grotesk', sans-serif" }}>
+              <div className="archive-feature-box purple-feature">
+                <h4 className="archive-feature-title">
                   Available Problem Pool
                 </h4>
-                <p style={{ fontSize: "0.86rem", color: "#94a3b8", lineHeight: 1.5, margin: "0 0 16px" }}>
+                <p>
                   Currently <strong>{allProblems.length}</strong> algorithmic challenges available in the global library for quizzes and multiplayer battle arenas.
                 </p>
                 <a

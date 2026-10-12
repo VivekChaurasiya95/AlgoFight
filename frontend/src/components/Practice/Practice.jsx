@@ -1,5 +1,5 @@
 // frontend/src/components/Practice/Practice.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -8,6 +8,8 @@ import {
   faCircle,
   faChevronLeft,
   faChevronRight,
+  faChevronDown,
+  faCheck,
   faBookOpen,
   faPlus,
   faCode,
@@ -104,6 +106,8 @@ export default function Practice() {
   const [difficulty, setDifficulty] = useState("all");
   const [selectedTag, setSelectedTag] = useState("all");
   const [availableTags, setAvailableTags] = useState(["all"]);
+  const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
+  const tagDropdownRef = useRef(null);
   const [problems, setProblems] = useState([]);
   const [readingProblemId, setReadingProblemId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -114,6 +118,30 @@ export default function Practice() {
   const [error, setError] = useState("");
   const [showImportModal, setShowImportModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Close tag dropdown on click outside or escape key
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(e.target)) {
+        setIsTagDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setIsTagDropdownOpen(false);
+      }
+    };
+    if (isTagDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isTagDropdownOpen]);
 
   const canImport = Boolean(isAdminUser(user) || profileData?.userType === "FACULTY");
 
@@ -473,21 +501,63 @@ export default function Practice() {
                 </div>
               </div>
 
-              <div className="filter-group tag-dropdown-group">
+              <div className="filter-group tag-dropdown-group" ref={tagDropdownRef}>
                 <label className="filter-label">
                   <span>Topic:</span>
                 </label>
-                <select
-                  value={selectedTag}
-                  onChange={handleTagChange}
-                  className="hud-select practice-select"
-                >
-                  {availableTags.map((tag) => (
-                    <option key={tag} value={tag}>
-                      {tag === "all" ? "All Types" : getFormattedTagName(tag)}
-                    </option>
-                  ))}
-                </select>
+                <div className="custom-topic-dropdown-wrap">
+                  <button
+                    type="button"
+                    className={`hud-select practice-select-btn ${isTagDropdownOpen ? "open" : ""}`}
+                    onClick={() => setIsTagDropdownOpen((prev) => !prev)}
+                    aria-haspopup="listbox"
+                    aria-expanded={isTagDropdownOpen}
+                  >
+                    <span className="practice-select-btn-label">
+                      {selectedTag === "all" ? "All Types" : getFormattedTagName(selectedTag)}
+                    </span>
+                    <FontAwesomeIcon
+                      icon={faChevronDown}
+                      className={`topic-chevron ${isTagDropdownOpen ? "rotated" : ""}`}
+                    />
+                  </button>
+
+                  <AnimatePresence>
+                    {isTagDropdownOpen && (
+                      <motion.div
+                        className="custom-topic-dropdown-menu"
+                        initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
+                        role="listbox"
+                      >
+                        {availableTags.map((tag) => {
+                          const isSelected = selectedTag === tag;
+                          const label = tag === "all" ? "All Types" : getFormattedTagName(tag);
+                          return (
+                            <div
+                              key={tag}
+                              role="option"
+                              aria-selected={isSelected}
+                              className={`custom-topic-option ${isSelected ? "selected" : ""}`}
+                              onClick={() => {
+                                setSelectedTag(tag);
+                                setCurrentPage(1);
+                                setIsTagDropdownOpen(false);
+                              }}
+                            >
+                              <span className="topic-option-label">{label}</span>
+                              {isSelected && (
+                                <FontAwesomeIcon icon={faCheck} className="topic-option-check" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
 
