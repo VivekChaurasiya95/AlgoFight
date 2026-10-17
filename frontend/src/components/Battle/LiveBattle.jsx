@@ -11,7 +11,8 @@ import { useAntiCheat } from "../../hooks/useAntiCheat";
 import { saveLocalDraft, getLocalDraft, getAllLocalDrafts, saveAllLocalDrafts, reconcileCheckpoints, markDraftAcked, clearDraft } from "../../services/storage/indexedDbRecovery.js";
 import ProblemStatement from "../Common/problem/ProblemStatement.jsx";
 import DetailedAnalysisModal from "../Common/modals/DetailedAnalysisModal.jsx";
-import ThemeSelector from "../Theme/ThemeSelector";
+import DiagnosticErrorCard from "../Common/editor/DiagnosticErrorCard.jsx";
+import { parseDiagnosticError } from "../../utils/diagnosticParser.js";
 import RankEmblem from "../Common/gamification/RankEmblem";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -37,6 +38,10 @@ import {
   faRotateRight,
   faKeyboard,
   faArrowLeft,
+  faTerminal,
+  faTriangleExclamation,
+  faCopy,
+  faRobot,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   SUPPORTED_LANGUAGES,
@@ -253,8 +258,17 @@ export default function LiveBattle() {
 
   const initialMatch = location.state?.matchData;
   const initialRoomCode = paramRoomCode || location.state?.roomCode;
+  const isAutoBot = Boolean(location.state?.autoBot || location.state?.playVsBot);
+  const isAutoBotRef = useRef(isAutoBot);
+  useEffect(() => {
+    isAutoBotRef.current = isAutoBot;
+  }, [isAutoBot]);
 
-  const [status, setStatus] = useState(initialMatch || initialRoomCode ? "matched" : "connecting");
+  const [status, setStatus] = useState(() => {
+    if (initialMatch || initialRoomCode) return "matched";
+    if (isAutoBot) return "bot_spawning";
+    return "connecting";
+  });
   const [syncStatus, setSyncStatus] = useState("synced"); // "synced" | "pending_sync" | "degraded"
   const saveDebounceTimer = useRef(null);
   const statusRef = useRef(status);
@@ -946,20 +960,24 @@ export default function LiveBattle() {
   };
 
   const handleLanguageChange = (newLang) => {
-    setLanguage(newLang);
+    if (!newLang || newLang === languageRef.current) return;
     const currentProb = problems[activeProblemIndexRef.current];
     const currentProbId = currentProb?.id || (currentProb ? `p_${activeProblemIndexRef.current}` : null);
     if (!currentProbId) return;
 
+    const currentCode = codeRef.current;
+    const currentLang = languageRef.current;
     const existing = codeByProblemRef.current[currentProbId];
-    const currentProbStarter = currentProb ? getStarterCodeForLanguage(currentProb, languageRef.current) : "";
-    const isStarterOrEmpty = !codeRef.current || codeRef.current.trim() === "" || codeRef.current.trim() === currentProbStarter.trim();
 
-    let newCode = codeRef.current;
-    if (isStarterOrEmpty && currentProb) {
-      newCode = getStarterCodeForLanguage(currentProb, newLang);
-      setCode(newCode);
-    }
+    // Check if we have code saved for this problem in the new language
+    const langKey = `${currentProbId}_${newLang}`;
+    const nextSavedCode = codeByProblemRef.current[langKey]?.code;
+    const newCode = nextSavedCode !== undefined 
+      ? nextSavedCode 
+      : (currentProb ? getStarterCodeForLanguage(currentProb, newLang) : "");
+
+    setLanguage(newLang);
+    setCode(newCode);
 
     const nextRev = (existing?.revision || existing?.localRevision || 0) + 1;
     const updatedEntry = {
@@ -971,7 +989,12 @@ export default function LiveBattle() {
       updatedAt: Date.now(),
       isDirty: true,
     };
-    const nextMap = { ...codeByProblemRef.current, [currentProbId]: updatedEntry };
+    const nextMap = { 
+      ...codeByProblemRef.current, 
+      [currentProbId]: updatedEntry,
+      [`${currentProbId}_${currentLang}`]: { code: currentCode, language: currentLang },
+      [langKey]: { code: newCode, language: newLang },
+    };
     codeByProblemRef.current = nextMap;
     setCodeByProblem(nextMap);
   };
@@ -983,6 +1006,16 @@ export default function LiveBattle() {
   const [running, setRunning] = useState(false);
   const [runMode, setRunMode] = useState("idle");
   const socketRef = useRef(null);
+
+  // Tabs for execution console: 'terminal' | 'problems'
+  const [consoleTab, setConsoleTab] = useState("terminal");
+  const [copiedOutput, setCopiedOutput] = useState(false);
+
+  // Compiler-Grade Diagnostic for error highlighting and line jump
+  const diagnostic = useMemo(() => {
+    if (!lastResult) return null;
+    return parseDiagnosticError(lastResult, code, language);
+  }, [lastResult, code, language]);
 
   const sampleCases = Array.isArray(problem?.testCases) ? problem.testCases.slice(0, 2) : [];
 
@@ -1027,9 +1060,12 @@ export default function LiveBattle() {
   };
 
   const handlePlayVsBot = () => {
+    isAutoBotRef.current = true;
+    setStatus("bot_spawning");
     if (socketRef.current) {
+      socketRef.current.emit("cancel_queue", { userId: user?.uid });
       socketRef.current.emit("play_vs_bot", { username, userId: user?.uid });
-      notify({ type: "info", title: "Solo Mode", message: "Spawning AlgoBot duel..." });
+      notify({ type: "info", title: "Solo Mode", message: "Spawning AlgoBot duel...", duration: 2500 });
     }
   };
 
@@ -1184,6 +1220,10 @@ export default function LiveBattle() {
         const currentTarget = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode || paramRoomCode;
         if (currentTarget) {
           socket.emit("join_room_channel", { roomCode: currentTarget, userId: user?.uid, username });
+        } else if (isAutoBotRef.current) {
+          setStatus("bot_spawning");
+          notify({ type: "info", title: "Solo Sparring", message: "Launching AlgoBot duel...", duration: 2500 });
+          socket.emit("play_vs_bot", { username, userId: user?.uid });
         } else if (statusRef.current !== "matched") {
           setStatus("waiting");
           notify({ type: "info", title: "Matchmaking", message: "Searching for a 1v1 challenger...", duration: 2600 });
@@ -1197,24 +1237,29 @@ export default function LiveBattle() {
       };
 
       socket.on("connect", initiateBattleQueue);
+      if (socket.connected) {
+        initiateBattleQueue();
+      }
 
       socket.on("waiting_for_opponent", (data) => {
-        if (!roomId && !initialMatch) {
+        if (!roomId && !initialMatch && !isAutoBotRef.current) {
           setStatus("waiting");
           if (data?.searchWindow) setSearchWindow(data.searchWindow);
         }
       });
 
       socket.on("matchmaking_status", (data) => {
-        if (data?.searchWindow) {
+        if (!isAutoBotRef.current && data?.searchWindow) {
           setSearchWindow(data.searchWindow);
         }
       });
 
       socket.on("matchmaking_timeout", (data) => {
-        clearActiveEvent();
-        notify({ type: "warning", title: "Matchmaking Failed", message: data?.message || "No available player found for 1v1 battle.", duration: 5000 });
-        navigate("/battle");
+        if (!isAutoBotRef.current) {
+          clearActiveEvent();
+          notify({ type: "warning", title: "Matchmaking Failed", message: data?.message || "No available player found for 1v1 battle.", duration: 5000 });
+          navigate("/battle");
+        }
       });
 
       socket.on("match_found", (data) => {
@@ -1228,7 +1273,9 @@ export default function LiveBattle() {
         setLanguage("javascript");
         if (data.timeLimitSeconds) setTimeLeft(data.timeLimitSeconds);
         
-        setCode("// write your solution here");
+        const initialProb = probs[0];
+        const initialCode = initialProb ? getStarterCodeForLanguage(initialProb, "javascript") : "// write your solution here";
+        setCode(initialCode);
         setOutput("");
         setLastResult(null);
         setExecutionTimeline([]);
@@ -1239,7 +1286,11 @@ export default function LiveBattle() {
         setOpponentName(opp);
         setStatus("matched");
 
-        notify({ type: "success", title: "Match Found", message: `You are now battling ${opp}.`, duration: 3000 });
+        if (opp.toLowerCase().includes("bot") || isAutoBotRef.current) {
+          notify({ type: "success", title: "Sparring Commenced", message: `Sparring duel against ${opp} ready. Good luck!`, duration: 3000 });
+        } else {
+          notify({ type: "success", title: "Match Found", message: `You are now battling ${opp}.`, duration: 3000 });
+        }
       });
 
       socket.on("battle_started", (data) => {
@@ -1353,11 +1404,20 @@ export default function LiveBattle() {
             memoryUsage: result?.memoryUsage || 0,
             verdict: result?.verdict || (isSuccess ? "ACCEPTED" : "WRONG_ANSWER"),
             testCaseResults: testCases,
+            error: result?.error || result?.structuredError || null,
+            structuredError: result?.structuredError || result?.error || null,
+            compilation: result?.compilation || null,
             output: outputText
         };
 
         setLastResult(uiResult);
         setOutput(uiResult.output);
+
+        if (!uiResult.passed || uiResult.verdict === "COMPILATION_ERROR" || Boolean(uiResult.error)) {
+          setConsoleTab("problems");
+        } else {
+          setConsoleTab("terminal");
+        }
 
         if (uiResult.passed) {
           notify({ type: "success", title: "Execution Passed", message: `Passed ${passedCount}/${totalCount} test cases.`, duration: 2200 });
@@ -1798,6 +1858,66 @@ export default function LiveBattle() {
     }, 5000);
   };
 
+  if (status === "bot_spawning") {
+    return (
+      <BackgroundPaths>
+        <div className="livebattle-page wait-mode bot-spawning-mode">
+          <section className="livebattle-header-card wait-header-card">
+            <div className="livebattle-header-left">
+              <button 
+                type="button" 
+                className="btn-livebattle-back" 
+                onClick={handleCancelQueue}
+                title="Exit to Arena"
+              >
+                <FontAwesomeIcon icon={faArrowLeft} />
+                <span>Arena</span>
+              </button>
+              <div className="livebattle-header-copy">
+                <h1 className="livebattle-hero-title">
+                  Sparring with <span className="text-cyan-gradient">AlgoBot</span>
+                </h1>
+                <p className="livebattle-hero-sub">
+                  Adaptive AI sparring mode with instant launch and zero matchmaking delay.
+                </p>
+              </div>
+            </div>
+            <button className="livebattle-leave-btn cancel-queue-btn" onClick={handleCancelQueue}>
+              <FontAwesomeIcon icon={faTimes} />
+              <span>Cancel</span>
+            </button>
+          </section>
+
+          <section className="livebattle-wait-panel bot-wait-panel">
+            <div className="bot-spawning-card">
+              <div className="bot-spawning-icon-halo">
+                <div className="bot-halo-pulse" />
+                <FontAwesomeIcon icon={faRobot} className="bot-spawning-robot-icon" />
+              </div>
+
+              <h2 className="bot-spawning-title">Entering Sparring Chamber</h2>
+              <p className="bot-spawning-subtitle">
+                Pairing against <strong>AlgoBot</strong> (1200 ELO). Zero queue time, preparing algorithmic problems and real-time judge...
+              </p>
+
+              <div className="bot-spawning-chips-row">
+                <span className="bot-spec-chip">🤖 Adaptive AI</span>
+                <span className="bot-spec-chip">⚡ Zero Queue</span>
+                <span className="bot-spec-chip">⏱️ Instant Judge</span>
+              </div>
+
+              <div className="bot-spawning-status-pill">
+                <FontAwesomeIcon icon={faSpinner} spin className="bot-spinner-icon" />
+                <span>Generating problem environment...</span>
+              </div>
+            </div>
+          </section>
+        </div>
+        <Footer />
+      </BackgroundPaths>
+    );
+  }
+
   if (status === "connecting" || status === "waiting") {
     return (
       <BackgroundPaths>
@@ -1994,6 +2114,12 @@ export default function LiveBattle() {
           onClose={() => setShowDetailedAnalysis(false)}
           result={lastResult}
           problem={problem}
+          code={code}
+          language={language}
+          onJumpToLine={(line, col) => {
+            setShowDetailedAnalysis(false);
+            editorRef.current?.jumpToLine?.(line, col);
+          }}
         />
 
         {/* Floating Arena Taunt Notification Banner */}
@@ -2014,6 +2140,7 @@ export default function LiveBattle() {
         </AnimatePresence>
 
         <motion.section initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="livebattle-header-card">
+          {/* ================= LEFT ZONE: ARENA CONTEXT & PROBLEM INFO ================= */}
           <div className="livebattle-header-left">
             <button 
               type="button" 
@@ -2026,7 +2153,7 @@ export default function LiveBattle() {
             </button>
 
             <div className="livebattle-room-info">
-              <div className="livebattle-room-pill">
+              <div className="livebattle-room-pill" title="Live Battle Room">
                 <span className="badge-pulse-dot" />
                 <span className="room-code-tag">
                   #{roomId ? (roomId.length > 12 ? roomId.slice(0, 8) : roomId) : "BTL"}
@@ -2045,9 +2172,22 @@ export default function LiveBattle() {
                 )}
               </div>
             </div>
+
+            {/* Active Problem Headline in Header */}
+            {problem && (
+              <div className="livebattle-header-problem-info" title={`${problem.title || "Challenge Problem"} (${problem.difficulty || "Medium"})`}>
+                <span className="problem-index-chip">Q{activeProblemIndex + 1}</span>
+                <span className="problem-title-text">{problem.title || "Challenge Problem"}</span>
+                {problem.difficulty && (
+                  <span className={`problem-diff-badge diff-${problem.difficulty.toLowerCase()}`}>
+                    {problem.difficulty}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Center Matchup Duel Hub */}
+          {/* ================= CENTER ZONE: THE 1v1 / SQUAD DUEL HUB ================= */}
           <div className="livebattle-header-center">
             {isSquad ? (
               <div className="squad-scoreboard-hub">
@@ -2078,6 +2218,7 @@ export default function LiveBattle() {
                 {battlePlayers.map((p, idx) => {
                   const hasLeft = p.status === 'LEFT' || p.forfeited;
                   const isMe = p.username === username || p.userId === user?.uid;
+                  const isBot = Boolean(p.isBot || p.userId === "bot" || p.username?.toLowerCase().includes("bot"));
                   const isWinner = battleResult && (battleResult.winnerId === p.userId || battleResult.winner === p.username);
                   const playerRating = p.rating || (isMe ? (user?.rating || 1200) : 1200);
                   const totalProblemsCount = Math.max(problems.length, 1);
@@ -2086,7 +2227,7 @@ export default function LiveBattle() {
                   return (
                     <React.Fragment key={p.userId || idx}>
                       {idx > 0 && <div className="matchup-vs-divider">VS</div>}
-                      <div className={`player-score-card ${isMe ? 'is-me' : ''} ${hasLeft ? 'is-left' : ''} ${isWinner ? 'is-winner' : ''}`}>
+                      <div className={`player-score-card ${isMe ? 'is-me' : 'is-opponent'} ${hasLeft ? 'is-left' : ''} ${isWinner ? 'is-winner' : ''}`}>
                         {/* Emote Speech Bubble */}
                         <AnimatePresence>
                           {(() => {
@@ -2106,17 +2247,21 @@ export default function LiveBattle() {
                             {(p.username || "P")[0].toUpperCase()}
                           </div>
                           <div className="player-rank-emblem-mini">
-                            <RankEmblem rating={playerRating} size={18} glow={false} />
+                            <RankEmblem rating={playerRating} size={16} glow={false} />
                           </div>
                         </div>
 
                         <div className="player-info">
                           <div className="player-name-row">
-                            <span className="player-username">{p.username}</span>
-                            {isMe && <span className="you-badge">YOU</span>}
+                            <span className="player-username" title={p.username}>{p.username}</span>
+                            {isMe ? (
+                              <span className="you-badge">YOU</span>
+                            ) : isBot ? (
+                              <span className="bot-badge">BOT</span>
+                            ) : null}
                             {p.disqualified && (
                               <span className="disqualified-badge">
-                                DISQUALIFIED ({p.tabSwitches || 3})
+                                DQ ({p.tabSwitches || 3})
                               </span>
                             )}
                             {hasLeft && !p.disqualified && <span className="left-badge">LEFT</span>}
@@ -2170,8 +2315,9 @@ export default function LiveBattle() {
                           </div>
                           <div className="player-score-row">
                             <span className="player-pts">{p.points || 0} pts</span>
-                            <span className="player-solved">({p.solvedCount || 0}/{problems.length} solved)</span>
-                            <span className="player-elo-tag">{playerRating} ELO</span>
+                            <span className="player-score-sep">•</span>
+                            <span className="player-solved">{p.solvedCount || 0}/{problems.length}</span>
+                            <span className="player-elo-tag">{playerRating}</span>
                           </div>
                           <div className="player-solved-progress-bar">
                             <div 
@@ -2188,9 +2334,8 @@ export default function LiveBattle() {
             )}
           </div>
 
+          {/* ================= RIGHT ZONE: QUICK TAUNTS, TIMER & CONTROLS ================= */}
           <div className="livebattle-header-right">
-            <ThemeSelector />
-
             {/* Quick Battle Taunts */}
             <QuickTauntBar
               onSelectEmote={handleSendEmote}
@@ -2198,25 +2343,6 @@ export default function LiveBattle() {
               onOpenPicker={() => setIsEmotePickerOpen(true)}
             />
 
-            {/* Active Problem Headline in Header */}
-            {problem && (
-              <div className="livebattle-header-problem-info">
-                <span className="problem-index-chip">Q{activeProblemIndex + 1}</span>
-                <span className="problem-title-text">{problem.title || "Challenge Problem"}</span>
-                {problem.difficulty && (
-                  <span className={`problem-diff-badge diff-${problem.difficulty.toLowerCase()}`}>
-                    {problem.difficulty}
-                  </span>
-                )}
-              </div>
-            )}
-            <button 
-              className="livebattle-fullscreen-btn" 
-              onClick={toggleFullScreen}
-              title={isFullscreen ? "Exit Fullscreen" : "Full Screen Mode"}
-            >
-              <FontAwesomeIcon icon={isFullscreen ? faCompress : faExpand} />
-            </button>
             <div
               className={`livebattle-timer calm-timer ${timeLeft <= 60 && timeLeft > 0 ? "timer-warning" : ""}`}
               aria-label={`Time remaining: ${formatTime(timeLeft)}`}
@@ -2225,6 +2351,15 @@ export default function LiveBattle() {
               <FontAwesomeIcon icon={faClock} className="timer-icon" />
               <span className="timer-digits">{formatTime(timeLeft)}</span>
             </div>
+
+            <button 
+              className="livebattle-fullscreen-btn" 
+              onClick={toggleFullScreen}
+              title={isFullscreen ? "Exit Fullscreen" : "Full Screen Mode"}
+            >
+              <FontAwesomeIcon icon={isFullscreen ? faCompress : faExpand} />
+            </button>
+
             <button className="livebattle-leave-btn" onClick={handleLeaveBattle}>
               <FontAwesomeIcon icon={faTimes} />
               <span>{status === "finished" ? "Exit Arena" : "Leave Battle"}</span>
@@ -2376,11 +2511,11 @@ export default function LiveBattle() {
               onRun={onTestCode}
               onSubmit={onSubmitCode}
               errorLocation={
-                (lastResult?.error?.line || lastResult?.structuredError?.line)
+                diagnostic?.line
                   ? {
-                      line: lastResult?.error?.line || lastResult?.structuredError?.line,
-                      column: lastResult?.error?.column || lastResult?.structuredError?.column,
-                      message: lastResult?.error?.message || lastResult?.structuredError?.message,
+                      line: diagnostic.line,
+                      column: diagnostic.column,
+                      message: diagnostic.message,
                     }
                   : null
               }
@@ -2618,31 +2753,94 @@ export default function LiveBattle() {
               <div className="livebattle-result-meta">
                 <div>
                   <span>Verdict</span>
-                  <strong className={lastResult.passed ? "pass" : "fail"}>{lastResult.passed ? "Passed" : "Failed"}</strong>
+                  <strong className={lastResult.passed ? "pass" : "fail"}>
+                    {lastResult.passed
+                      ? "Passed"
+                      : (diagnostic?.verdictType === "COMPILATION_ERROR"
+                          ? "Compile Error"
+                          : (diagnostic?.verdictType === "SYNTAX_ERROR"
+                              ? "Syntax Error"
+                              : (diagnostic?.verdictType === "TIME_LIMIT_EXCEEDED"
+                                  ? "Time Limit Exceeded"
+                                  : (diagnostic?.verdictType === "MEMORY_LIMIT_EXCEEDED"
+                                      ? "Memory Limit Exceeded"
+                                      : (diagnostic?.verdictType === "RUNTIME_ERROR"
+                                          ? "Runtime Error"
+                                          : "Wrong Answer")))))}
+                  </strong>
                 </div>
                 <div>
                   <span>Tests</span>
                   <strong>
-                    {lastResult.passedTestCases ?? 0}/{lastResult.totalTestCases ?? 0}
+                    {diagnostic?.verdictType === "COMPILATION_ERROR" || diagnostic?.verdictType === "SYNTAX_ERROR"
+                      ? "--"
+                      : `${lastResult.passedTestCases ?? 0}/${lastResult.totalTestCases ?? 0}`}
                   </strong>
                 </div>
                 <div>
                   <span>Time</span>
-                  <strong>{lastResult.executionTime ?? 0} ms</strong>
+                  <strong>
+                    {diagnostic?.verdictType === "COMPILATION_ERROR" || diagnostic?.verdictType === "SYNTAX_ERROR"
+                      ? "0 ms"
+                      : `${lastResult.executionTime ?? 0} ms`}
+                  </strong>
                 </div>
               </div>
             ) : null}
 
             <div className="livebattle-output-box">
               <div className="console-bar">
-                <div className="console-dots">
-                  <span className="dot dot-red" />
-                  <span className="dot dot-yellow" />
-                  <span className="dot dot-green" />
+                <div className="console-bar-left">
+                  <div className="console-dots">
+                    <span className="dot dot-red" />
+                    <span className="dot dot-yellow" />
+                    <span className="dot dot-green" />
+                  </div>
+                  <div className="console-tabs-group">
+                    <button
+                      type="button"
+                      className={`console-tab-btn ${consoleTab === "terminal" ? "active" : ""}`}
+                      onClick={() => setConsoleTab("terminal")}
+                    >
+                      <FontAwesomeIcon icon={faTerminal} />
+                      <span>Console Output</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`console-tab-btn ${consoleTab === "problems" ? "active" : ""}`}
+                      onClick={() => setConsoleTab("problems")}
+                    >
+                      <FontAwesomeIcon icon={diagnostic?.isError ? faTriangleExclamation : faCheckCircle} />
+                      <span>Problems</span>
+                      {diagnostic?.isError ? (
+                        <span className="console-tab-counter">1</span>
+                      ) : (
+                        <span className="console-tab-counter clean">0</span>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <span className="console-title">Execution Console</span>
+
+                <div className="console-bar-actions">
+                  {consoleTab === "terminal" && output && (
+                    <button
+                      type="button"
+                      className="console-action-icon-btn"
+                      onClick={() => {
+                        navigator.clipboard.writeText(output);
+                        setCopiedOutput(true);
+                        setTimeout(() => setCopiedOutput(false), 2000);
+                      }}
+                      title="Copy Console Output"
+                    >
+                      <FontAwesomeIcon icon={copiedOutput ? faCheck : faCopy} />
+                      <span>{copiedOutput ? "Copied" : "Copy"}</span>
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="console-content">
+
+              <div className="console-content" style={{ padding: consoleTab === "problems" ? "12px" : "14px" }}>
                 {running ? (
                   <div className="execution-timeline">
                     <div className="timeline-nodes" style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
@@ -2686,8 +2884,32 @@ export default function LiveBattle() {
                         ))}
                     </div>
                   </div>
+                ) : consoleTab === "problems" ? (
+                  diagnostic && diagnostic.isError ? (
+                    <DiagnosticErrorCard
+                      diagnostic={diagnostic}
+                      onJumpToLine={(line, col) => editorRef.current?.jumpToLine?.(line, col)}
+                    />
+                  ) : (
+                    <div className="console-clean-placeholder">
+                      <FontAwesomeIcon icon={faCheckCircle} />
+                      <span>No compiler or logical problems detected in current execution.</span>
+                    </div>
+                  )
                 ) : (
-                  <pre>{output || "Output will appear here."}</pre>
+                  diagnostic?.verdictType === "COMPILATION_ERROR" || diagnostic?.verdictType === "SYNTAX_ERROR" ? (
+                    <div style={{ fontFamily: "'Fira Code', monospace", fontSize: "0.82rem", color: "#f87171", lineHeight: 1.6 }}>
+                      <div><strong>[COMPILATION FAILED]</strong></div>
+                      <div style={{ marginTop: "6px", color: "var(--text-muted, #94a3b8)" }}>
+                        Program could not be compiled or parsed. No executable was generated and zero test cases were run.
+                      </div>
+                      <div style={{ marginTop: "8px", color: "var(--cta-primary, #00e5ff)" }}>
+                        👉 Switch to the <strong>Problems</strong> tab to view the compiler diagnostic and jump to line {diagnostic.line || ""}.
+                      </div>
+                    </div>
+                  ) : (
+                    <pre>{output || "Output will appear here."}</pre>
+                  )
                 )}
               </div>
             </div>

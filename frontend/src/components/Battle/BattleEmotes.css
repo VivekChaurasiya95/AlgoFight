@@ -133,67 +133,87 @@
 
 /* --- Quick Taunt Bar (Header Quick-Action) --- */
 .quick-taunt-bar {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 4px 8px;
+  gap: 5px;
+  background: rgba(14, 20, 38, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 3px 6px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.quick-taunt-emotes-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .quick-taunt-btn {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 4px 8px;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   color: #e2e8f0;
+  flex-shrink: 0;
 }
 
 .quick-taunt-btn:hover:not(:disabled) {
-  background: rgba(245, 158, 11, 0.18);
-  border-color: rgba(245, 158, 11, 0.45);
-  transform: translateY(-2px) scale(1.05);
+  background: rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.6);
+  transform: translateY(-2px) scale(1.18);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+}
+
+.quick-taunt-btn:active:not(:disabled) {
+  transform: scale(0.92);
 }
 
 .quick-taunt-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.35;
   cursor: not-allowed;
-  filter: grayscale(0.6);
+  filter: grayscale(0.8);
 }
 
 .quick-taunt-btn .quick-taunt-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  white-space: nowrap;
+  display: none;
 }
 
 .emote-menu-trigger-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 7px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(234, 88, 12, 0.15));
-  border: 1.5px solid rgba(245, 158, 11, 0.5);
+  gap: 5px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(234, 88, 12, 0.15));
+  border: 1px solid rgba(245, 158, 11, 0.5);
   color: #fbbf24;
-  border-radius: 10px;
-  padding: 6px 12px;
-  font-size: 0.8rem;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
   font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 0.03em;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
+  height: 28px;
+  flex-shrink: 0;
 }
 
 .emote-menu-trigger-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(234, 88, 12, 0.28));
   border-color: rgba(245, 158, 11, 0.8);
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
   transform: translateY(-1px);
 }
 
@@ -206,8 +226,9 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 3px;
+  height: 2.5px;
   background: #fbbf24;
+  box-shadow: 0 0 6px #fbbf24;
   transition: width 0.1s linear;
 }
 

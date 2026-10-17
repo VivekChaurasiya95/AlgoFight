@@ -38,21 +38,21 @@
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.14em;
-  color: #94a3b8;
+  color: var(--text-muted, #94a3b8);
   margin-bottom: 2px;
 }
 
 .about-kicker-tag .kicker-slash {
-  color: #00e5ff;
+  color: var(--cta-primary, #00e5ff);
 }
 
 .about-kicker-tag .kicker-cross {
-  color: #ff2a7a;
+  color: var(--danger, #ff2a7a);
 }
 
 .about-kicker-tag .word-glow-cyan {
-  color: #00e5ff;
-  text-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
+  color: var(--cta-primary, #00e5ff);
+  text-shadow: 0 0 12px var(--cta-shadow, rgba(0, 229, 255, 0.6));
 }
 
 .learn-hero-title {
@@ -62,18 +62,18 @@
   font-weight: 900;
   letter-spacing: -0.02em;
   line-height: 1.12;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
 }
 
 .learn-hero-title .word-glow-cyan {
-  color: #00e5ff;
-  text-shadow: 0 0 18px rgba(0, 229, 255, 0.5);
+  color: var(--cta-primary, #00e5ff);
+  text-shadow: 0 0 18px var(--cta-shadow, rgba(0, 229, 255, 0.5));
 }
 
 .learn-hero-desc {
   margin: 4px 0 0;
   font-size: 0.98rem;
-  color: #94a3b8;
+  color: var(--text-secondary, #94a3b8);
   max-width: 820px;
   line-height: 1.68;
 }
@@ -103,9 +103,9 @@
 }
 
 .dash-card.hero-stat-card:hover {
-  border-color: rgba(0, 229, 255, 0.3);
+  border-color: var(--cta-primary, rgba(0, 229, 255, 0.3));
   transform: translateY(-2px);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 20px rgba(0, 229, 255, 0.06);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 20px var(--cta-shadow, rgba(0, 229, 255, 0.06));
 }
 
 /* ================= CORE FEATURES PANEL ================= */
@@ -337,9 +337,9 @@
   font-weight: 700;
   padding: 3px 9px;
   border-radius: 999px;
-  background: rgba(0, 229, 255, 0.1);
-  border: 1px solid rgba(0, 229, 255, 0.3);
-  color: #00e5ff;
+  background: var(--surface-highlight, rgba(0, 229, 255, 0.1));
+  border: 1px solid var(--border-primary, rgba(0, 229, 255, 0.3));
+  color: var(--cta-primary, #00e5ff);
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -421,4 +421,55 @@
   .learn-hero-title {
     font-size: 1.85rem;
   }
+}
+
+/* ================= LIGHT THEME ADAPTATION ================= */
+:root[data-theme="light"] .learn-page {
+  color: #0f172a;
+}
+
+:root[data-theme="light"] .learn-hero-title,
+:root[data-theme="light"] .learn-section-title,
+:root[data-theme="light"] .mission-title,
+:root[data-theme="light"] .arch-title,
+:root[data-theme="light"] .pillar-card-title,
+:root[data-theme="light"] .hero-stat-num {
+  color: #0f172a;
+}
+
+:root[data-theme="light"] .learn-hero-desc,
+:root[data-theme="light"] .learn-section-sub,
+:root[data-theme="light"] .mission-desc,
+:root[data-theme="light"] .arch-desc,
+:root[data-theme="light"] .pillar-card-desc,
+:root[data-theme="light"] .hero-stat-label {
+  color: #64748b;
+}
+
+:root[data-theme="light"] .dash-card.hero-stat-card,
+:root[data-theme="light"] .dash-card.learn-mission-panel,
+:root[data-theme="light"] .dash-card.learn-arch-panel,
+:root[data-theme="light"] .dash-card.mission-card,
+:root[data-theme="light"] .dash-card.arch-card,
+:root[data-theme="light"] .pillar-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme="light"] .dash-card.hero-stat-card:hover,
+:root[data-theme="light"] .dash-card.mission-card:hover,
+:root[data-theme="light"] .dash-card.arch-card:hover,
+:root[data-theme="light"] .pillar-card:hover {
+  border-color: #0284c7;
+  box-shadow: 0 10px 24px rgba(2, 132, 199, 0.12);
+}
+
+:root[data-theme="light"] .about-kicker-tag {
+  color: #64748b;
+}
+
+:root[data-theme="light"] .about-cta-box {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-color: #bae6fd;
 }

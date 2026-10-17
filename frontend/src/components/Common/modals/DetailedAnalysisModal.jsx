@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import ReactDOM from "react-dom";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -18,9 +18,22 @@ import {
   faCheck
 } from "@fortawesome/free-solid-svg-icons";
 import "./DetailedAnalysisModal.css";
+import { useTheme } from "../../../contexts/ThemeContext.jsx";
+import DiagnosticErrorCard from "../editor/DiagnosticErrorCard.jsx";
+import { parseDiagnosticError } from "../../../utils/diagnosticParser.js";
 
-export default function DetailedAnalysisModal({ isOpen, onClose, result, problem }) {
+export default function DetailedAnalysisModal({
+  isOpen,
+  onClose,
+  result,
+  problem,
+  code = "",
+  language = "javascript",
+  onJumpToLine = null,
+}) {
   if (!isOpen) return null;
+
+  const { theme } = useTheme();
 
   const [copied, setCopied] = useState(false);
 
@@ -52,27 +65,25 @@ export default function DetailedAnalysisModal({ isOpen, onClose, result, problem
     ? Number((rawMemoryBytes / (1024 * 1024)).toFixed(1))
     : 0.0;
 
-  // 3. Dynamic Verdict Classification
-  const rawVerdict = String(result?.verdict || result?.status || "").toUpperCase();
-  let verdictType = "ACCEPTED";
+  // 3. Dynamic Compiler-Grade Diagnostic & Verdict Classification
+  const diagnostic = useMemo(() => {
+    return parseDiagnosticError(result, code || problem?.starterCode, language);
+  }, [result, code, problem, language]);
 
-  if (rawVerdict.includes("COMPILE") || rawVerdict.includes("COMPILATION")) {
-    verdictType = "COMPILATION_ERROR";
-  } else if (rawVerdict.includes("TIME") || rawVerdict.includes("TLE") || (totalExecutionTimeMs > 0 && totalExecutionTimeMs > timeLimitMs)) {
-    verdictType = "TIME_LIMIT_EXCEEDED";
-  } else if (rawVerdict.includes("MEM") || rawVerdict.includes("MLE") || (measuredMemoryMb > 0 && measuredMemoryMb > memoryLimitMb)) {
-    verdictType = "MEMORY_LIMIT_EXCEEDED";
-  } else if (rawVerdict.includes("RUNTIME") || rawVerdict.includes("EXCEPTION") || rawVerdict.includes("ERROR") || result?.error) {
-    verdictType = "RUNTIME_ERROR";
-  } else if (!isAllPassed || rawVerdict.includes("WRONG") || rawVerdict.includes("WA")) {
-    verdictType = "WRONG_ANSWER";
-  } else {
-    verdictType = "ACCEPTED";
-  }
+  const rawVerdict = String(result?.verdict || result?.status || "").toUpperCase();
+  const verdictType = diagnostic?.verdictType || (isAllPassed ? "ACCEPTED" : "WRONG_ANSWER");
 
   // Generate Verdict Card Details
   const getVerdictCardData = () => {
     switch (verdictType) {
+      case "SYNTAX_ERROR":
+      case "COMPILATION_ERROR":
+        return {
+          title: verdictType === "SYNTAX_ERROR" ? "Syntax Error" : "Compilation Error",
+          subtext: diagnostic?.line ? `Line ${diagnostic.line}` : "Build failed",
+          icon: faCode,
+          cardClass: "verdict-ce",
+        };
       case "WRONG_ANSWER":
         return {
           title: "Wrong Answer",
@@ -97,16 +108,9 @@ export default function DetailedAnalysisModal({ isOpen, onClose, result, problem
       case "RUNTIME_ERROR":
         return {
           title: "Runtime Error",
-          subtext: "Exception encountered",
+          subtext: diagnostic?.subtype || "Exception encountered",
           icon: faBug,
           cardClass: "verdict-re",
-        };
-      case "COMPILATION_ERROR":
-        return {
-          title: "Compilation Error",
-          subtext: "Build failed",
-          icon: faCode,
-          cardClass: "verdict-ce",
         };
       case "ACCEPTED":
       default:
@@ -247,9 +251,10 @@ export default function DetailedAnalysisModal({ isOpen, onClose, result, problem
   };
 
   const modalContent = (
-    <div className="analysis-portal-overlay" onClick={onClose}>
+    <div className="analysis-portal-overlay" data-theme={theme} onClick={onClose}>
       <motion.div
         className="analysis-modal-container"
+        data-theme={theme}
         onClick={(e) => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.97, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -413,73 +418,13 @@ export default function DetailedAnalysisModal({ isOpen, onClose, result, problem
 
             {/* Active Test Case Detail Viewer */}
             <div className="active-test-container">
-              {/* STRUCTURED DIAGNOSTIC ERROR CARD */}
-              {activeStructuredError && (
-                <div className="structured-error-card">
-                  <div className="structured-error-header">
-                    <span className="structured-error-badge">
-                      <FontAwesomeIcon icon={faBug} />
-                      {activeStructuredError.type || "JUDGE ERROR"}
-                      {activeStructuredError.subtype ? ` (${activeStructuredError.subtype})` : ""}
-                    </span>
-                    <span className="structured-error-loc">
-                      {activeStructuredError.line !== null && activeStructuredError.line !== undefined
-                        ? `Line: ${activeStructuredError.line}${activeStructuredError.column ? ` Column: ${activeStructuredError.column}` : ""}`
-                        : "Line: Unable to determine"}
-                    </span>
-                  </div>
-
-                  <div className="structured-error-message-box">
-                    <strong>Message:</strong> {activeStructuredError.message}
-                  </div>
-
-                  {activeStructuredError.codeContext?.lines && activeStructuredError.codeContext.lines.length > 0 && (
-                    <div className="structured-error-section">
-                      <span className="structured-section-label">Code Context</span>
-                      <div className="code-context-box">
-                        {activeStructuredError.codeContext.lines.map((l) => (
-                          <div key={l.line} className={`code-context-line ${l.isErrorLine ? "error-line" : ""}`}>
-                            <span className="code-line-num">{l.line} |</span>
-                            <span className="code-line-text">{l.content}</span>
-                          </div>
-                        ))}
-                        {activeStructuredError.codeContext.highlightColumn && (
-                          <div className="code-context-caret">
-                            {" ".repeat(Math.max(0, activeStructuredError.codeContext.highlightColumn - 1)) + "^"}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {activeStructuredError.explanation && (
-                    <div className="structured-error-section">
-                      <span className="structured-section-label">Explanation</span>
-                      <div className="structured-explanation-text">{activeStructuredError.explanation}</div>
-                    </div>
-                  )}
-
-                  {activeStructuredError.suggestion && (
-                    <div className="structured-error-section">
-                      <span className="structured-section-label">Suggested Fix</span>
-                      <div className="structured-suggestion-box">{activeStructuredError.suggestion}</div>
-                    </div>
-                  )}
-
-                  {activeStructuredError.rawMessage && (
-                    <div>
-                      <button
-                        type="button"
-                        className="raw-output-toggle-btn"
-                        onClick={() => setShowRawOutput(!showRawOutput)}
-                      >
-                        {showRawOutput ? "▲ Hide Technical Details" : "▼ Show Technical Details (Raw Output)"}
-                      </button>
-                      {showRawOutput && (
-                        <pre className="raw-output-pre">{activeStructuredError.rawMessage}</pre>
-                      )}
-                    </div>
-                  )}
+              {/* COMPILER-GRADE DIAGNOSTIC CARD */}
+              {diagnostic && diagnostic.isError && (
+                <div style={{ marginBottom: "16px" }}>
+                  <DiagnosticErrorCard
+                    diagnostic={diagnostic}
+                    onJumpToLine={onJumpToLine}
+                  />
                 </div>
               )}
 
@@ -498,7 +443,7 @@ export default function DetailedAnalysisModal({ isOpen, onClose, result, problem
               </div>
 
               {/* Genuine error strip if runtime error exists */}
-              {activeTest.errorMessage && !activeStructuredError && (
+              {activeTest.errorMessage && !diagnostic?.isError && (
                 <div className="test-error-strip">
                   <FontAwesomeIcon icon={faBug} className="error-strip-icon" />
                   <span>{activeTest.errorMessage}</span>

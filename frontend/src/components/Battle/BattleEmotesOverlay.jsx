@@ -182,25 +182,27 @@ export function QuickTauntBar({
     : 0;
 
   return (
-    <div className="quick-taunt-bar">
-      {QUICK_TAUNT_EMOTES.map((emote) => (
-        <button
-          key={emote.id}
-          type="button"
-          className="quick-taunt-btn"
-          disabled={isCoolingDown}
-          onClick={() => onSelectEmote(emote)}
-          title={`Taunt: "${emote.teaseText}"`}
-        >
-          <EmoteImage
-            codepoint={emote.codepoint}
-            alt={emote.name}
-            size={22}
-            fallbackEmoji={emote.fallbackEmoji}
-          />
-          <span className="quick-taunt-label">{emote.name}</span>
-        </button>
-      ))}
+    <div className="quick-taunt-bar" title="Quick Battle Emotes">
+      <div className="quick-taunt-emotes-group">
+        {QUICK_TAUNT_EMOTES.map((emote) => (
+          <button
+            key={emote.id}
+            type="button"
+            className="quick-taunt-btn"
+            disabled={isCoolingDown}
+            onClick={() => onSelectEmote(emote)}
+            title={`Taunt: "${emote.teaseText}"`}
+          >
+            <EmoteImage
+              codepoint={emote.codepoint}
+              alt={emote.name}
+              size={20}
+              fallbackEmoji={emote.fallbackEmoji}
+            />
+            <span className="quick-taunt-label">{emote.name}</span>
+          </button>
+        ))}
+      </div>
 
       <button
         type="button"
@@ -208,8 +210,8 @@ export function QuickTauntBar({
         onClick={onOpenPicker}
         title="Open All Animated Emotes"
       >
-        <EmoteImage codepoint="1f60f" alt="Smirk" size={18} fallbackEmoji="😏" />
-        <span>Taunts</span>
+        <EmoteImage codepoint="1f60f" alt="Smirk" size={16} fallbackEmoji="😏" />
+        <span className="taunts-btn-text">Taunts</span>
         {isCoolingDown && (
           <div
             className="emote-cooldown-bar"

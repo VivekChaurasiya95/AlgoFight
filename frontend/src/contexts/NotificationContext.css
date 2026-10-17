@@ -25,6 +25,7 @@
   border-radius: 12px;
   background: var(--surface-primary, #111827);
   border: 1px solid var(--notify-border, var(--border-default, rgba(255, 255, 255, 0.12)));
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   box-shadow: 
     0 14px 34px rgba(0, 0, 0, 0.38),
     0 2px 8px rgba(0, 0, 0, 0.2),
@@ -84,16 +85,16 @@
   padding: 0;
 }
 
-/* Explicit high specificity to guarantee no dark-text-on-dark-card or vice versa */
+/* Matching the rest of AlgoFight: Space Grotesk for headings, Inter for descriptions */
 .app-notification-card .app-notification-body h4,
 :root .app-notification-card .app-notification-body h4 {
   margin: 0;
-  font-family: var(--font-display, 'Space Grotesk'), sans-serif;
-  font-size: 0.88rem;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 0.9rem;
   font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  text-transform: none !important;
   color: var(--text-primary, #f8fafc) !important;
   text-shadow: none !important;
   -webkit-text-fill-color: initial !important;
@@ -102,9 +103,11 @@
 .app-notification-card .app-notification-body p,
 :root .app-notification-card .app-notification-body p {
   margin: 0;
-  font-family: var(--font-primary, 'Inter'), sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-size: 0.83rem;
-  line-height: 1.45;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  font-weight: 400;
   color: var(--text-secondary, #94a3b8) !important;
   text-shadow: none !important;
   -webkit-text-fill-color: initial !important;

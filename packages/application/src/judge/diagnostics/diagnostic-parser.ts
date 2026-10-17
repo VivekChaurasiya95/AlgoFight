@@ -127,21 +127,33 @@ export class DiagnosticParser {
         actualOutput?: string,
         isHidden: boolean = false
     ): StructuredError {
-        const explanation = isHidden
-            ? `Your output did not match the expected output on hidden test case #${testCaseNumber}.`
-            : `Your output did not match the expected output on sample test case #${testCaseNumber}.`;
+        const expTrim = (expectedOutput || "").trim();
+        const actTrim = (actualOutput || "").trim();
 
-        const suggestion = isHidden
+        let detail = `Your output did not match the expected output on ${isHidden ? "hidden" : "sample"} test case #${testCaseNumber}.`;
+        let fix = isHidden
             ? "Consider edge cases such as empty inputs, boundary values, or negative numbers."
             : "Compare your output line-by-line with the expected output to spot discrepancies.";
 
+        if (!actTrim) {
+            detail = `Logical Error: Program produced no output on test case #${testCaseNumber}.`;
+            fix = "Ensure your solution prints or returns the expected value without exiting prematurely.";
+        } else if (actTrim.startsWith("[") && !expTrim.startsWith("[")) {
+            detail = `Format Mismatch: Output was formatted as a raw array or JSON string (${actTrim.length > 40 ? actTrim.substring(0, 40) + "..." : actTrim}), but the judge expects space-separated values.`;
+            fix = "Format array elements separated by spaces (e.g. arr.join(' ') in JS or print(*arr) in Python) instead of printing the array directly.";
+        } else if (expTrim.includes("\n") && !actTrim.includes("\n")) {
+            detail = `Line Count Mismatch: Expected multiple lines of output, but received a single line.`;
+            fix = "Print each answer or step on its own line.";
+        }
+
         return {
             type: ErrorType.WRONG_ANSWER,
+            subtype: "LOGICAL_ERROR",
             message: `Output mismatch on test case #${testCaseNumber}.`,
             line: null,
             column: null,
-            explanation,
-            suggestion,
+            explanation: detail,
+            suggestion: fix,
         };
     }
 

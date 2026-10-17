@@ -28,88 +28,108 @@
 .arena-compact-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  gap: 16px;
+  align-items: center;
+  gap: 20px;
   flex-wrap: wrap;
-  padding-bottom: 2px;
+  padding: 22px 28px !important;
+  border-radius: 18px;
+  background: var(--surface-primary, rgba(10, 14, 23, 0.82));
+  border: 1px solid var(--border-default, rgba(0, 229, 255, 0.25));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55), 0 0 24px var(--cta-shadow, rgba(0, 229, 255, 0.08));
+  box-sizing: border-box;
+  overflow: visible;
+  position: relative;
 }
 
 .arena-header-left {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 340px;
 }
 
 .hero-kicker-tag.arena-kicker {
   font-family: 'Share Tech Mono', monospace;
   font-size: 0.72rem;
   letter-spacing: 0.18em;
-  color: #94a3b8;
-  margin-bottom: 4px;
+  color: var(--text-muted, #94a3b8);
+  margin-bottom: 2px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 3px 10px;
-  background: rgba(0, 229, 255, 0.04);
-  border: 1px solid rgba(0, 229, 255, 0.16);
+  background: var(--surface-highlight, rgba(0, 229, 255, 0.04));
+  border: 1px solid var(--border-subtle, rgba(0, 229, 255, 0.16));
   border-radius: 999px;
   width: fit-content;
 }
 
 .kicker-slash {
-  color: #3b82f6;
+  color: var(--secondary, #3b82f6);
   font-weight: 700;
 }
 
 .kicker-cross {
-  color: #64748b;
+  color: var(--text-disabled, #64748b);
   font-size: 0.7rem;
 }
 
 .kicker-word.word-glow-cyan {
-  color: #00e5ff;
-  text-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+  color: var(--cta-primary, #00e5ff);
+  text-shadow: 0 0 10px var(--cta-shadow, rgba(0, 229, 255, 0.6));
 }
 
 .arena-header-title {
   font-family: 'Space Grotesk', -apple-system, sans-serif;
-  font-size: clamp(1.5rem, 2.2vw, 2.1rem);
+  font-size: clamp(1.45rem, 2.2vw, 2.05rem);
   font-weight: 900;
-  line-height: 1.15;
-  color: #ffffff;
+  line-height: 1.25;
+  color: var(--text-primary, #ffffff);
   letter-spacing: -0.01em;
   text-transform: uppercase;
-  margin: 0 0 4px;
+  margin: 0;
+  padding: 1px 0 2px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .arena-header-subtext {
-  font-size: 0.84rem;
-  color: #94a3b8;
-  line-height: 1.4;
+  font-size: 0.86rem;
+  color: var(--text-secondary, #94a3b8);
+  line-height: 1.5;
   margin: 0;
-  max-width: 540px;
+  max-width: 600px;
 }
 
 .arena-header-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .telemetry-bar.arena-telemetry-bar {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 12px;
-  background: rgba(10, 14, 23, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 5px 14px;
+  background: var(--surface-elevated, rgba(10, 14, 23, 0.8));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
   border-radius: 999px;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.74rem;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-secondary, #94a3b8);
   backdrop-filter: blur(14px);
+  white-space: nowrap;
 }
 
 .telemetry-divider {
@@ -162,52 +182,55 @@
 }
 
 .text-cyan-gradient {
-  background: linear-gradient(135deg, #00e5ff 0%, #38bdf8 100%);
+  background: linear-gradient(135deg, var(--cta-primary, #00e5ff) 0%, var(--secondary, #38bdf8) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+  display: inline-block;
+  padding-bottom: 2px;
 }
 
 /* Tabs Switcher */
 .arena-tabs-pill-bar {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 4px;
-  background: rgba(10, 14, 23, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 5px;
+  padding: 4px;
+  background: var(--bg-deep, rgba(2, 6, 14, 0.75));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
   border-radius: 999px;
   backdrop-filter: blur(16px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 .arena-pill-tab {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
+  gap: 7px;
+  padding: 7px 16px;
   border-radius: 999px;
   background: transparent;
   border: 1px solid transparent;
-  color: #94a3b8;
+  color: var(--text-muted, #94a3b8);
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
 }
 
 .arena-pill-tab:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary, #ffffff);
+  background: var(--surface-highlight, rgba(255, 255, 255, 0.06));
 }
 
 .arena-pill-tab.active {
-  background: linear-gradient(135deg, rgba(0, 229, 255, 0.2) 0%, rgba(0, 114, 255, 0.22) 100%);
-  border-color: rgba(0, 229, 255, 0.55);
-  color: #00e5ff;
-  box-shadow: 0 2px 14px rgba(0, 229, 255, 0.3);
+  background: var(--cta-primary, #00e5ff);
+  border-color: var(--cta-primary, #00e5ff);
+  color: var(--cta-text, #050b14);
+  box-shadow: 0 2px 14px var(--cta-shadow, rgba(0, 229, 255, 0.35));
 }
 
 .arena-online-badge {
@@ -1086,6 +1109,38 @@
 }
 
 /* Responsive */
+@media (max-width: 960px) {
+  .arena-compact-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px 20px !important;
+    gap: 16px;
+  }
+
+  .arena-header-right {
+    align-items: stretch;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .telemetry-bar.arena-telemetry-bar {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+  }
+
+  .arena-tabs-pill-bar {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .arena-pill-tab {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 640px) {
   .arena-dashboard-wrapper {
     margin: 16px auto 0;
@@ -1093,18 +1148,8 @@
   }
 
   .arena-compact-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .arena-header-right {
-    align-items: flex-start;
-    width: 100%;
-  }
-
-  .arena-tabs-pill-bar {
-    width: 100%;
-    justify-content: center;
+    padding: 16px 16px !important;
+    gap: 14px;
+    border-radius: 14px;
   }
 }

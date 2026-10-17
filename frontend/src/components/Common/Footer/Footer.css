@@ -1,12 +1,25 @@
 /* ================= PREMIUM COMPACT CYBER FOOTER ================= */
 .page-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 28px;
-  padding-bottom: 20px;
-  margin-top: 36px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  padding-top: 32px;
+  padding-bottom: 24px;
+  margin-top: 40px;
   width: 100%;
   box-sizing: border-box;
-  background: radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.03) 0%, transparent 70%);
+  background: radial-gradient(circle at 50% 0%, var(--cta-shadow, rgba(0, 229, 255, 0.04)) 0%, transparent 70%), var(--bg-deep, #050607);
+  position: relative;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.page-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--cta-primary, #00e5ff) 40%, var(--secondary, #38bdf8) 70%, transparent 100%);
+  opacity: 0.6;
 }
 
 .footer-container {
@@ -17,7 +30,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 22px;
 }
 
 /* ================= 1. TOP BRAND & INSTITUTION BAR ================= */
@@ -27,8 +40,8 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 20px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
 }
 
 .footer-brand-group {
@@ -43,7 +56,7 @@
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .footer-brand-logo-wrap:hover {
@@ -54,15 +67,16 @@
   height: 32px;
   width: auto;
   object-fit: contain;
+  filter: drop-shadow(0 0 8px var(--cta-shadow, rgba(0, 229, 255, 0.35)));
 }
 
 .footer-brand-name {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: -0.01em;
-  color: #ffffff;
-  background: linear-gradient(135deg, #ffffff 40%, #00e5ff 100%);
+  color: var(--text-primary, #ffffff);
+  background: linear-gradient(135deg, var(--text-primary, #ffffff) 30%, var(--cta-primary, #00e5ff) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -71,10 +85,10 @@
 .footer-mission-text {
   font-size: 0.85rem;
   line-height: 1.5;
-  color: #8a93a6;
+  color: var(--text-muted, #7f808f);
   margin: 0;
   max-width: 520px;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
   padding-left: 16px;
 }
 
@@ -85,8 +99,8 @@
   justify-content: center;
   padding: 3px;
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid var(--border-subtle, rgba(255, 255, 255, 0.18));
+  background: var(--surface-primary, rgba(255, 255, 255, 0.04));
   overflow: hidden;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -124,18 +138,6 @@
   box-sizing: border-box;
 }
 
-.footer-accordion-card:hover {
-  background: transparent;
-  border-color: transparent;
-  box-shadow: none;
-}
-
-.footer-accordion-card.is-expanded {
-  background: transparent;
-  border-color: transparent;
-  box-shadow: none;
-}
-
 /* Accordion trigger button */
 .footer-accordion-btn {
   background: transparent;
@@ -155,10 +157,10 @@
 
 .footer-col-title {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  color: #cbd5e1;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary, #cbd5e1);
   margin: 0;
   text-transform: uppercase;
   transition: color 0.2s ease, text-shadow 0.2s ease;
@@ -175,13 +177,9 @@
   justify-content: center;
 }
 
-.footer-accordion-btn:hover .footer-chevron-badge {
-  background: transparent;
-}
-
 .footer-col-chevron {
   font-size: 0.72rem;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
 }
 
@@ -213,11 +211,12 @@
 
 .footer-list li a {
   font-size: 0.84rem;
-  color: #8a93a6;
+  color: var(--text-muted, #7f808f);
   cursor: pointer;
   transition: color 0.18s ease, transform 0.18s ease;
   text-decoration: none;
   display: inline-block;
+  font-family: 'Inter', sans-serif;
 }
 
 .footer-list li a:hover {
@@ -239,11 +238,12 @@
   align-items: center;
   gap: 8px;
   font-size: 0.82rem;
-  color: #8a93a6;
+  color: var(--text-muted, #7f808f);
+  font-family: 'Inter', sans-serif;
 }
 
 .footer-contact-link {
-  color: #8a93a6;
+  color: var(--text-muted, #7f808f);
   text-decoration: none;
   transition: color 0.18s ease;
   word-break: break-all;
@@ -263,15 +263,15 @@
 
 /* ================= 3. BOTTOM LINE ================= */
 .footer-bottom-line {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
+  padding-top: 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
   font-size: 0.82rem;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   box-sizing: border-box;
 }
 
@@ -283,7 +283,7 @@
 }
 
 .footer-divider {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--border-subtle, rgba(255, 255, 255, 0.2));
   font-size: 0.8rem;
 }
 
@@ -291,13 +291,13 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: #94a3b8;
+  color: var(--text-secondary, #94a3b8);
   font-size: 0.88rem;
   font-weight: 600;
 }
 
 .footer-sdc-logo {
-  height: 58px;
+  height: 56px;
   width: auto;
   object-fit: contain;
   vertical-align: middle;
@@ -308,7 +308,7 @@
 }
 
 .footer-sdc-logo:hover {
-  transform: scale(1.1);
+  transform: scale(1.08);
   filter: drop-shadow(0 0 16px var(--cta-shadow, rgba(0, 229, 255, 0.6))) brightness(1.15);
 }
 
@@ -325,12 +325,12 @@
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #000000;
+  border: 2px solid var(--bg-primary, #070809);
   margin-left: -9px;
   position: relative;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  background: #0d1522;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  background: var(--surface-primary, #0d1522);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   cursor: pointer;
 }
 
@@ -364,11 +364,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #232936;
-  color: #94a3b8;
+  background: var(--surface-elevated, #232936);
+  color: var(--text-muted, #94a3b8);
   font-size: 0.72rem;
   font-weight: 700;
-  border: 2px solid #000000;
+  border: 2px solid var(--bg-primary, #070809);
 }
 
 .dev-stack-avatar:hover {
@@ -381,6 +381,119 @@
 .dev-stack-avatar.dev-stack-plus:hover {
   background: var(--cta-primary, #00e5ff);
   color: var(--cta-text, #04080d);
+  border-color: var(--cta-primary, #00e5ff);
+}
+
+/* ================= EXPLICIT THEME OVERRIDES ================= */
+
+/* 1. CLEAN HORIZON / LIGHT THEME */
+:root[data-theme="light"] .page-footer {
+  background: #f8fafc;
+  border-top-color: #e2e8f0;
+}
+
+:root[data-theme="light"] .page-footer::before {
+  background: linear-gradient(90deg, transparent 0%, #0284c7 40%, #0ea5e9 70%, transparent 100%);
+  opacity: 0.45;
+}
+
+:root[data-theme="light"] .footer-top-bar {
+  border-bottom-color: #e2e8f0;
+}
+
+:root[data-theme="light"] .footer-brand-name {
+  background: linear-gradient(135deg, #0f172a 30%, #0284c7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+:root[data-theme="light"] .footer-mission-text {
+  color: #64748b;
+  border-left-color: #cbd5e1;
+}
+
+:root[data-theme="light"] .footer-institution-badge {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme="light"] .footer-col-title {
+  color: #0f172a;
+}
+
+:root[data-theme="light"] .footer-col-chevron {
+  color: #94a3b8;
+}
+
+:root[data-theme="light"] .footer-list li a,
+:root[data-theme="light"] .footer-contact-items li,
+:root[data-theme="light"] .footer-contact-link {
+  color: #64748b;
+}
+
+:root[data-theme="light"] .footer-list li a:hover,
+:root[data-theme="light"] .footer-contact-link:hover {
+  color: #0284c7;
+}
+
+:root[data-theme="light"] .footer-bottom-line {
+  border-top-color: #e2e8f0;
+  color: #64748b;
+}
+
+:root[data-theme="light"] .footer-powered-by {
+  color: #334155;
+}
+
+:root[data-theme="light"] .dev-stack-avatar {
+  border-color: #ffffff;
+  background: #f1f5f9;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="light"] .dev-stack-avatar.dev-stack-plus {
+  background: #e2e8f0;
+  color: #475569;
+  border-color: #ffffff;
+}
+
+:root[data-theme="light"] .dev-stack-avatar.dev-stack-plus:hover {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+/* 2. SYNTHWAVE / AMETHYST (NEON VIOLET) TUNING */
+:root[data-theme="amethyst"] .footer-logo-img {
+  filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.45));
+}
+:root[data-theme="amethyst"] .footer-sdc-logo {
+  filter: drop-shadow(0 0 10px rgba(192, 132, 252, 0.4)) brightness(1.05);
+}
+
+/* 3. SOLAR / SUNSET (WARM AMBER) TUNING */
+:root[data-theme="sunset"] .footer-logo-img {
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.45));
+}
+:root[data-theme="sunset"] .footer-sdc-logo {
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.4)) brightness(1.05);
+}
+
+/* 4. TERMINAL / EMERALD (QUANTUM GREEN) TUNING */
+:root[data-theme="emerald"] .footer-logo-img {
+  filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.45));
+}
+:root[data-theme="emerald"] .footer-sdc-logo {
+  filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.4)) brightness(1.05);
+}
+
+/* 5. CRIMSON / OVERDRIVE (BLOOD MOON) TUNING */
+:root[data-theme="crimson"] .footer-logo-img {
+  filter: drop-shadow(0 0 8px rgba(251, 113, 133, 0.45));
+}
+:root[data-theme="crimson"] .footer-sdc-logo {
+  filter: drop-shadow(0 0 10px rgba(251, 113, 133, 0.4)) brightness(1.05);
 }
 
 /* ================= RESPONSIVENESS ================= */

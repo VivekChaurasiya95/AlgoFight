@@ -315,23 +315,25 @@ export class PistonAdapter {
             };
         } catch (err: any) {
             const timedOut = err.code === "ERR_SCRIPT_EXECUTION_TIMEOUT";
+            const isSyntax = !timedOut && (err instanceof SyntaxError || err.name === "SyntaxError" || String(err.message || "").includes("SyntaxError"));
             const timeMs = Date.now() - start;
             return {
                 compile: {
-                    success: true,
-                    output: "",
+                    success: !isSyntax,
+                    output: isSyntax ? (err.stack || err.message) : "",
+                    error: isSyntax ? (err.stack || err.message) : undefined,
                 },
                 run: {
                     success: false,
-                    stdout: stdoutBuffer.trim(),
-                    stderr: (stderrBuffer + "\n" + (timedOut ? "Time Limit Exceeded" : err.message)).trim(),
+                    stdout: isSyntax ? "" : stdoutBuffer.trim(),
+                    stderr: (stderrBuffer + "\n" + (timedOut ? "Time Limit Exceeded" : (err.stack || err.message))).trim(),
                     code: 1,
                     signal: timedOut ? "SIGXCPU" : null,
                     isTimeout: timedOut,
                     isMemoryLimit: false,
-                    isRuntimeError: !timedOut,
-                    timeMs,
-                    memoryBytes: 15 * 1024 * 1024,
+                    isRuntimeError: !timedOut && !isSyntax,
+                    timeMs: isSyntax ? 0 : timeMs,
+                    memoryBytes: isSyntax ? 0 : 15 * 1024 * 1024,
                 },
             };
         }
@@ -352,7 +354,7 @@ export class PistonAdapter {
         memoryLimitBytes: number = -1
     ): NormalizedExecutionResult {
         const hasCompile = !!response.compile;
-        const compileSuccess = hasCompile ? response.compile!.code === 0 : true;
+        let compileSuccess = hasCompile ? response.compile!.code === 0 : true;
 
         const run = response.run;
         const isExplicitTimeout =
@@ -371,17 +373,43 @@ export class PistonAdapter {
             ));
 
         const isTimeout = isExplicitTimeout || (!isMemoryLimit && run.signal === "SIGKILL");
+
+        // Detect syntax / compilation errors in interpreted languages where Piston lacks a separate compile stage
+        const runStderr = run.stderr || "";
+        const runOutput = run.output || "";
+        const combinedErr = (runStderr + "\n" + runOutput).trim();
+        const combinedLower = combinedErr.toLowerCase();
+
+        const isSyntaxError = 
+            combinedErr.includes("SyntaxError:") ||
+            combinedErr.includes("IndentationError:") ||
+            combinedErr.includes("TabError:") ||
+            combinedErr.includes("Syntax error") ||
+            (run.code !== 0 && (
+                combinedLower.includes("syntaxerror") ||
+                combinedLower.includes("syntax error") ||
+                combinedLower.includes("unexpected token") ||
+                combinedLower.includes("unexpected identifier") ||
+                combinedLower.includes("invalid syntax") ||
+                combinedLower.includes("parsing error") ||
+                combinedLower.includes("error ts")
+            ));
+
+        if (isSyntaxError) {
+            compileSuccess = false;
+        }
+
         const isRuntimeError = !compileSuccess ? false : (run.code !== 0 && !isTimeout && !isMemoryLimit);
 
         return {
             compile: {
                 success: compileSuccess,
-                output: hasCompile ? response.compile!.output : "",
-                error: !compileSuccess ? response.compile!.stderr || response.compile!.output : undefined,
+                output: hasCompile ? response.compile!.output : (isSyntaxError ? combinedErr : ""),
+                error: !compileSuccess ? (response.compile?.stderr || response.compile?.output || (isSyntaxError ? combinedErr : undefined)) : undefined,
             },
             run: {
-                success: run.code === 0 && !isTimeout && !isMemoryLimit,
-                stdout: run.stdout,
+                success: compileSuccess && run.code === 0 && !isTimeout && !isMemoryLimit,
+                stdout: compileSuccess ? run.stdout : "", // Uncompilable code produces NO program stdout
                 stderr: run.stderr,
                 code: run.code,
                 signal: run.signal,

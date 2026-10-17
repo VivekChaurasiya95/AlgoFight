@@ -95,10 +95,31 @@ export class ExecutionPipeline {
             return errorResult;
         }
 
+        const canaryStderr = (firstExecution.run?.stderr || firstExecution.run?.stdout || "").trim();
+        const canaryStderrLower = canaryStderr.toLowerCase();
+
+        const isSyntaxOrCompileError = 
+            !firstExecution.compile.success ||
+            canaryStderr.includes("SyntaxError:") ||
+            canaryStderr.includes("IndentationError:") ||
+            canaryStderr.includes("TabError:") ||
+            canaryStderr.includes("Syntax error") ||
+            (firstExecution.run && !firstExecution.run.success && (
+                canaryStderrLower.includes("syntaxerror") ||
+                canaryStderrLower.includes("syntax error") ||
+                canaryStderrLower.includes("unexpected token") ||
+                canaryStderrLower.includes("unexpected identifier") ||
+                canaryStderrLower.includes("invalid syntax") ||
+                canaryStderrLower.includes("parsing error") ||
+                canaryStderrLower.includes("error ts")
+            ));
+
+        const rawCompileErr = firstExecution.compile.error || firstExecution.compile.output || (isSyntaxOrCompileError ? canaryStderr : "");
+
         const compilationResult = {
-            success: firstExecution.compile.success,
-            output: firstExecution.compile.output,
-            error: firstExecution.compile.error,
+            success: firstExecution.compile.success && !isSyntaxOrCompileError,
+            output: firstExecution.compile.output || (isSyntaxOrCompileError ? canaryStderr : ""),
+            error: !firstExecution.compile.success || isSyntaxOrCompileError ? (rawCompileErr || "Compilation / Syntax Error") : undefined,
         };
 
         if (!compilationResult.success) {
@@ -114,7 +135,7 @@ export class ExecutionPipeline {
                 verdict: Verdict.COMPILATION_ERROR,
                 compilation: compilationResult,
                 error: structuredErr,
-                testCases: [],
+                testCases: [], // Crucial: ZERO test cases evaluated when code fails compilation
                 resourceUsage: { maxMemory: 0, totalTime: 0 }
             };
             onProgress?.({ 

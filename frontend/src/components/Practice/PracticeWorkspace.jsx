@@ -17,6 +17,11 @@ import {
   faRotateLeft,
   faRotateRight,
   faKeyboard,
+  faTerminal,
+  faTriangleExclamation,
+  faCheckCircle,
+  faCopy,
+  faCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import { evaluatePracticeCode, fetchProblemById, recordPracticeProgress, fetchPracticeCheckpoint, savePracticeCheckpoint } from "../../services/api";
 import { saveLocalDraft, getLocalDraft, reconcileCheckpoints } from "../../services/storage/indexedDbRecovery.js";
@@ -25,6 +30,8 @@ import { useAuth } from "../../contexts/AuthContext.jsx";
 import { useAntiCheat } from "../../hooks/useAntiCheat";
 import ProblemStatement from "../Common/problem/ProblemStatement.jsx";
 import DetailedAnalysisModal from "../Common/modals/DetailedAnalysisModal.jsx";
+import DiagnosticErrorCard from "../Common/editor/DiagnosticErrorCard.jsx";
+import { parseDiagnosticError } from "../../utils/diagnosticParser.js";
 import {
   SUPPORTED_LANGUAGES,
   getStarterCodeForLanguage,
@@ -34,7 +41,6 @@ import BackgroundPaths from "../BackgroundPaths/BackgroundPaths";
 import "../BackgroundPaths/BackgroundPaths.css";
 import Footer from "../Common/Footer/Footer";
 import SmartCodeEditor from "../Common/editor/SmartCodeEditor.jsx";
-import ThemeSelector from "../Theme/ThemeSelector";
 import "../Battle/LiveBattle.css";
 
 export default function PracticeWorkspace() {
@@ -49,6 +55,12 @@ export default function PracticeWorkspace() {
 
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [code, setCode] = useState("");
+  const [codeByLanguage, setCodeByLanguage] = useState({});
+  const codeByLanguageRef = useRef({});
+  useEffect(() => {
+    codeByLanguageRef.current = codeByLanguage;
+  }, [codeByLanguage]);
+
   const editorRef = useRef(null);
   const saveDebounceTimer = useRef(null);
   const revisionRef = useRef(1);
@@ -60,6 +72,16 @@ export default function PracticeWorkspace() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
   const [isSubmitPanelOpen, setIsSubmitPanelOpen] = useState(true);
+
+  // Tabs for console panel: 'terminal' | 'problems'
+  const [consoleTab, setConsoleTab] = useState("terminal");
+  const [copiedOutput, setCopiedOutput] = useState(false);
+
+  // Compiler-Grade Diagnostic for error highlighting and line jump
+  const diagnostic = useMemo(() => {
+    if (!lastResult) return null;
+    return parseDiagnosticError(lastResult, code, selectedLanguage);
+  }, [lastResult, code, selectedLanguage]);
 
   // Fullscreen Mode State & Auto-Trigger
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
@@ -239,11 +261,19 @@ export default function PracticeWorkspace() {
         if (!active) return;
 
         if (reconciled && reconciled.code && reconciled.code.trim().length > 0) {
+          const lang = reconciled.language || "javascript";
+          setSelectedLanguage(lang);
           setCode(reconciled.code);
-          if (reconciled.language) setSelectedLanguage(reconciled.language);
+          const initialMap = { [lang]: reconciled.code };
+          setCodeByLanguage(initialMap);
+          codeByLanguageRef.current = initialMap;
           revisionRef.current = reconciled.revision || reconciled.localRevision || 1;
         } else {
-          setCode(getStarterCodeForLanguage(data, selectedLanguage || "javascript"));
+          const initialCode = getStarterCodeForLanguage(data, selectedLanguage || "javascript");
+          setCode(initialCode);
+          const initialMap = { [selectedLanguage || "javascript"]: initialCode };
+          setCodeByLanguage(initialMap);
+          codeByLanguageRef.current = initialMap;
         }
       } catch (error) {
         if (!active) return;
@@ -269,17 +299,50 @@ export default function PracticeWorkspace() {
   }, [notify, problemId, user?.uid]);
 
   const handleLanguageChange = (newLang) => {
+    if (!newLang || newLang === selectedLanguage) return;
+
+    // 1. Save current code for current language in memory
+    const currentCode = code;
+    const currentLang = selectedLanguage;
+    const updatedMap = {
+      ...codeByLanguageRef.current,
+      [currentLang]: currentCode,
+    };
+
+    // 2. Look up code for the new language:
+    // If user has saved code in newLang, restore it.
+    // Otherwise, generate the proper starter wrapper for newLang!
+    let nextCode = updatedMap[newLang];
+    if (nextCode === undefined || nextCode === null) {
+      nextCode = getStarterCodeForLanguage(problem, newLang);
+      updatedMap[newLang] = nextCode;
+    }
+
+    codeByLanguageRef.current = updatedMap;
+    setCodeByLanguage(updatedMap);
     setSelectedLanguage(newLang);
-    if (!problem) return;
-    const currentStarter = getStarterCodeForLanguage(problem, selectedLanguage);
-    const isStarterOrEmpty = !code.trim() || code.trim() === currentStarter.trim();
-    if (isStarterOrEmpty) {
-      setCode(getStarterCodeForLanguage(problem, newLang));
+    setCode(nextCode);
+
+    // 3. Persist checkpoint for the new language
+    if (problemId && user?.uid) {
+      saveLocalDraft({
+        activityType: "practice",
+        activityId: problemId,
+        problemId,
+        userId: user.uid,
+        code: nextCode,
+        language: newLang,
+      }).catch(() => {});
     }
   };
 
   const handleCodeChange = (newCode) => {
     setCode(newCode);
+    codeByLanguageRef.current = {
+      ...codeByLanguageRef.current,
+      [selectedLanguage]: newCode,
+    };
+    setCodeByLanguage(codeByLanguageRef.current);
     revisionRef.current = (revisionRef.current || 1) + 1;
 
     if (saveDebounceTimer.current) {
@@ -343,6 +406,12 @@ export default function PracticeWorkspace() {
       const passed = Boolean(result?.passed);
 
       setLastResult(result);
+      const isError = !passed || result?.verdict === "COMPILATION_ERROR" || Boolean(result?.error);
+      if (isError) {
+        setConsoleTab("problems");
+      } else {
+        setConsoleTab("terminal");
+      }
       setOutput(
         mode === "submit"
           ? `${result?.output || "Submission finished."}\n\nPractice submit uses a balanced suite: sample + limited hidden/edge checks.`
@@ -489,6 +558,12 @@ export default function PracticeWorkspace() {
           onClose={() => setShowDetailedAnalysis(false)}
           result={lastResult}
           problem={problem}
+          code={code}
+          language={selectedLanguage}
+          onJumpToLine={(line, col) => {
+            setShowDetailedAnalysis(false);
+            editorRef.current?.jumpToLine?.(line, col);
+          }}
         />
 
         <motion.section initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="livebattle-header-card">
@@ -508,7 +583,6 @@ export default function PracticeWorkspace() {
           </div>
 
           <div className="livebattle-header-right">
-            <ThemeSelector />
             <button
               className="livebattle-fullscreen-btn"
               onClick={toggleFullScreen}
@@ -624,11 +698,11 @@ export default function PracticeWorkspace() {
                 onRun={() => evaluateCode("test")}
                 onSubmit={() => evaluateCode("submit")}
                 errorLocation={
-                  (lastResult?.error?.line || lastResult?.structuredError?.line)
+                  diagnostic?.line
                     ? {
-                        line: lastResult?.error?.line || lastResult?.structuredError?.line,
-                        column: lastResult?.error?.column || lastResult?.structuredError?.column,
-                        message: lastResult?.error?.message || lastResult?.structuredError?.message,
+                        line: diagnostic.line,
+                        column: diagnostic.column,
+                        message: diagnostic.message,
                       }
                     : null
                 }
@@ -800,17 +874,37 @@ export default function PracticeWorkspace() {
                     <div className="livebattle-result-meta" style={{ marginTop: "12px" }}>
                       <div>
                         <span>Verdict</span>
-                        <strong className={lastResult.passed ? "pass" : "fail"}>{lastResult.passed ? "Passed" : "Failed"}</strong>
+                        <strong className={lastResult.passed ? "pass" : "fail"}>
+                          {lastResult.passed
+                            ? "Passed"
+                            : (diagnostic?.verdictType === "COMPILATION_ERROR"
+                                ? "Compile Error"
+                                : (diagnostic?.verdictType === "SYNTAX_ERROR"
+                                    ? "Syntax Error"
+                                    : (diagnostic?.verdictType === "TIME_LIMIT_EXCEEDED"
+                                        ? "Time Limit Exceeded"
+                                        : (diagnostic?.verdictType === "MEMORY_LIMIT_EXCEEDED"
+                                            ? "Memory Limit Exceeded"
+                                            : (diagnostic?.verdictType === "RUNTIME_ERROR"
+                                                ? "Runtime Error"
+                                                : "Wrong Answer")))))}
+                        </strong>
                       </div>
                       <div>
                         <span>Tests</span>
                         <strong>
-                          {lastResult.passedTestCases ?? 0}/{lastResult.totalTestCases ?? 0}
+                          {diagnostic?.verdictType === "COMPILATION_ERROR" || diagnostic?.verdictType === "SYNTAX_ERROR"
+                            ? "--"
+                            : `${lastResult.passedTestCases ?? 0}/${lastResult.totalTestCases ?? 0}`}
                         </strong>
                       </div>
                       <div>
                         <span>Time</span>
-                        <strong>{lastResult.executionTime ?? 0} ms</strong>
+                        <strong>
+                          {diagnostic?.verdictType === "COMPILATION_ERROR" || diagnostic?.verdictType === "SYNTAX_ERROR"
+                            ? "0 ms"
+                            : `${lastResult.executionTime ?? 0} ms`}
+                        </strong>
                       </div>
                     </div>
                   ) : null}
@@ -824,22 +918,89 @@ export default function PracticeWorkspace() {
 
                   <div className="livebattle-output-box" style={{ marginTop: "12px" }}>
                     <div className="console-bar">
-                      <div className="console-dots">
-                        <span className="dot dot-red" />
-                        <span className="dot dot-yellow" />
-                        <span className="dot dot-green" />
+                      <div className="console-bar-left">
+                        <div className="console-dots">
+                          <span className="dot dot-red" />
+                          <span className="dot dot-yellow" />
+                          <span className="dot dot-green" />
+                        </div>
+                        <div className="console-tabs-group">
+                          <button
+                            type="button"
+                            className={`console-tab-btn ${consoleTab === "terminal" ? "active" : ""}`}
+                            onClick={() => setConsoleTab("terminal")}
+                          >
+                            <FontAwesomeIcon icon={faTerminal} />
+                            <span>Console Output</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`console-tab-btn ${consoleTab === "problems" ? "active" : ""}`}
+                            onClick={() => setConsoleTab("problems")}
+                          >
+                            <FontAwesomeIcon icon={diagnostic?.isError ? faTriangleExclamation : faCheckCircle} />
+                            <span>Problems</span>
+                            {diagnostic?.isError ? (
+                              <span className="console-tab-counter">1</span>
+                            ) : (
+                              <span className="console-tab-counter clean">0</span>
+                            )}
+                          </button>
+                        </div>
                       </div>
-                      <span className="console-title">Console Output</span>
+
+                      <div className="console-bar-actions">
+                        {consoleTab === "terminal" && output && (
+                          <button
+                            type="button"
+                            className="console-action-icon-btn"
+                            onClick={() => {
+                              navigator.clipboard.writeText(output);
+                              setCopiedOutput(true);
+                              setTimeout(() => setCopiedOutput(false), 2000);
+                            }}
+                            title="Copy Console Output"
+                          >
+                            <FontAwesomeIcon icon={copiedOutput ? faCheck : faCopy} />
+                            <span>{copiedOutput ? "Copied" : "Copy"}</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="console-content" style={{ padding: "14px", flex: 1, overflowY: "auto" }}>
+
+                    <div className="console-content" style={{ padding: consoleTab === "problems" ? "12px" : "14px", flex: 1, overflowY: "auto" }}>
                       {running ? (
                         <div className="livebattle-loader livebattle-inline-loader">
                           {runMode === "test" ? "Testing against sample cases..." : "Evaluating against balanced test suite..."}
                         </div>
+                      ) : consoleTab === "problems" ? (
+                        diagnostic && diagnostic.isError ? (
+                          <DiagnosticErrorCard
+                            diagnostic={diagnostic}
+                            onJumpToLine={(line, col) => editorRef.current?.jumpToLine?.(line, col)}
+                          />
+                        ) : (
+                          <div className="console-clean-placeholder">
+                            <FontAwesomeIcon icon={faCheckCircle} />
+                            <span>No compiler or logical problems detected in current execution.</span>
+                          </div>
+                        )
                       ) : (
-                        <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", fontFamily: "'Fira Code', monospace", fontSize: "0.83rem", color: "var(--text-primary, #d1d5db)" }}>
-                          {output || "Output will appear here."}
-                        </pre>
+                        diagnostic?.verdictType === "COMPILATION_ERROR" || diagnostic?.verdictType === "SYNTAX_ERROR" ? (
+                          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: "0.82rem", color: "#f87171", lineHeight: 1.6 }}>
+                            <div><strong>[COMPILATION FAILED]</strong></div>
+                            <div style={{ marginTop: "6px", color: "var(--text-muted, #94a3b8)" }}>
+                              Program could not be compiled or parsed. No executable was generated and zero test cases were run.
+                            </div>
+                            <div style={{ marginTop: "8px", color: "var(--cta-primary, #00e5ff)" }}>
+                              👉 Switch to the <strong>Problems</strong> tab to view the compiler diagnostic and jump to line {diagnostic.line || ""}.
+                            </div>
+                          </div>
+                        ) : (
+                          <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", fontFamily: "'Fira Code', monospace", fontSize: "0.83rem", color: "var(--text-primary, #d1d5db)" }}>
+                            {output || "Console output will appear here."}
+                          </pre>
+                        )
                       )}
                     </div>
                   </div>

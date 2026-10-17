@@ -9,8 +9,8 @@ export class CppDiagnosticParser {
         const userLines = userCode.split("\n");
         const totalUserLines = userLines.length;
 
-        // Pattern for GCC/Clang: file.cpp:line:col: error/fatal error: message
-        const gccRegex = /(?:([a-zA-Z0-9_.\-\\/]+):(\d+):(\d+):\s+(error|fatal error|warning):\s+(.*))/g;
+        // Pattern for GCC/Clang: file.cpp:line:col: error/fatal error: message or file.cpp:line: error:
+        const gccRegex = /(?:([a-zA-Z0-9_.\-\\/]+):(\d+)(?::(\d+))?:\s+(error|fatal error|warning):\s+(.*))/g;
 
         const matches: Array<{
             file: string;
@@ -25,7 +25,7 @@ export class CppDiagnosticParser {
             matches.push({
                 file: match[1],
                 reportedLine: parseInt(match[2], 10),
-                column: parseInt(match[3], 10),
+                column: match[3] ? parseInt(match[3], 10) : 1,
                 severity: match[4],
                 message: match[5].trim(),
             });

@@ -846,13 +846,14 @@
   text-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
 }
 
-.arena-compact-header {
+.main-view-header.arena-compact-header,
+.controlhub-compact-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 16px 22px;
+  padding: 22px 28px;
   border-radius: 18px;
   background: var(--surface-primary, rgba(10, 14, 23, 0.78));
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));

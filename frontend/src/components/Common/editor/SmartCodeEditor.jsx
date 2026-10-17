@@ -84,12 +84,11 @@ export const SmartCodeEditor = forwardRef(({
     setCanRedo(false);
   }, [problemId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Jump cursor & scroll to error line when errorLocation changes
-  useEffect(() => {
-    if (!errorLocation || !errorLocation.line || !textareaRef.current || !value) return;
-
-    const targetLine = errorLocation.line;
-    const lineList = value.split("\n");
+  // Jump cursor & scroll to line and column
+  const jumpToLine = useCallback((targetLine, targetCol = 1) => {
+    if (!targetLine || !textareaRef.current) return;
+    const currentVal = textareaRef.current.value || value || "";
+    const lineList = currentVal.split("\n");
     if (targetLine < 1 || targetLine > lineList.length) return;
 
     let charOffset = 0;
@@ -97,20 +96,31 @@ export const SmartCodeEditor = forwardRef(({
       charOffset += lineList[i].length + 1; // +1 for newline
     }
 
-    const col = Math.max(0, (errorLocation.column || 1) - 1);
+    const col = Math.max(0, (targetCol || 1) - 1);
     const lineLen = lineList[targetLine - 1].length;
     const finalPos = charOffset + Math.min(col, lineLen);
 
     const textarea = textareaRef.current;
     textarea.focus();
-    textarea.setSelectionRange(charOffset, finalPos);
+    // Select from start of the line or caret at the exact column
+    if (col > 0) {
+      textarea.setSelectionRange(charOffset, finalPos);
+    } else {
+      textarea.setSelectionRange(charOffset, charOffset + lineLen);
+    }
 
     const lineHeight = 22; // exact monospace line height
     const newScrollTop = Math.max(0, (targetLine - 3) * lineHeight);
     textarea.scrollTop = newScrollTop;
     if (highlightRef.current) highlightRef.current.scrollTop = newScrollTop;
     if (gutterRef.current) gutterRef.current.scrollTop = newScrollTop;
-  }, [errorLocation, value, textareaRef]);
+  }, [value, textareaRef]);
+
+  // Jump cursor & scroll to error line when errorLocation changes
+  useEffect(() => {
+    if (!errorLocation || !errorLocation.line) return;
+    jumpToLine(errorLocation.line, errorLocation.column || 1);
+  }, [errorLocation, jumpToLine]);
 
   const showToastFeedback = useCallback((message, type = "info") => {
     if (!showToast) return;
@@ -261,8 +271,9 @@ export const SmartCodeEditor = forwardRef(({
     closeShortcuts: () => setIsShortcutsOpen(false),
     focus: () => textareaRef.current?.focus(),
     getTextarea: () => textareaRef.current,
+    jumpToLine,
     isFormatting,
-  }), [executeFormat, triggerUndo, triggerRedo, isFormatting, textareaRef]);
+  }), [executeFormat, triggerUndo, triggerRedo, isFormatting, textareaRef, jumpToLine]);
 
   // Background Idle Self-Alignment via Prettier (zero user intervention)
   useEffect(() => {

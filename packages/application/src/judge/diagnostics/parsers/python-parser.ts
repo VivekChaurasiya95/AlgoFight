@@ -18,14 +18,21 @@ export class PythonDiagnosticParser {
         let line: number | null = null;
         let column: number | null = null;
 
-        const fileLineMatches = [...rawOutput.matchAll(/File\s+"[^"]+",\s+line\s+(\d+)(?:,\s+in\s+([^\n]+))?/g)];
+        const fileLineMatches = [
+            ...rawOutput.matchAll(/File\s+"[^"]+",\s+line\s+(\d+)(?:,\s+in\s+([^\n]+))?/g),
+            ...rawOutput.matchAll(/(?:line\s+|line:)(\d+)/gi),
+        ];
         if (fileLineMatches.length > 0) {
-            // Last match in traceback is where the error occurred
-            const lastMatch = fileLineMatches[fileLineMatches.length - 1];
-            const repLine = parseInt(lastMatch[1], 10);
-            const adj = repLine - lineOffset;
-            if (adj >= 1 && adj <= totalUserLines) {
-                line = adj;
+            // Find valid line within user code bounds
+            for (let i = fileLineMatches.length - 1; i >= 0; i--) {
+                const repLine = parseInt(fileLineMatches[i][1], 10);
+                if (!isNaN(repLine)) {
+                    const adj = repLine - lineOffset;
+                    if (adj >= 1 && adj <= totalUserLines) {
+                        line = adj;
+                        break;
+                    }
+                }
             }
         }
 

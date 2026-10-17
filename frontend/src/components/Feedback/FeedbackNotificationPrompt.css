@@ -89,31 +89,36 @@
 }
 
 .feedback-toast-badge {
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.65rem;
     font-weight: 700;
-    letter-spacing: 0.8px;
-    color: #ffb300;
+    letter-spacing: 0.08em;
+    color: var(--warning, #ffb300);
     text-transform: uppercase;
 }
 
 .feedback-toast-inbox-hint {
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.68rem;
     font-weight: 600;
-    color: #00e5ff;
+    color: var(--cta-primary, #00e5ff);
 }
 
 .feedback-toast-title {
     margin: 0 0 4px;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 0.95rem;
     font-weight: 700;
-    color: #f8fafc;
+    letter-spacing: -0.01em;
+    color: var(--text-primary, #f8fafc);
 }
 
 .feedback-toast-msg {
     margin: 0 0 10px;
-    font-size: 0.8rem;
-    color: #cbd5e1;
-    line-height: 1.35;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 0.83rem;
+    color: var(--text-secondary, #cbd5e1);
+    line-height: 1.45;
 }
 
 .feedback-toast-actions {
@@ -126,27 +131,30 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: linear-gradient(135deg, #00e5ff 0%, #00b4d8 100%);
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--cta-primary, linear-gradient(135deg, #00e5ff 0%, #00b4d8 100%));
     border: none;
-    color: #050b14;
+    color: var(--cta-text, #050b14);
     padding: 6px 12px;
     border-radius: 6px;
     font-size: 0.78rem;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 0 10px rgba(0, 229, 255, 0.25);
+    box-shadow: 0 0 10px var(--cta-shadow, rgba(0, 229, 255, 0.25));
     transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
 
 .feedback-toast-btn-action:hover {
     transform: translateY(-1px);
-    box-shadow: 0 0 16px rgba(0, 229, 255, 0.45);
+    background: var(--cta-hover, #38bdf8);
+    box-shadow: 0 0 16px var(--cta-shadow, rgba(0, 229, 255, 0.45));
 }
 
 .feedback-toast-btn-later {
     background: transparent;
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    color: #94a3b8;
+    border: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.25));
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text-muted, #94a3b8);
     padding: 5px 10px;
     border-radius: 6px;
     font-size: 0.75rem;
@@ -156,8 +164,8 @@
 }
 
 .feedback-toast-btn-later:hover {
-    color: #f1f5f9;
-    border-color: #cbd5e1;
+    color: var(--text-primary, #f1f5f9);
+    border-color: var(--border-primary, #cbd5e1);
 }
 
 .feedback-toast-close {

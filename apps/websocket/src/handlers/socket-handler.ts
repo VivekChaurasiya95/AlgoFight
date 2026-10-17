@@ -1411,6 +1411,10 @@ export class SocketHandler {
                         verdict: result.verdict,
                         error: result.error || null,
                         structuredError: result.error || null,
+                        compilation: result.compilation || null,
+                        output: result.verdict === "COMPILATION_ERROR"
+                            ? (result.compilation?.error || result.compilation?.output || result.error?.rawMessage || result.error?.message || "Compilation failed.")
+                            : (result.verdict === "ACCEPTED" ? "All test cases passed successfully!" : (result.error?.message || "Some test cases failed.")),
                         executionTime: result.resourceUsage?.totalTime || 0,
                         memoryUsage: result.resourceUsage?.maxMemory || 0,
                         results: (result.testCases || []).map((tc) => ({
@@ -1460,6 +1464,10 @@ export class SocketHandler {
                         verdict: result.verdict,
                         error: result.error || null,
                         structuredError: result.error || null,
+                        compilation: result.compilation || null,
+                        output: result.verdict === "COMPILATION_ERROR"
+                            ? (result.compilation?.error || result.compilation?.output || result.error?.rawMessage || result.error?.message || "Compilation failed.")
+                            : (isAccepted ? "All test cases passed successfully!" : (result.error?.message || "Some test cases failed.")),
                         executionTime: result.resourceUsage?.totalTime || 0,
                         memoryUsage: result.resourceUsage?.maxMemory || 0,
                         results: (result.testCases || []).map((tc) => ({

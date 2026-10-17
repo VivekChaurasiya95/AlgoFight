@@ -200,7 +200,7 @@ export class SubmissionController {
                 passed,
                 output: passed 
                     ? "All test cases passed successfully!" 
-                    : (activeError?.message || evalResult.compilation?.error || firstFailed?.error || "Output mismatch."),
+                    : (evalResult.compilation?.error || evalResult.compilation?.output || activeError?.rawMessage || activeError?.message || firstFailed?.error || "Output mismatch."),
                 passedTestCases: passedCount,
                 totalTestCases: totalCount,
                 executionTime: evalResult.resourceUsage?.totalTime || 0,
@@ -208,6 +208,7 @@ export class SubmissionController {
                 verdict: evalResult.verdict,
                 error: activeError,
                 structuredError: activeError,
+                compilation: evalResult.compilation || null,
                 testCaseResults: sanitizedTestCaseResults,
                 reward: rewardInfo,
             };
