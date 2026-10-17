@@ -158,10 +158,10 @@ export default function EloRatingGraph({
     };
   }, [numRating, rawHistory]);
 
-  // 2. Geometry coordinates
-  const topY = 14;
-  const botY = 48;
-  const midY = (topY + botY) / 2; // 31
+  // 2. Geometry coordinates scaled to viewBoxHeight
+  const topY = Math.max(12, Math.round(viewBoxHeight * 0.16));
+  const botY = Math.max(42, Math.round(viewBoxHeight * 0.72));
+  const midY = Math.round((topY + botY) / 2);
   const leftX = 34;
   const rightX = 236;
 

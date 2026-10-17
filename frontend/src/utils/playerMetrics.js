@@ -38,6 +38,12 @@ export function normalizeUserStats(profile = {}) {
 
   const arenaPoints = Math.max(0, Number(profile?.arenaPoints ?? 0));
 
+  const currentStreak = Number(profile?.currentStreak ?? 0);
+  const longestStreak = Number(profile?.longestStreak ?? currentStreak);
+  const solvedToday = Boolean(profile?.solvedToday);
+  const todaySolvedCount = Number(profile?.todaySolvedCount ?? 0);
+  const streakDates = Array.isArray(profile?.streakDates) ? profile.streakDates : [];
+
   return {
     rating,
     arenaPoints,
@@ -48,6 +54,11 @@ export function normalizeUserStats(profile = {}) {
     practiceSubmissions,
     winRate,
     practiceAccuracy,
+    currentStreak,
+    longestStreak,
+    solvedToday,
+    todaySolvedCount,
+    streakDates,
     rank: tier.name,
     rankKey: tier.key,
     rankTier: tier,
@@ -55,6 +66,46 @@ export function normalizeUserStats(profile = {}) {
     highestRank: profile?.highestRank || tier.key,
     ewma: Number(profile?.ewma ?? 0.5),
   };
+}
+
+/**
+ * Returns date formatted as YYYY-MM-DD in India Standard Time (Asia/Kolkata).
+ */
+export function getISTDateString(d = new Date()) {
+  const dateObj = typeof d === "string" ? new Date(d) : d;
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(dateObj);
+}
+
+/**
+ * Shifts an IST date string by delta days.
+ */
+export function getShiftedISTDate(baseDateStr, dayDelta) {
+  const [y, m, d] = baseDateStr.split("-").map(Number);
+  const utcDate = new Date(Date.UTC(y, m - 1, d));
+  utcDate.setUTCDate(utcDate.getUTCDate() + dayDelta);
+  return utcDate.toISOString().split("T")[0];
+}
+
+/**
+ * Returns remaining time until next 12:00 AM IST (daily streak boundary).
+ */
+export function getTimeUntilNextISTMidnight() {
+  const now = new Date();
+  const istOffsetMs = 5.5 * 60 * 60 * 1000;
+  const istNow = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + istOffsetMs);
+  
+  const nextMidnightIST = new Date(istNow);
+  nextMidnightIST.setHours(24, 0, 0, 0);
+  
+  const diffMs = Math.max(0, nextMidnightIST.getTime() - istNow.getTime());
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  return `${hours}h ${minutes}m`;
 }
 
 export const UNIVERSAL_EFFICIENCY_RULES = [

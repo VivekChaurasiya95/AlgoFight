@@ -86,9 +86,53 @@ export async function authRoutes(app: FastifyInstance) {
 
     // 5. Get current authenticated user
     app.get("/auth/me", { preHandler: [requireAuth] }, async (req: FastifyRequest, reply: FastifyReply) => {
-        return reply.send({
-            user: req.user,
-            trustContext: req.trustContext,
-        });
+        try {
+            const { prisma } = await import("@algofight/database");
+            const fullUser = await prisma.user.findUnique({
+                where: { id: req.user!.id },
+            });
+            if (!fullUser) {
+                return reply.send({ user: req.user, trustContext: req.trustContext });
+            }
+            const userMeta = (fullUser.studentIdentityMetadata as any) || {};
+            const originalPhoto = userMeta.originalPhotoURL ||
+                (userMeta.photoURL?.startsWith('http') && !userMeta.photoURL.includes('/avatars/') ? userMeta.photoURL : null) ||
+                `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(fullUser.username || fullUser.email)}`;
+
+            return reply.send({
+                user: {
+                    id: fullUser.id,
+                    uid: fullUser.id,
+                    email: fullUser.email,
+                    username: fullUser.username,
+                    displayName: fullUser.username,
+                    role: fullUser.role || req.user?.role || "USER",
+                    userType: fullUser.userType || "INDIVIDUAL",
+                    platformCode: fullUser.platformCode,
+                    institutionName: fullUser.institutionName,
+                    department: fullUser.department,
+                    enrollmentNumber: fullUser.enrollmentNumber,
+                    school: fullUser.school || userMeta.school || null,
+                    designation: fullUser.designation || userMeta.designation || (fullUser.userType === "FACULTY" ? "Faculty Educator" : null),
+                    rating: fullUser.rating || 0,
+                    highestRating: fullUser.highestRating || fullUser.rating || 0,
+                    highestRank: fullUser.highestRank || "ROOKIE",
+                    arenaPoints: fullUser.arenaPoints ?? 0,
+                    wins: fullUser.wins || 0,
+                    losses: fullUser.losses || 0,
+                    matchesWon: fullUser.wins || 0,
+                    matchesPlayed: (fullUser.wins || 0) + (fullUser.losses || 0),
+                    photoURL: userMeta.photoURL || null,
+                    originalPhotoURL: originalPhoto,
+                    avatarFrame: userMeta.avatarFrame || null,
+                    unlockedAvatars: Array.isArray(userMeta.unlockedAvatars) ? userMeta.unlockedAvatars : [],
+                    unlockedFrames: Array.isArray(userMeta.unlockedFrames) ? userMeta.unlockedFrames : [],
+                    unlockedThemes: Array.isArray(userMeta.unlockedThemes) ? userMeta.unlockedThemes : [],
+                },
+                trustContext: req.trustContext,
+            });
+        } catch {
+            return reply.send({ user: req.user, trustContext: req.trustContext });
+        }
     });
 }

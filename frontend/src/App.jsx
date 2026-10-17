@@ -44,17 +44,9 @@ const IntelEventsDirectory = lazy(() => import('./components/Intel/IntelEventsDi
 // Fast, non-blocking loading placeholder
 function PageLoader() {
   return (
-    <div style={{
-      minHeight: '60vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: '#00e5ff',
-      fontSize: '0.9rem',
-      letterSpacing: '0.12em',
-      textTransform: 'uppercase'
-    }}>
-      Loading...
+    <div className="app-page-loader">
+      <div className="app-loader-spinner" />
+      <span>Loading...</span>
     </div>
   );
 }

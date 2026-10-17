@@ -844,10 +844,224 @@ p {
   background: var(--hud-cyan);
 }
 
-/* ===== SELECTION ===== */
+/* ===== SELECTION HIGHLIGHTER (ADAPTIVE PER THEME) ===== */
 ::selection {
-  background: rgba(0, 240, 255, 0.3);
-  color: var(--text-primary);
+  background: var(--selection-bg, rgba(0, 229, 255, 0.32));
+  color: var(--selection-color, #ffffff);
+}
+
+::-moz-selection {
+  background: var(--selection-bg, rgba(0, 229, 255, 0.32));
+  color: var(--selection-color, #ffffff);
+}
+
+/* 1. Light Mode (Horizon Studio): Elegant Soft Sapphire Blue / Cobalt */
+:root[data-theme="light"] ::selection,
+:root[data-theme="light"] *::selection {
+  background: #bfdbfe !important;
+  color: #1e3a8a !important;
+}
+
+:root[data-theme="light"] ::-moz-selection,
+:root[data-theme="light"] *::-moz-selection {
+  background: #bfdbfe !important;
+  color: #1e3a8a !important;
+}
+
+/* 2. Crimson Red (Overdrive): Fiery Crimson Red */
+:root[data-theme="crimson"] ::selection,
+:root[data-theme="crimson"] *::selection {
+  background: rgba(255, 42, 85, 0.42) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="crimson"] ::-moz-selection,
+:root[data-theme="crimson"] *::-moz-selection {
+  background: rgba(255, 42, 85, 0.42) !important;
+  color: #ffffff !important;
+}
+
+/* 3. Amethyst / Synthwave Neon: Electric Violet / Purple */
+:root[data-theme="amethyst"] ::selection,
+:root[data-theme="amethyst"] *::selection {
+  background: rgba(168, 85, 247, 0.42) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="amethyst"] ::-moz-selection,
+:root[data-theme="amethyst"] *::-moz-selection {
+  background: rgba(168, 85, 247, 0.42) !important;
+  color: #ffffff !important;
+}
+
+/* 4. Terminal Emerald: Quantum Neon Matrix Green */
+:root[data-theme="emerald"] ::selection,
+:root[data-theme="emerald"] *::selection {
+  background: rgba(16, 185, 129, 0.42) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="emerald"] ::-moz-selection,
+:root[data-theme="emerald"] *::-moz-selection {
+  background: rgba(16, 185, 129, 0.42) !important;
+  color: #ffffff !important;
+}
+
+/* 5. Solar Sunset: Warm Molten Amber / Orange */
+:root[data-theme="sunset"] ::selection,
+:root[data-theme="sunset"] *::selection {
+  background: rgba(245, 158, 11, 0.42) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="sunset"] ::-moz-selection,
+:root[data-theme="sunset"] *::-moz-selection {
+  background: rgba(245, 158, 11, 0.42) !important;
+  color: #ffffff !important;
+}
+
+/* 6. Obsidian Black: Stealth Monochromatic Platinum */
+:root[data-theme="obsidian"] ::selection,
+:root[data-theme="obsidian"] *::selection {
+  background: rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="obsidian"] ::-moz-selection,
+:root[data-theme="obsidian"] *::-moz-selection {
+  background: rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
+}
+
+/* 7. Regular / Pulse Cyan: Kinetic Electric Cyan */
+:root[data-theme="regular"] ::selection,
+:root[data-theme="regular"] *::selection,
+:root[data-theme="original"] ::selection,
+:root[data-theme="original"] *::selection {
+  background: rgba(0, 229, 255, 0.35) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="regular"] ::-moz-selection,
+:root[data-theme="regular"] *::-moz-selection,
+:root[data-theme="original"] ::-moz-selection,
+:root[data-theme="original"] *::-moz-selection {
+  background: rgba(0, 229, 255, 0.35) !important;
+  color: #ffffff !important;
+}
+
+/* 8. Custom Theme: Dynamic Accent */
+:root[data-theme="custom"] ::selection,
+:root[data-theme="custom"] *::selection {
+  background: var(--accent, rgba(0, 229, 255, 0.4)) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="custom"] ::-moz-selection,
+:root[data-theme="custom"] *::-moz-selection {
+  background: var(--accent, rgba(0, 229, 255, 0.4)) !important;
+  color: #ffffff !important;
+}
+
+/* ===== THEME-ADAPTIVE PAGE & ROUTE LOADERS ===== */
+.app-page-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justifyContent: center;
+  gap: 16px;
+  min-height: 60vh;
+  width: 100%;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: 0.15em;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--cta-primary, #00e5ff);
+  background: transparent;
+  transition: color 0.3s ease;
+}
+
+.app-page-loader.full-screen {
+  min-height: 100vh;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg-void, #020408);
+}
+
+.app-loader-spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--cta-primary, #00e5ff);
+  animation: appLoaderSpin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes appLoaderSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Light mode loader override */
+:root[data-theme="light"] .app-page-loader {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .app-page-loader.full-screen {
+  background: #f8fafc !important;
+}
+
+:root[data-theme="light"] .app-loader-spinner {
+  border-color: #e2e8f0 !important;
+  border-top-color: #2563eb !important;
+}
+
+/* Crimson */
+:root[data-theme="crimson"] .app-page-loader {
+  color: #ff2a55 !important;
+}
+:root[data-theme="crimson"] .app-loader-spinner {
+  border-color: rgba(255, 42, 85, 0.15) !important;
+  border-top-color: #ff2a55 !important;
+}
+
+/* Amethyst */
+:root[data-theme="amethyst"] .app-page-loader {
+  color: #a855f7 !important;
+}
+:root[data-theme="amethyst"] .app-loader-spinner {
+  border-color: rgba(168, 85, 247, 0.15) !important;
+  border-top-color: #a855f7 !important;
+}
+
+/* Emerald */
+:root[data-theme="emerald"] .app-page-loader {
+  color: #10b981 !important;
+}
+:root[data-theme="emerald"] .app-loader-spinner {
+  border-color: rgba(16, 185, 129, 0.15) !important;
+  border-top-color: #10b981 !important;
+}
+
+/* Sunset */
+:root[data-theme="sunset"] .app-page-loader {
+  color: #f59e0b !important;
+}
+:root[data-theme="sunset"] .app-loader-spinner {
+  border-color: rgba(245, 158, 11, 0.15) !important;
+  border-top-color: #f59e0b !important;
+}
+
+/* Obsidian */
+:root[data-theme="obsidian"] .app-page-loader {
+  color: #ffffff !important;
+}
+:root[data-theme="obsidian"] .app-loader-spinner {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  border-top-color: #ffffff !important;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -5950,9 +6164,10 @@ p {
 }
 
 :root[data-theme="light"] .nav-bell-trigger {
-  background: #f8fafc !important;
-  color: #475569 !important;
-  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
 }
 
 :root[data-theme="light"] .nav-bell-trigger:hover,
@@ -5960,6 +6175,14 @@ p {
   background: #eff6ff !important;
   color: #2563eb !important;
   border-color: #93c5fd !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15) !important;
+}
+
+:root[data-theme="light"] .nav-bell-badge {
+  border: 2px solid #ffffff !important;
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 5px rgba(225, 29, 72, 0.35) !important;
 }
 
 :root[data-theme="light"] .nav-profile-circle {

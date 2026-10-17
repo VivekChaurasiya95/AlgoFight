@@ -47,7 +47,11 @@ export const formatUser = (userData, token) => {
     displayName: userData.username || userData.displayName || "Player",
     username: userData.username || userData.displayName || "Player",
     photoURL: userData.photoURL || identityMeta.photoURL || null,
+    originalPhotoURL: userData.originalPhotoURL || identityMeta.originalPhotoURL || (typeof window !== 'undefined' ? localStorage.getItem('algofight_original_photo_url') : null) || (userData.photoURL?.startsWith('http') && !userData.photoURL?.includes('/avatars/') ? userData.photoURL : null) || (userData.username || userData.displayName || userData.email ? `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(userData.username || userData.displayName || userData.email)}` : null) || null,
     avatarFrame: userData.avatarFrame || identityMeta.avatarFrame || null,
+    unlockedAvatars: Array.isArray(userData.unlockedAvatars) ? userData.unlockedAvatars : (Array.isArray(identityMeta.unlockedAvatars) ? identityMeta.unlockedAvatars : []),
+    unlockedFrames: Array.isArray(userData.unlockedFrames) ? userData.unlockedFrames : (Array.isArray(identityMeta.unlockedFrames) ? identityMeta.unlockedFrames : []),
+    unlockedThemes: Array.isArray(userData.unlockedThemes) ? userData.unlockedThemes : (Array.isArray(identityMeta.unlockedThemes) ? identityMeta.unlockedThemes : []),
     role: computedRole,
     userType: computedUserType,
     platformCode: userData.platformCode,
@@ -187,6 +191,11 @@ export function AuthProvider({ children }) {
   const loginWithGoogle = useCallback(async (idToken) => {
     const res = await loginWithGoogleApi(idToken);
     if (res?.success && res.token && res.user) {
+      if (res.user.originalPhotoURL || res.user.photoURL) {
+        try {
+          localStorage.setItem('algofight_original_photo_url', res.user.originalPhotoURL || res.user.photoURL);
+        } catch {}
+      }
       applyAuthenticatedState(res.user, res.token);
       return res.user;
     }
@@ -260,12 +269,14 @@ export function AuthProvider({ children }) {
   // Update avatar and frame appearance
   const updateAvatarAndFrame = useCallback(async ({ photoURL, avatarFrame }) => {
     const token = getSessionToken();
+    const resolvedOriginal = user?.originalPhotoURL || (typeof localStorage !== 'undefined' ? localStorage.getItem('algofight_original_photo_url') : null) || null;
     try {
       const res = await syncUserToBackend({
         uid: user?.uid,
         email: user?.email,
         displayName: user?.displayName,
         photoURL,
+        originalPhotoURL: resolvedOriginal,
         avatarFrame,
         authToken: token,
       });
@@ -274,6 +285,7 @@ export function AuthProvider({ children }) {
         ...(user || {}),
         photoURL,
         avatarFrame,
+        originalPhotoURL: res?.originalPhotoURL || resolvedOriginal,
       };
 
       setUser(updatedUser);

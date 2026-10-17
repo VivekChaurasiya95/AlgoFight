@@ -9,18 +9,9 @@ export default function FacultyRoute({ children }) {
 
   if (loading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          color: "#00e5ff",
-          fontFamily: "'Space Grotesk', sans-serif",
-          fontSize: "1.1rem",
-        }}
-      >
-        Verifying Faculty Clearance...
+      <div className="app-page-loader full-screen">
+        <div className="app-loader-spinner" />
+        <span>Verifying Faculty Clearance...</span>
       </div>
     );
   }

@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { requireAuth } from "../plugins/auth.plugin";
+import { prisma } from "@algofight/database";
 import {
     PointLedgerService,
     ConsistencyRewardService,
@@ -45,34 +46,74 @@ export async function rewardRoutes(app: FastifyInstance) {
         return ledger.getHistory(userId, limit, offset);
     });
 
-    // 4. Redeem Vault Reward
+    // 4. Redeem Vault Reward (Avatar, Frame, Theme)
     app.post("/rewards/redeem", { preHandler: [requireAuth] }, async (req, reply) => {
         const userId = req.user!.id;
         const body = (req.body as any) || {};
-        const cost = Number(body.cost);
+        const cost = Number(body.cost) || 0;
         const rewardTitle = body.rewardTitle || "Reward Item";
+        const itemType = body.itemType; // 'avatar' | 'frame' | 'theme'
+        const itemId = body.itemId;
+        const isAdmin = req.user?.role === "ADMIN";
 
-        if (!cost || cost <= 0 || isNaN(cost)) {
-            return reply.status(400).send({ error: "BAD_REQUEST", message: "Invalid reward cost." });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            return reply.status(404).send({ error: "NOT_FOUND", message: "User not found." });
         }
 
-        const result = await ledger.deductPoints({
-            userId,
-            amount: cost,
-            type: "REWARD_REDEMPTION",
-            source: "VAULT",
-            sourceId: `${Date.now()}_${rewardTitle}`,
-            metadata: { rewardTitle, cost }
+        let newBalance = user.arenaPoints;
+
+        // Admins can unlock everything for 0 points; regular users must pay cost if > 0
+        if (!isAdmin && cost > 0) {
+            // If user's ledger has 0 points, but they have rating/wins, initialize ledger
+            const computedPoints = (user.rating || 0) + (user.wins || 0) * 120;
+            if (user.arenaPoints < cost && computedPoints >= cost) {
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: { arenaPoints: computedPoints },
+                });
+            }
+
+            const result = await ledger.deductPoints({
+                userId,
+                amount: cost,
+                type: "REWARD_REDEMPTION",
+                source: "VAULT",
+                sourceId: `${Date.now()}_${itemId || rewardTitle}`,
+                metadata: { rewardTitle, cost, itemType, itemId },
+            });
+
+            if (!result.success) {
+                return reply.status(400).send({ error: "INSUFFICIENT_FUNDS", message: result.error || "Insufficient Arena Points balance." });
+            }
+            newBalance = result.newBalance;
+        }
+
+        // Persist unlocked item in studentIdentityMetadata
+        const currentMeta = (user.studentIdentityMetadata as any) || {};
+        const unlockedAvatars = Array.from(new Set([...(currentMeta.unlockedAvatars || []), ...(itemType === "avatar" && itemId ? [itemId] : [])]));
+        const unlockedFrames = Array.from(new Set([...(currentMeta.unlockedFrames || []), ...(itemType === "frame" && itemId ? [itemId] : [])]));
+        const unlockedThemes = Array.from(new Set([...(currentMeta.unlockedThemes || []), ...(itemType === "theme" && itemId ? [itemId] : [])]));
+
+        const updatedMeta = {
+            ...currentMeta,
+            unlockedAvatars,
+            unlockedFrames,
+            unlockedThemes,
+        };
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { studentIdentityMetadata: updatedMeta },
         });
-
-        if (!result.success) {
-            return reply.status(400).send({ error: "INSUFFICIENT_FUNDS", message: result.error || "Insufficient Arena Points balance." });
-        }
 
         return {
             success: true,
-            newBalance: result.newBalance,
-            message: `Successfully redeemed ${rewardTitle}! Request placed in fulfillment queue.`,
+            newBalance,
+            unlockedAvatars,
+            unlockedFrames,
+            unlockedThemes,
+            message: `Successfully unlocked ${rewardTitle}!`,
         };
     });
 

@@ -9,8 +9,9 @@ export default function AdminRoute({ children }) {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", color: "#00e5ff" }}>
-        Authenticating clearance...
+      <div className="app-page-loader full-screen">
+        <div className="app-loader-spinner" />
+        <span>Authenticating clearance...</span>
       </div>
     );
   }
