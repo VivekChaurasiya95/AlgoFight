@@ -6,12 +6,11 @@ import { faBell, faBars, faTimes, faRightFromBracket, faShieldHalved, faUser, fa
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotificationInbox } from '../../contexts/NotificationInboxContext';
-import { useTheme } from '../../contexts/ThemeContext';
 import { isAdminUser } from '../../constants/admins';
 import InboxDropdown from './InboxDropdown';
-import ThemeSelector from '../Theme/ThemeSelector';
 import logoIcon from '../../assets/algofight-logo.png';
 import mitsLogo from '../../assets/mits-logo.png';
+import UserAvatar from '../Common/UserAvatar/UserAvatar';
 
 const getInitials = (user) => {
   if (!user) return 'U';
@@ -26,7 +25,6 @@ const getInitials = (user) => {
 const Navbar = () => {
   const { user, logout, profileData } = useAuth();
   const { unreadCount } = useNotificationInbox();
-  const { theme, toggleTheme } = useTheme();
   const [isInboxOpen, setIsInboxOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
@@ -146,9 +144,6 @@ const Navbar = () => {
 
           {/* Right Action Items */}
           <div className="navbar-actions">
-            {/* Theme Selector Popover & Quick Switch */}
-            <ThemeSelector />
-
             {user ? (
               <div className="user-action-group">
                 {/* Notification Bell */}
@@ -173,18 +168,13 @@ const Navbar = () => {
                   title={user.displayName || user.email || "Profile"}
                   aria-label="User Profile"
                 >
-                  {user.photoURL && !avatarError ? (
-                    <img
-                      src={user.photoURL}
-                      alt={user.displayName || "User Avatar"}
-                      className="nav-profile-avatar-img"
-                      onError={() => setAvatarError(true)}
-                    />
-                  ) : (
-                    <span className="nav-profile-initials">
-                      {getInitials(user)}
-                    </span>
-                  )}
+                  <UserAvatar
+                    src={user.photoURL}
+                    frame={user.avatarFrame}
+                    name={user.displayName || user.username || user.email}
+                    size="sm"
+                    glow={true}
+                  />
                   <span className="nav-profile-status-dot" title="Online" />
                 </Link>
 
@@ -303,11 +293,13 @@ const Navbar = () => {
                   <div className="mobile-user-profile-bar">
                     <div className="mobile-user-info">
                       <Link to="/profile" className="mobile-avatar-link">
-                        {user.photoURL && !avatarError ? (
-                          <img src={user.photoURL} alt="Avatar" className="mobile-avatar-img" />
-                        ) : (
-                          <div className="mobile-avatar-placeholder">{getInitials(user)}</div>
-                        )}
+                        <UserAvatar
+                          src={user.photoURL}
+                          frame={user.avatarFrame}
+                          name={user.displayName || user.username || user.email}
+                          size="md"
+                          glow={true}
+                        />
                       </Link>
                       <div className="mobile-user-text">
                         <span className="mobile-user-name">{user.displayName || 'Combatant'}</span>

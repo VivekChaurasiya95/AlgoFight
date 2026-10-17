@@ -35,11 +35,13 @@ import '../BackgroundPaths/BackgroundPaths.css';
 import Footer from '../Common/Footer/Footer';
 import RankEmblem from '../Common/gamification/RankEmblem';
 import FacultyDetailsModal from '../Faculty/FacultyDetailsModal';
+import UserAvatar from '../Common/UserAvatar/UserAvatar';
+import AvatarCustomizerModal from './AvatarCustomizerModal';
 
 function Profile() {
     const { userId } = useParams();
     const navigate = useNavigate();
-    const { user, loading: authLoading, updateFacultyDetails } = useAuth();
+    const { user, loading: authLoading, updateFacultyDetails, updateAvatarAndFrame } = useAuth();
     const { notify } = useNotification();
 
     const [profile, setProfile] = useState(null);
@@ -47,6 +49,7 @@ function Profile() {
     const [profileError, setProfileError] = useState('');
     const [avatarError, setAvatarError] = useState(false);
     const [isFacultyModalOpen, setIsFacultyModalOpen] = useState(false);
+    const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
     // Duel challenge states
     const [outgoingChallenge, setOutgoingChallenge] = useState(null);
@@ -297,6 +300,8 @@ function Profile() {
     const email = isOwnProfile ? (profile?.email || user?.email || '') : (profile?.platformCode || profile?.email || '');
     const targetPhoto = profile?.photoURL || profile?.avatarUrl || profile?.avatar || profile?.picture || null;
     const photoURL = isOwnProfile ? (user?.photoURL || targetPhoto || '') : (targetPhoto || '');
+    const targetFrame = profile?.avatarFrame || profile?.frame || null;
+    const avatarFrame = isOwnProfile ? (user?.avatarFrame || targetFrame || '') : (targetFrame || '');
 
     // Dynamic institutional academic fallback calculation if email is institutional
     const academicFallback = useMemo(() => {
@@ -605,18 +610,32 @@ function Profile() {
                 <section className="profile-overview-shell">
                     <section className="profile-hero-card">
                         <div className="profile-identity-row">
-                            <div className="profile-avatar-shell">
-                                {photoURL && !avatarError ? (
-                                    <img
-                                        src={photoURL}
-                                        alt={`${displayName}'s avatar`}
-                                        className="profile-avatar-image"
-                                        onError={() => setAvatarError(true)}
-                                    />
-                                ) : (
-                                    <span className="profile-avatar-initial">
-                                        {(displayName || "P")[0].toUpperCase()}
-                                    </span>
+                            <div
+                                className={`profile-avatar-interactive ${isOwnProfile ? 'is-editable' : ''}`}
+                                onClick={() => {
+                                    if (isOwnProfile) setIsAvatarModalOpen(true);
+                                }}
+                                title={isOwnProfile ? "Click to change avatar & frame" : undefined}
+                            >
+                                <UserAvatar
+                                    src={photoURL}
+                                    frame={avatarFrame}
+                                    name={displayName}
+                                    size="hero"
+                                    glow={true}
+                                />
+                                {isOwnProfile && (
+                                    <button
+                                        type="button"
+                                        className="profile-avatar-edit-badge"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsAvatarModalOpen(true);
+                                        }}
+                                        title="Customize Avatar & Frame"
+                                    >
+                                        <FontAwesomeIcon icon={faPen} />
+                                    </button>
                                 )}
                             </div>
 
@@ -1094,6 +1113,32 @@ function Profile() {
                     initialDesignation={profile?.designation || profile?.studentIdentityMetadata?.designation || ""}
                     isOnboarding={false}
                     userDisplayName={displayName}
+                />
+            )}
+
+            {/* Avatar & Frame Customizer Modal */}
+            {isOwnProfile && (
+                <AvatarCustomizerModal
+                    isOpen={isAvatarModalOpen}
+                    onClose={() => setIsAvatarModalOpen(false)}
+                    currentPhotoURL={photoURL}
+                    currentFrame={avatarFrame}
+                    originalPhotoURL={user?.googlePhotoURL || (user?.email ? null : null)}
+                    displayName={displayName}
+                    onSave={async ({ photoURL: newPhoto, avatarFrame: newFrame }) => {
+                        await updateAvatarAndFrame({ photoURL: newPhoto, avatarFrame: newFrame });
+                        setProfile((prev) => ({
+                            ...(prev || {}),
+                            photoURL: newPhoto,
+                            avatarFrame: newFrame,
+                        }));
+                        notify({
+                            type: 'success',
+                            title: 'Avatar & Frame Updated!',
+                            message: 'Your new avatar and frame are now active across the arena.',
+                            duration: 3500,
+                        });
+                    }}
                 />
             )}
             </div>

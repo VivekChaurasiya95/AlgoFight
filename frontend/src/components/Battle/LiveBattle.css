@@ -350,7 +350,7 @@
 	border: 1px solid rgba(255, 255, 255, 0.08);
 	transition: all 0.25s ease;
 	position: relative;
-	overflow: hidden;
+	overflow: visible;
 }
 
 .player-score-card.is-me {

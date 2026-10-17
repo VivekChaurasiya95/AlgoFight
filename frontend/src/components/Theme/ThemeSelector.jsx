@@ -8,10 +8,13 @@ import {
   faCheck,
   faChevronDown,
   faTimes,
+  faLock,
 } from '@fortawesome/free-solid-svg-icons';
+import { useNotification } from '../../contexts/NotificationContext';
 
 export default function ThemeSelector() {
-  const { theme, setTheme, themes, activeThemeConfig } = useTheme();
+  const { theme, setTheme, themes, activeThemeConfig, isThemeUnlocked } = useTheme();
+  const { notify } = useNotification();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -41,8 +44,19 @@ export default function ThemeSelector() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  const handleSelectTheme = (themeId) => {
-    setTheme(themeId, false);
+  const handleSelectTheme = (t) => {
+    const isUnlocked = isThemeUnlocked ? isThemeUnlocked(t.id) : true;
+    if (!isUnlocked) {
+      if (notify) {
+        notify({
+          type: 'info',
+          title: 'Theme Locked',
+          message: `${t.name} is locked. Unlock it with Arena Points in the Rewards Vault!`,
+        });
+      }
+      return;
+    }
+    setTheme(t.id, false);
     setIsOpen(false);
   };
 
@@ -104,17 +118,18 @@ export default function ThemeSelector() {
             <div className="theme-selector-grid">
               {themes.map((t, idx) => {
                 const isCurrent = t.id === theme;
+                const isUnlocked = isThemeUnlocked ? isThemeUnlocked(t.id) : true;
                 const isSpanFull = idx === themes.length - 1 && themes.length % 2 !== 0;
                 return (
                   <button
                     key={t.id}
                     type="button"
-                    className={`theme-card-option ${isCurrent ? 'is-active' : ''} ${isSpanFull ? 'is-span-full' : ''}`}
-                    onClick={() => handleSelectTheme(t.id)}
+                    className={`theme-card-option ${isCurrent ? 'is-active' : ''} ${!isUnlocked ? 'is-locked' : ''} ${isSpanFull ? 'is-span-full' : ''}`}
+                    onClick={() => handleSelectTheme(t)}
                     style={{
                       '--theme-accent': t.accentColor,
                     }}
-                    title={`${t.name} — ${t.tagline}`}
+                    title={`${t.name} — ${!isUnlocked ? '[LOCKED] ' : ''}${t.tagline}`}
                   >
                     <div className="theme-card-top-row">
                       <div className="theme-card-swatches">
@@ -139,19 +154,30 @@ export default function ThemeSelector() {
                           <div className="theme-active-badge-mini">
                             <FontAwesomeIcon icon={faCheck} />
                           </div>
+                        ) : !isUnlocked ? (
+                          <div className="theme-lock-badge-mini" title="Locked Theme">
+                            <FontAwesomeIcon icon={faLock} />
+                          </div>
                         ) : (
                           <span className="theme-radio-dot" />
                         )
                       )}
                     </div>
                     <div className="theme-card-bottom-row">
-                      <span className="theme-card-name">{t.name}</span>
+                      <span className="theme-card-name">
+                        {t.name}
+                        {!isUnlocked && <span className="theme-name-lock-tag">🔒</span>}
+                      </span>
                     </div>
                     {isSpanFull && (
                       <div className="theme-card-span-action">
                         {isCurrent ? (
                           <div className="theme-active-badge-mini">
                             <FontAwesomeIcon icon={faCheck} />
+                          </div>
+                        ) : !isUnlocked ? (
+                          <div className="theme-lock-badge-mini" title="Locked Theme">
+                            <FontAwesomeIcon icon={faLock} />
                           </div>
                         ) : (
                           <span className="theme-radio-dot" />

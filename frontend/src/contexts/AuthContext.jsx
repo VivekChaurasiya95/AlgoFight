@@ -15,6 +15,7 @@ import {
   fetchMeApi,
   fetchUserProfile,
   updateFacultyProfile,
+  syncUserToBackend,
 } from "../services/api";
 import { useUserStore } from "../store/useUserStore";
 import { unifiedAnalytics } from "../services/analytics";
@@ -45,7 +46,8 @@ export const formatUser = (userData, token) => {
     email: userData.email,
     displayName: userData.username || userData.displayName || "Player",
     username: userData.username || userData.displayName || "Player",
-    photoURL: userData.photoURL || null,
+    photoURL: userData.photoURL || identityMeta.photoURL || null,
+    avatarFrame: userData.avatarFrame || identityMeta.avatarFrame || null,
     role: computedRole,
     userType: computedUserType,
     platformCode: userData.platformCode,
@@ -105,6 +107,7 @@ export function AuthProvider({ children }) {
         email: formatted.email,
         displayName: formatted.displayName,
         photoURL: formatted.photoURL,
+        avatarFrame: formatted.avatarFrame,
         accessToken: token || getSessionToken(),
       });
       unifiedAnalytics.setUserId(formatted.uid);
@@ -254,6 +257,57 @@ export function AuthProvider({ children }) {
     return null;
   }, []);
 
+  // Update avatar and frame appearance
+  const updateAvatarAndFrame = useCallback(async ({ photoURL, avatarFrame }) => {
+    const token = getSessionToken();
+    try {
+      const res = await syncUserToBackend({
+        uid: user?.uid,
+        email: user?.email,
+        displayName: user?.displayName,
+        photoURL,
+        avatarFrame,
+        authToken: token,
+      });
+
+      const updatedUser = {
+        ...(user || {}),
+        photoURL,
+        avatarFrame,
+      };
+
+      setUser(updatedUser);
+      setStoredUser(updatedUser);
+      setProfileData((prev) => ({
+        ...(prev || {}),
+        photoURL,
+        avatarFrame,
+      }));
+      setGlobalProfileData((prev) => ({
+        ...(prev || {}),
+        photoURL,
+        avatarFrame,
+      }));
+      setGlobalUser({
+        uid: user?.uid,
+        email: user?.email,
+        displayName: user?.displayName,
+        photoURL,
+        avatarFrame,
+        accessToken: token,
+      });
+
+      return res || updatedUser;
+    } catch (err) {
+      console.error("Failed to sync avatar/frame to backend:", err);
+      // Fallback local update
+      const updatedUser = { ...(user || {}), photoURL, avatarFrame };
+      setUser(updatedUser);
+      setStoredUser(updatedUser);
+      return updatedUser;
+    }
+  }, [user, setGlobalUser, setGlobalProfileData]);
+
   // Refresh user stats from server across entire app
   const refreshUser = useCallback(async () => {
     const token = getSessionToken();
@@ -280,6 +334,7 @@ export function AuthProvider({ children }) {
     loginManual,
     signupManual,
     updateFacultyDetails,
+    updateAvatarAndFrame,
     logout,
   };
 

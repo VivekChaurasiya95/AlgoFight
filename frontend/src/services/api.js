@@ -142,7 +142,7 @@ export async function requestJson(path, options = {}) {
 /**
  * Sync Firebase user to backend after login/signup
  */
-export async function syncUserToBackend({ uid, email, displayName, photoURL, authToken, githubUrl, linkedinUrl }) {
+export async function syncUserToBackend({ uid, email, displayName, photoURL, avatarFrame, authToken, githubUrl, linkedinUrl }) {
   invalidateApiCache("/api/users");
   return requestJson("/api/users", {
     method: "POST",
@@ -150,7 +150,7 @@ export async function syncUserToBackend({ uid, email, displayName, photoURL, aut
       "Content-Type": "application/json",
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     },
-    body: JSON.stringify({ uid, email, displayName, photoURL, githubUrl, linkedinUrl }),
+    body: JSON.stringify({ uid, email, displayName, photoURL, avatarFrame, githubUrl, linkedinUrl }),
     includeAuth: true,
   });
 }

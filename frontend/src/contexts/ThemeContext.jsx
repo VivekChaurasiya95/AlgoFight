@@ -2,12 +2,20 @@ import React, { createContext, useContext, useState, useEffect, useRef, useMemo 
 import ThemeSwitchLoader from '../components/Common/ThemeSwitchLoader';
 import { THEMES, THEME_ORDER, THEME_LIST, DEFAULT_THEME_ID, getThemeConfig } from '../config/themes';
 
+export const DEFAULT_UNLOCKED_THEMES = ['regular', 'original', 'light', 'emerald'];
+
 const ThemeContext = createContext({
   theme: DEFAULT_THEME_ID,
   targetTheme: DEFAULT_THEME_ID,
   isSwitching: false,
   activeThemeConfig: THEMES[DEFAULT_THEME_ID],
   themes: THEME_LIST,
+  unlockedThemes: DEFAULT_UNLOCKED_THEMES,
+  isThemeUnlocked: () => true,
+  unlockTheme: () => {},
+  previewTheme: () => {},
+  clearPreviewTheme: () => {},
+  previewThemeId: null,
   setTheme: () => {},
   toggleTheme: () => {},
   cycleTheme: () => {},
@@ -23,17 +31,52 @@ export const ThemeProvider = ({ children }) => {
     }
   });
 
+  const [previewThemeId, setPreviewThemeId] = useState(null);
+
+  const [unlockedThemes, setUnlockedThemes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('algofight_unlocked_themes');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return Array.from(new Set([...DEFAULT_UNLOCKED_THEMES, ...parsed]));
+        }
+      }
+    } catch {}
+    return DEFAULT_UNLOCKED_THEMES;
+  });
+
+  const isThemeUnlocked = (themeId) => {
+    return unlockedThemes.includes(themeId);
+  };
+
+  const unlockTheme = (themeId) => {
+    if (!THEMES[themeId]) return;
+    setUnlockedThemes((prev) => {
+      const next = Array.from(new Set([...prev, themeId]));
+      try {
+        localStorage.setItem('algofight_unlocked_themes', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const [isSwitching, setIsSwitching] = useState(false);
   const [targetTheme, setTargetTheme] = useState(theme);
   const switchTimerRef = useRef(null);
   const finishTimerRef = useRef(null);
 
-  // Apply theme attributes and CSS variables whenever active theme changes
+  // Apply theme attributes and CSS variables whenever active theme or preview changes
   useEffect(() => {
     try {
-      const config = getThemeConfig(theme);
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('algofight_theme', theme);
+      const activeId = previewThemeId || theme;
+      const config = getThemeConfig(activeId);
+      document.documentElement.setAttribute('data-theme', activeId);
+
+      // Only persist permanent theme in localStorage
+      if (!previewThemeId) {
+        localStorage.setItem('algofight_theme', theme);
+      }
 
       // Inject theme-specific CSS variables dynamically for instant reciprocation
       if (config && config.tokens) {
@@ -55,7 +98,7 @@ export const ThemeProvider = ({ children }) => {
     } catch {
       // Ignore storage/DOM errors in restricted contexts
     }
-  }, [theme]);
+  }, [theme, previewThemeId]);
 
   // Clean up timers on unmount
   useEffect(() => {
@@ -65,8 +108,19 @@ export const ThemeProvider = ({ children }) => {
     };
   }, []);
 
+  const previewTheme = (themeId) => {
+    if (THEMES[themeId]) {
+      setPreviewThemeId(themeId);
+    }
+  };
+
+  const clearPreviewTheme = () => {
+    setPreviewThemeId(null);
+  };
+
   const initiateThemeSwitch = (nextTheme, withLoader = false) => {
     const validated = THEMES[nextTheme] ? nextTheme : DEFAULT_THEME_ID;
+    setPreviewThemeId(null);
     if (validated === theme && !isSwitching) return;
 
     if (switchTimerRef.current) clearTimeout(switchTimerRef.current);
@@ -106,7 +160,7 @@ export const ThemeProvider = ({ children }) => {
     cycleTheme(false);
   };
 
-  const activeThemeConfig = useMemo(() => getThemeConfig(theme), [theme]);
+  const activeThemeConfig = useMemo(() => getThemeConfig(previewThemeId || theme), [theme, previewThemeId]);
 
   return (
     <ThemeContext.Provider
@@ -116,6 +170,12 @@ export const ThemeProvider = ({ children }) => {
         isSwitching,
         activeThemeConfig,
         themes: THEME_LIST,
+        unlockedThemes,
+        isThemeUnlocked,
+        unlockTheme,
+        previewTheme,
+        clearPreviewTheme,
+        previewThemeId,
         setTheme,
         toggleTheme,
         cycleTheme,

@@ -11,6 +11,7 @@ export interface UserPresence {
     userType?: string;
     institutionName?: string;
     photoURL?: string;
+    avatarFrame?: string;
     status: PlayerPresenceStatus;
     roomId?: string;
     connectedAt: number;

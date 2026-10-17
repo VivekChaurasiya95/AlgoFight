@@ -1,0 +1,527 @@
+/* ==========================================================================
+   BATTLE EMOTES & TAUNTS SYSTEM (Google Noto Animated Emoji)
+   ========================================================================== */
+
+/* --- Avatar Speech Bubble --- */
+.emote-speech-bubble {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid rgba(245, 158, 11, 0.5);
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.7),
+              0 0 20px rgba(245, 158, 11, 0.25);
+  border-radius: 16px;
+  padding: 6px 14px 6px 10px;
+  white-space: nowrap;
+  z-index: 100;
+  pointer-events: none;
+  animation: emote-pop-bounce 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.emote-speech-bubble.is-opponent {
+  border-color: rgba(239, 68, 68, 0.6);
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.7),
+              0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.emote-speech-bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px 8px 0 8px;
+  border-style: solid;
+  border-color: rgba(15, 23, 42, 0.94) transparent transparent transparent;
+}
+
+.emote-bubble-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.emote-bubble-text-group {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.emote-bubble-sender {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.emote-bubble-taunt {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+
+/* --- Floating Arena Taunt Broadcast Banner --- */
+.arena-taunt-broadcast {
+  position: fixed;
+  top: 86px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1.5px solid rgba(245, 158, 11, 0.65);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8),
+              0 0 35px rgba(245, 158, 11, 0.35);
+  border-radius: 9999px;
+  padding: 8px 24px 8px 12px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.arena-taunt-broadcast.opponent-taunt {
+  border-color: rgba(239, 68, 68, 0.7);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8),
+              0 0 35px rgba(239, 68, 68, 0.4);
+}
+
+.arena-taunt-icon-wrap {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+  overflow: visible;
+  animation: emote-wobble 2s infinite ease-in-out;
+}
+
+.arena-taunt-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.arena-taunt-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fbbf24;
+}
+
+.arena-taunt-broadcast.opponent-taunt .arena-taunt-label {
+  color: #f87171;
+}
+
+.arena-taunt-message {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+/* --- Quick Taunt Bar (Header Quick-Action) --- */
+.quick-taunt-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 4px 8px;
+}
+
+.quick-taunt-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #e2e8f0;
+}
+
+.quick-taunt-btn:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.45);
+  transform: translateY(-2px) scale(1.05);
+}
+
+.quick-taunt-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+
+.quick-taunt-btn .quick-taunt-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.emote-menu-trigger-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(234, 88, 12, 0.15));
+  border: 1.5px solid rgba(245, 158, 11, 0.5);
+  color: #fbbf24;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.emote-menu-trigger-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(234, 88, 12, 0.28));
+  border-color: rgba(245, 158, 11, 0.8);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.35);
+  transform: translateY(-1px);
+}
+
+.emote-menu-trigger-btn.has-cooldown {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.emote-cooldown-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: #fbbf24;
+  transition: width 0.1s linear;
+}
+
+/* --- Battle Emote Drawer / Modal Popover --- */
+.emote-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.emote-picker-window {
+  width: 100%;
+  max-width: 580px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8),
+              0 0 40px rgba(245, 158, 11, 0.15);
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.emote-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.emote-picker-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.emote-picker-title-group h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emote-badge-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.emote-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emote-sound-toggle-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emote-sound-toggle-btn.is-active {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.emote-picker-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+}
+
+.emote-picker-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+/* Category Tabs & Search */
+.emote-picker-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.emote-category-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.emote-tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emote-tab-btn:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.emote-tab-btn.is-active {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.emote-search-input {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  width: 140px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.emote-search-input:focus {
+  border-color: rgba(245, 158, 11, 0.5);
+  width: 180px;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+}
+
+/* Emote Grid */
+.emote-grid-container {
+  padding: 18px 20px;
+  max-height: 380px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.emote-grid-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.emote-grid-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.emote-card-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.emote-card-btn:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.45);
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 8px 20px -4px rgba(245, 158, 11, 0.25);
+}
+
+.emote-card-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.7);
+}
+
+.emote-card-preview {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.emote-card-btn:hover:not(:disabled) .emote-card-preview {
+  transform: scale(1.12);
+}
+
+.emote-card-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.emote-card-tease {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* Footer / Cooldown status */
+.emote-picker-footer {
+  padding: 12px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.emote-cooldown-status {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.emote-attribution {
+  font-size: 0.68rem;
+  color: #64748b;
+  text-decoration: none;
+}
+
+.emote-attribution a {
+  color: #94a3b8;
+  text-decoration: underline;
+}
+
+/* Keyframe animations */
+@keyframes emote-pop-bounce {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 15px) scale(0.7);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(-50%, -4px) scale(1.08);
+  }
+  100% {
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes emote-wobble {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-6deg) scale(1.05);
+  }
+  75% {
+    transform: rotate(6deg) scale(1.05);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .quick-taunt-bar .quick-taunt-label {
+    display: none;
+  }
+  .emote-grid-container {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .emote-grid-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

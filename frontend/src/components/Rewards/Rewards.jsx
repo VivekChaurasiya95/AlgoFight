@@ -17,10 +17,15 @@ import {
     faFire,
     faLayerGroup,
     faChartPie,
-    faClockRotateLeft
+    faClockRotateLeft,
+    faPalette,
+    faLock,
+    faCheck,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { THEMES } from '../../config/themes';
 import { fetchUserProfile, requestJson } from '../../services/api';
 import {
     calculateArenaPointBreakdown,
@@ -34,7 +39,123 @@ import '../BackgroundPaths/BackgroundPaths.css';
 import Footer from '../Common/Footer/Footer';
 import './Rewards.css';
 
+const themeRewards = [
+    {
+        id: 'theme-regular',
+        themeId: 'regular',
+        themeName: 'Regular',
+        isTheme: true,
+        title: 'Regular HUD',
+        tagline: 'Classic multi-accent arena & stadium ambiance',
+        category: 'Themes',
+        cost: 0,
+        icon: faPalette,
+        tone: 'cyan',
+        swatches: ['#050811', '#00E5FF', '#8B5CF6'],
+        accentColor: '#00E5FF',
+    },
+    {
+        id: 'theme-original',
+        themeId: 'original',
+        themeName: 'Pulse',
+        isTheme: true,
+        title: 'Pulse Cyan',
+        tagline: 'Kinetic electric cyan & cyber grid HUD',
+        category: 'Themes',
+        cost: 200,
+        icon: faPalette,
+        tone: 'cyan',
+        swatches: ['#040914', '#00F2FE', '#0284C7'],
+        accentColor: '#00F2FE',
+    },
+    {
+        id: 'theme-light',
+        themeId: 'light',
+        themeName: 'Horizon',
+        isTheme: true,
+        title: 'Horizon Studio',
+        tagline: 'Futuristic high-key white tournament cockpit',
+        category: 'Themes',
+        cost: 350,
+        icon: faPalette,
+        tone: 'blue',
+        swatches: ['#F8FAFC', '#2563EB', '#3B82F6'],
+        accentColor: '#2563EB',
+    },
+    {
+        id: 'theme-emerald',
+        themeId: 'emerald',
+        themeName: 'Terminal',
+        isTheme: true,
+        title: 'Terminal Emerald',
+        tagline: 'Hacker console & quantum matrix green',
+        category: 'Themes',
+        cost: 500,
+        icon: faPalette,
+        tone: 'teal',
+        swatches: ['#02120C', '#00F5A0', '#059669'],
+        accentColor: '#00F5A0',
+    },
+    {
+        id: 'theme-sunset',
+        themeId: 'sunset',
+        themeName: 'Solar',
+        isTheme: true,
+        title: 'Solar Sunset',
+        tagline: 'Warm molten amber glow & solar twilight',
+        category: 'Themes',
+        cost: 1200,
+        icon: faPalette,
+        tone: 'orange',
+        swatches: ['#160F08', '#F59E0B', '#D97706'],
+        accentColor: '#F59E0B',
+    },
+    {
+        id: 'theme-amethyst',
+        themeId: 'amethyst',
+        themeName: 'Synthwave',
+        isTheme: true,
+        title: 'Synthwave Neon',
+        tagline: 'Neon violet & ultraviolet retro dusk',
+        category: 'Themes',
+        cost: 2000,
+        icon: faPalette,
+        tone: 'purple',
+        swatches: ['#0C061A', '#A855F7', '#7C3AED'],
+        accentColor: '#A855F7',
+    },
+    {
+        id: 'theme-crimson',
+        themeId: 'crimson',
+        themeName: 'Overdrive',
+        isTheme: true,
+        title: 'Overdrive Crimson',
+        tagline: 'High-intensity adrenaline battle red',
+        category: 'Themes',
+        cost: 3200,
+        icon: faPalette,
+        tone: 'pink',
+        swatches: ['#120407', '#FF2A55', '#DC2626'],
+        accentColor: '#FF2A55',
+    },
+    {
+        id: 'theme-custom',
+        themeId: 'custom',
+        themeName: 'Obsidian',
+        isTheme: true,
+        title: 'Obsidian Titanium',
+        tagline: 'Monochromatic stealth cockpit & dark titanium',
+        category: 'Themes',
+        cost: 4500,
+        icon: faPalette,
+        tone: 'blue',
+        swatches: ['#070809', '#1A1D25', '#E3E5ED'],
+        accentColor: '#E3E5ED',
+    },
+];
+
 const rewardCatalog = [
+    ...themeRewards,
     {
         title: 'Amazon Gift Cards',
         description: 'Redeem credits from $10 to $500 for textbooks, hardware gear, or dev software.',
@@ -92,12 +213,16 @@ const recentRedeems = [];
 const numberFormatter = new Intl.NumberFormat('en-US');
 
 function getRewardStatusLabel(status) {
+    if (status === 'active') return 'Equipped';
+    if (status === 'unlocked') return 'Unlocked';
     if (status === 'redeem') return 'Available';
     if (status === 'locked') return 'Locked';
     return 'Coming Soon';
 }
 
 function getRewardActionLabel(status) {
+    if (status === 'active') return 'Currently Active ✓';
+    if (status === 'unlocked') return 'Equip Theme ⚡';
     if (status === 'redeem') return 'Claim Reward';
     if (status === 'locked') return 'Need More Points';
     return 'Coming Soon';
@@ -106,6 +231,15 @@ function getRewardActionLabel(status) {
 function Rewards() {
     const { user, loading: authLoading } = useAuth();
     const { notify } = useNotification();
+    const {
+        theme: currentTheme,
+        setTheme,
+        isThemeUnlocked,
+        unlockTheme,
+        previewTheme,
+        clearPreviewTheme,
+    } = useTheme();
+    const [hoveredThemeId, setHoveredThemeId] = useState(null);
     const [profile, setProfile] = useState(null);
     const [weeklyStatus, setWeeklyStatus] = useState(null);
     const [historyTransactions, setHistoryTransactions] = useState([]);
@@ -184,6 +318,35 @@ function Rewards() {
     const computedRewards = useMemo(
         () =>
             rewardCatalog.map((reward) => {
+                if (reward.isTheme) {
+                    const isUnlocked = isThemeUnlocked ? isThemeUnlocked(reward.themeId) : reward.cost === 0;
+                    const isCurrent = currentTheme === reward.themeId;
+
+                    let status = 'locked';
+                    let cta = `Locked (${numberFormatter.format(reward.cost)} PTS)`;
+
+                    if (isUnlocked) {
+                        if (isCurrent) {
+                            status = 'active';
+                            cta = 'Equipped ✓';
+                        } else {
+                            status = 'unlocked';
+                            cta = 'Preview / Set ⚡';
+                        }
+                    } else if (arenaPoints >= reward.cost) {
+                        status = 'redeem';
+                        cta = `Unlock (${numberFormatter.format(reward.cost)} PTS)`;
+                    }
+
+                    return {
+                        ...reward,
+                        status,
+                        isUnlocked,
+                        isCurrent,
+                        cta,
+                    };
+                }
+
                 const status = reward.comingSoon
                     ? 'coming-soon'
                     : arenaPoints >= reward.cost
@@ -196,7 +359,17 @@ function Rewards() {
                     cta: getRewardActionLabel(status),
                 };
             }),
-        [arenaPoints]
+        [arenaPoints, isThemeUnlocked, currentTheme]
+    );
+
+    const themeItems = useMemo(
+        () => computedRewards.filter((r) => r.isTheme),
+        [computedRewards]
+    );
+
+    const generalRewards = useMemo(
+        () => computedRewards.filter((r) => !r.isTheme),
+        [computedRewards]
     );
 
     const pointSourceRows = useMemo(
@@ -212,16 +385,65 @@ function Rewards() {
 
     const [activeCategory, setActiveCategory] = useState('All');
 
-    const categories = ['All', 'Marketplace', 'Competition', 'Productivity', 'Career', 'Learning', 'Hardware'];
+    const categories = ['All', 'Themes', 'Marketplace', 'Competition', 'Productivity', 'Career', 'Learning', 'Hardware'];
 
-    const filteredRewards = useMemo(() => {
-        if (activeCategory === 'All') return computedRewards;
-        return computedRewards.filter((r) => r.category === activeCategory);
-    }, [computedRewards, activeCategory]);
+    const displayGeneralRewards = useMemo(() => {
+        if (activeCategory === 'All') return generalRewards;
+        if (activeCategory === 'Themes') return [];
+        return generalRewards.filter((r) => r.category === activeCategory);
+    }, [activeCategory, generalRewards]);
 
-    const redeemableCount = computedRewards.filter((reward) => reward.status === 'redeem').length;
+    const unlockedCount = computedRewards.filter((reward) => reward.isUnlocked || reward.status === 'redeem' || reward.status === 'active').length;
+
+    const handleThemeHoverEnter = (reward) => {
+        setHoveredThemeId(reward.themeId);
+        if (previewTheme) {
+            previewTheme(reward.themeId);
+        }
+    };
+
+    const handleThemeHoverLeave = () => {
+        setHoveredThemeId(null);
+        if (clearPreviewTheme) {
+            clearPreviewTheme();
+        }
+    };
+
+    const handleThemeClick = (reward) => {
+        if (reward.isUnlocked) {
+            setTheme(reward.themeId, false);
+            if (notify) {
+                notify({
+                    type: 'success',
+                    title: 'Theme Applied! ⚡',
+                    message: `${reward.title} is now your active arena HUD visual.`,
+                    duration: 4000,
+                });
+            }
+            return;
+        }
+
+        // Locked theme: flash error message not unlocked
+        const needed = reward.cost - arenaPoints;
+        if (notify) {
+            notify({
+                type: 'error',
+                title: '🔒 Theme Not Unlocked!',
+                message: needed > 0
+                    ? `${reward.title} is locked! You need ${numberFormatter.format(needed)} more Arena Points to unlock it (${numberFormatter.format(reward.cost)} PTS total).`
+                    : `${reward.title} is locked! Requires tier unlock from competitive achievements.`,
+                duration: 4500,
+            });
+        }
+    };
 
     const handleClaimClick = async (reward) => {
+        if (reward.isTheme) {
+            handleThemeClick(reward);
+            return;
+        }
+
+        // Standard marketplace / physical reward redemption
         if (reward.status === 'redeem') {
             try {
                 const res = await requestJson('/api/rewards/redeem', {
@@ -409,15 +631,15 @@ function Rewards() {
                                 <div className="dash-icon-box icon-purple">
                                     <FontAwesomeIcon icon={faGift} />
                                 </div>
-                                <span className="dash-card-title">Unlocked Items</span>
+                                <span className="dash-card-title">Unlocked Vault Items</span>
                             </div>
                             <span className="dash-pill-tag tag-purple">READY</span>
                         </div>
                         <div className="dash-stat-big stat-purple">
-                            {redeemableCount}
+                            {unlockedCount}
                         </div>
                         <div className="kpi-subtext">
-                            {redeemableCount === 1 ? '1 item ready to claim now' : `${redeemableCount} items ready to claim now`}
+                            {unlockedCount} items & themes ready to equip or claim
                         </div>
                     </article>
                 </motion.section>
@@ -436,9 +658,9 @@ function Rewards() {
                                 <div className="dash-icon-box icon-cyan">
                                     <FontAwesomeIcon icon={faLayerGroup} />
                                 </div>
-                                <h2 className="panel-heading-title">Reward Catalog</h2>
+                                <h2 className="panel-heading-title">Reward Catalog & HUD Skins</h2>
                             </div>
-                            <span className="dash-pill-tag tag-cyan">WEEKLY RESTOCK</span>
+                            <span className="dash-pill-tag tag-cyan">8 COLOR THEMES LIVE</span>
                         </div>
 
                         {/* Category Filter Pills */}
@@ -455,49 +677,191 @@ function Rewards() {
                             ))}
                         </div>
 
-                        {/* Catalog Cards Grid */}
-                        <div className="rewards-grid">
-                            {filteredRewards.length > 0 ? (
-                                filteredRewards.map((reward) => (
-                                    <article
-                                        key={reward.title}
-                                        className={`reward-card dash-card status-${reward.status}`}
-                                    >
-                                        <div className="reward-card-top">
-                                            <div className={`dash-icon-box tone-${reward.tone}`}>
-                                                <FontAwesomeIcon icon={reward.icon} />
-                                            </div>
-                                            <span className="reward-category-tag">{reward.category}</span>
-                                        </div>
-
-                                        <h3 className="reward-item-title">{reward.title}</h3>
-                                        <p className="reward-item-desc">{reward.description}</p>
-
-                                        <div className="reward-meta-row">
-                                            <div className="reward-cost-badge">
-                                                <span className="cost-num">{numberFormatter.format(reward.cost)}</span>
-                                                <span className="cost-unit">PTS</span>
-                                            </div>
-                                            <span className={`reward-status-pill status-${reward.status}`}>
-                                                {getRewardStatusLabel(reward.status)}
+                        {/* Theme HUD Skins: Compact Grid */}
+                        {(activeCategory === 'All' || activeCategory === 'Themes') && (
+                            <div className="themes-compact-container">
+                                <div className="themes-compact-header">
+                                    <div className="themes-header-left">
+                                        <div className="themes-header-eyebrow-row">
+                                            <span className="themes-live-indicator">
+                                                <span className="active-glow-dot" /> LIVE PREVIEW HUD
+                                            </span>
+                                            <span className="themes-unlocked-badge">
+                                                <FontAwesomeIcon icon={faPalette} style={{ marginRight: '5px' }} />
+                                                {themeItems.filter((t) => t.isUnlocked).length} / {themeItems.length} UNLOCKED
                                             </span>
                                         </div>
-
-                                        <button
-                                            className={`reward-action-btn action-${reward.status}`}
-                                            type="button"
-                                            onClick={() => handleClaimClick(reward)}
-                                        >
-                                            {reward.cta}
-                                        </button>
-                                    </article>
-                                ))
-                            ) : (
-                                <div className="rewards-empty-state">
-                                    <p>No rewards currently listed in this category.</p>
+                                        <h3 className="themes-header-title">Arena Cyber HUD Themes</h3>
+                                        <p className="themes-header-desc">
+                                            Hover over any theme button to live-preview its palette across the entire arena cockpit. Unlocked themes can be applied permanently with a click.
+                                        </p>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
+
+                                <div className="themes-compact-grid">
+                                    {themeItems.map((reward) => {
+                                        const isCurrentlyEquipped = currentTheme === reward.themeId;
+                                        const isHovered = hoveredThemeId === reward.themeId;
+
+                                        return (
+                                            <article
+                                                key={reward.id || reward.themeId}
+                                                className={`theme-compact-card ${isCurrentlyEquipped ? 'is-active-theme' : ''} ${reward.isUnlocked ? 'is-unlocked-theme' : 'is-locked-theme'} ${isHovered ? 'is-previewing-theme' : ''}`}
+                                                style={{
+                                                    '--theme-accent-color': reward.accentColor,
+                                                }}
+                                                onMouseEnter={() => handleThemeHoverEnter(reward)}
+                                                onMouseLeave={handleThemeHoverLeave}
+                                            >
+                                                <div className="theme-compact-top">
+                                                    <div className="theme-compact-ident">
+                                                        <div
+                                                            className="theme-compact-icon"
+                                                            style={{
+                                                                color: reward.accentColor,
+                                                                borderColor: `${reward.accentColor}55`,
+                                                                backgroundColor: `${reward.accentColor}18`,
+                                                            }}
+                                                        >
+                                                            <FontAwesomeIcon icon={reward.icon || faPalette} />
+                                                        </div>
+                                                        <div className="theme-compact-name-block">
+                                                            <h4 className="theme-compact-title">{reward.title}</h4>
+                                                            <span className="theme-compact-tagline">{reward.tagline}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="theme-compact-swatches-strip">
+                                                     <div className="theme-compact-swatches">
+                                                         {reward.swatches?.map((swatch, sIdx) => (
+                                                             <span
+                                                                 key={sIdx}
+                                                                 className="theme-compact-swatch-dot"
+                                                                 style={{ backgroundColor: swatch }}
+                                                             />
+                                                         ))}
+                                                     </div>
+
+                                                     <div className="theme-compact-badge-slot">
+                                                         {isCurrentlyEquipped ? (
+                                                             <span className="theme-compact-status-pill tag-equipped">
+                                                                 <span className="active-glow-dot" /> ACTIVE
+                                                             </span>
+                                                         ) : reward.isUnlocked ? (
+                                                             <span className="theme-compact-status-pill tag-unlocked">
+                                                                 {reward.cost === 0 ? 'STARTER' : 'READY'}
+                                                             </span>
+                                                         ) : (
+                                                             <span className="theme-compact-status-pill tag-locked">
+                                                                 <FontAwesomeIcon icon={faLock} style={{ marginRight: '3px' }} />
+                                                                 {numberFormatter.format(reward.cost)} PTS
+                                                             </span>
+                                                         )}
+                                                     </div>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    className={`theme-compact-btn ${isCurrentlyEquipped ? 'btn-active' : reward.isUnlocked ? 'btn-unlocked' : 'btn-locked'}`}
+                                                    onMouseEnter={() => handleThemeHoverEnter(reward)}
+                                                    onMouseLeave={handleThemeHoverLeave}
+                                                    onClick={() => handleThemeClick(reward)}
+                                                >
+                                                    {isCurrentlyEquipped ? (
+                                                        <>
+                                                            <FontAwesomeIcon icon={faCheck} style={{ marginRight: '6px' }} />
+                                                            Equipped ✓
+                                                        </>
+                                                    ) : reward.isUnlocked ? (
+                                                        isHovered ? (
+                                                            <>Click to Set Theme ⚡</>
+                                                        ) : (
+                                                            <>Preview / Apply HUD</>
+                                                        )
+                                                    ) : (
+                                                        isHovered ? (
+                                                            <>
+                                                                <FontAwesomeIcon icon={faLock} style={{ marginRight: '6px' }} />
+                                                                Previewing · Locked ({numberFormatter.format(reward.cost)} PTS)
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <FontAwesomeIcon icon={faLock} style={{ marginRight: '6px' }} />
+                                                                Locked ({numberFormatter.format(reward.cost)} PTS)
+                                                            </>
+                                                        )
+                                                    )}
+                                                </button>
+                                            </article>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* General Rewards Catalog Section */}
+                        {activeCategory !== 'Themes' && (
+                            <div className="general-rewards-wrapper">
+                                {activeCategory === 'All' && (
+                                    <div className="general-rewards-section-header">
+                                        <div className="dash-card-title-group">
+                                            <div className="dash-icon-box icon-purple">
+                                                <FontAwesomeIcon icon={faGift} />
+                                            </div>
+                                            <h3 className="general-rewards-section-title">Marketplace Rewards & Hardware</h3>
+                                        </div>
+                                        <span className="dash-pill-tag tag-purple">REDEEMABLE ITEMS</span>
+                                    </div>
+                                )}
+
+                                <div className="rewards-grid">
+                                    {displayGeneralRewards.length > 0 ? (
+                                        displayGeneralRewards.map((reward) => (
+                                            <article
+                                                key={reward.title}
+                                                className={`reward-card dash-card status-${reward.status}`}
+                                            >
+                                                <div className="reward-card-top">
+                                                    <div className={`dash-icon-box tone-${reward.tone}`}>
+                                                        <FontAwesomeIcon icon={reward.icon} />
+                                                    </div>
+                                                    <span className="reward-category-tag">{reward.category}</span>
+                                                </div>
+
+                                                <h3 className="reward-item-title">{reward.title}</h3>
+                                                <p className="reward-item-desc">{reward.description}</p>
+
+                                                <div className="reward-meta-row">
+                                                    <div className="reward-cost-badge">
+                                                        <span className="cost-num">{numberFormatter.format(reward.cost)}</span>
+                                                        <span className="cost-unit">PTS</span>
+                                                    </div>
+                                                    <span className={`reward-status-pill status-${reward.status}`}>
+                                                        {reward.status === 'locked' && <FontAwesomeIcon icon={faLock} style={{ marginRight: '4px' }} />}
+                                                        {reward.status === 'redeem' && <FontAwesomeIcon icon={faGift} style={{ marginRight: '4px' }} />}
+                                                        {getRewardStatusLabel(reward.status)}
+                                                    </span>
+                                                </div>
+
+                                                <button
+                                                    className={`reward-action-btn action-${reward.status}`}
+                                                    type="button"
+                                                    disabled={reward.status === 'active' || reward.status === 'coming-soon'}
+                                                    onClick={() => handleClaimClick(reward)}
+                                                >
+                                                    {reward.cta}
+                                                </button>
+                                            </article>
+                                        ))
+                                    ) : (
+                                        <div className="rewards-empty-state">
+                                            <p>No rewards currently listed in this category.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </motion.section>
 
                     {/* Right Side Column */}

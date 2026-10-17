@@ -9,6 +9,7 @@ export interface SyncUserPayload {
     username?: string;
     displayName?: string;
     photoURL?: string;
+    avatarFrame?: string;
     githubUrl?: string;
     linkedinUrl?: string;
     userType?: "STUDENT" | "FACULTY" | "INDIVIDUAL";
@@ -170,13 +171,14 @@ export class UserController {
             }
         }
 
-        if (payload.school || payload.designation || payload.photoURL) {
+        if (payload.school || payload.designation || payload.photoURL || payload.avatarFrame !== undefined) {
             studentIdentityMetadata = {
                 ...(typeof studentIdentityMetadata === 'object' && studentIdentityMetadata !== null ? studentIdentityMetadata : {}),
                 ...(payload.school ? { school: payload.school.trim() } : {}),
                 ...(payload.designation ? { designation: payload.designation.trim() } : {}),
                 ...(department ? { department: department.trim() } : {}),
-                ...(payload.photoURL ? { photoURL: payload.photoURL } : {}),
+                ...(payload.photoURL !== undefined ? { photoURL: payload.photoURL } : {}),
+                ...(payload.avatarFrame !== undefined ? { avatarFrame: payload.avatarFrame } : {}),
             };
         }
 
@@ -216,6 +218,7 @@ export class UserController {
             school: user.school || syncMeta.school || null,
             designation: user.designation || syncMeta.designation || (user.userType === "FACULTY" ? "Faculty Educator" : null),
             photoURL: (user as any).photoURL || syncMeta.photoURL || payload.photoURL || null,
+            avatarFrame: (user as any).avatarFrame || syncMeta.avatarFrame || payload.avatarFrame || null,
             academicProfile,
             matchesWon: user.wins,
             matchesPlayed: user.wins + user.losses,
@@ -313,6 +316,7 @@ export class UserController {
             school: user.school || userMeta.school || null,
             designation: user.designation || userMeta.designation || (user.userType === "FACULTY" ? "Faculty Educator" : null),
             photoURL: (user as any).photoURL || userMeta.photoURL || null,
+            avatarFrame: (user as any).avatarFrame || userMeta.avatarFrame || null,
             academicProfile,
             matchesWon: user.wins,
             matchesPlayed: user.wins + user.losses,
@@ -343,6 +347,7 @@ export class UserController {
                 matchesPlayed,
                 winRate,
                 photoURL: (u as any).photoURL || userMeta.photoURL || null,
+                avatarFrame: (u as any).avatarFrame || userMeta.avatarFrame || null,
                 status: "OFFLINE",
                 createdAt: u.createdAt,
             };
@@ -360,6 +365,7 @@ export class UserController {
                 wins: u.wins,
                 losses: u.losses,
                 photoURL: (u as any).photoURL || userMeta.photoURL || null,
+                avatarFrame: (u as any).avatarFrame || userMeta.avatarFrame || null,
                 trend: "same",
             };
         });

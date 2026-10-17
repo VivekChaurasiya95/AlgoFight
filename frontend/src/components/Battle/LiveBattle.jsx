@@ -46,6 +46,13 @@ import BackgroundPaths from "../BackgroundPaths/BackgroundPaths";
 import "../BackgroundPaths/BackgroundPaths.css";
 import Footer from "../Common/Footer/Footer";
 import SmartCodeEditor from "../Common/editor/SmartCodeEditor.jsx";
+import {
+  BattleEmotePicker,
+  QuickTauntBar,
+  PlayerEmoteBubble,
+  ArenaTauntBroadcast,
+} from "./BattleEmotesOverlay.jsx";
+import { playEmoteChime } from "../../constants/battleEmotes";
 import "./LiveBattle.css";
 
 const PostBattleSummaryModal = ({ battleResult, liveState, problems, ratingUpdates, currentUser, currentUsername, onClose }) => {
@@ -332,6 +339,123 @@ export default function LiveBattle() {
   const [isSelfDisqualified, setIsSelfDisqualified] = useState(false);
   const [reentryStatus, setReentryStatus] = useState("idle"); // "idle" | "pending" | "approved" | "rejected"
   const [incomingPardonRequest, setIncomingPardonRequest] = useState(null);
+
+  // Emotes & Teasing System (Google Fonts Noto Animated Emoji)
+  const [activeEmotes, setActiveEmotes] = useState({});
+  const [latestBroadcastEmote, setLatestBroadcastEmote] = useState(null);
+  const [isEmotePickerOpen, setIsEmotePickerOpen] = useState(false);
+  const [emoteCooldownRemaining, setEmoteCooldownRemaining] = useState(0);
+  const [emoteSoundEnabled, setEmoteSoundEnabled] = useState(true);
+  const emoteCooldownTimerRef = useRef(null);
+
+  const handleIncomingEmote = (data) => {
+    if (!data?.emoteCodepoint) return;
+    const isMe =
+      data.senderUserId === user?.uid ||
+      (data.senderUsername && data.senderUsername === username) ||
+      Boolean(data.isLocal);
+    const emoteData = {
+      ...data,
+      isOpponent: !isMe,
+    };
+
+    if (emoteSoundEnabled) {
+      playEmoteChime(emoteData.isOpponent ? "taunt" : "pop");
+    }
+
+    const playerKey = data.senderUserId || data.senderUsername || (isMe ? "me" : "opponent");
+    setActiveEmotes((prev) => ({
+      ...prev,
+      [playerKey]: emoteData,
+    }));
+
+    setTimeout(() => {
+      setActiveEmotes((prev) => {
+        const copy = { ...prev };
+        if (copy[playerKey]?.timestamp === data.timestamp) {
+          delete copy[playerKey];
+        }
+        return copy;
+      });
+    }, 3800);
+
+    setLatestBroadcastEmote(emoteData);
+    setTimeout(() => {
+      setLatestBroadcastEmote((cur) => (cur?.timestamp === data.timestamp ? null : cur));
+    }, 3200);
+  };
+
+  const handleSendEmote = (emote) => {
+    if (emoteCooldownRemaining > 0) return;
+
+    const targetId = roomId || initialMatch?.roomId || initialMatch?.roomCode || initialRoomCode || paramRoomCode;
+    const myUserId = user?.uid || "me";
+    const myName = username || "Player";
+
+    const emotePayload = {
+      roomId: targetId,
+      emoteId: emote.id,
+      emoteCodepoint: emote.codepoint,
+      emoteLabel: emote.name,
+      teaseText: emote.teaseText,
+      senderUserId: myUserId,
+      senderUsername: myName,
+      timestamp: Date.now(),
+    };
+
+    if (socketRef.current?.connected && targetId) {
+      socketRef.current.emit("battle_emote", emotePayload);
+    }
+
+    handleIncomingEmote({
+      ...emotePayload,
+      isLocal: true,
+    });
+
+    const COOLDOWN_MS = 2500;
+    setEmoteCooldownRemaining(COOLDOWN_MS);
+    const startCd = Date.now();
+    if (emoteCooldownTimerRef.current) clearInterval(emoteCooldownTimerRef.current);
+    emoteCooldownTimerRef.current = setInterval(() => {
+      const remaining = Math.max(0, COOLDOWN_MS - (Date.now() - startCd));
+      setEmoteCooldownRemaining(remaining);
+      if (remaining <= 0) {
+        clearInterval(emoteCooldownTimerRef.current);
+        emoteCooldownTimerRef.current = null;
+      }
+    }, 100);
+
+    // Bot automatic counter-tease when playing vs bot
+    const isBotMatch = Boolean(
+      status === "bot_battle" ||
+      opponentName?.toLowerCase().includes("bot") ||
+      (liveState?.players || []).some((p) => p.username?.toLowerCase().includes("bot"))
+    );
+    if (isBotMatch) {
+      const botResponses = [
+        { id: "robot", name: "AI Speed", teaseText: "Calculating your defeat... 🤖", codepoint: "1f916" },
+        { id: "smirk", name: "Smirk", teaseText: "Too easy for an AI! 😏", codepoint: "1f60f" },
+        { id: "yawn", name: "Yawn", teaseText: "Still typing syntax? 🥱", codepoint: "1f971" },
+        { id: "poop", name: "Spaghetti", teaseText: "O(N^3) complexity detected 💩", codepoint: "1f4a9" },
+        { id: "clown", name: "Clown", teaseText: "Did you check constraints? 🤡", codepoint: "1f921" },
+        { id: "fire", name: "Fire", teaseText: "Let me cook! 🔥", codepoint: "1f525" },
+        { id: "skull", name: "RIP", teaseText: "Runtime error incoming 💀", codepoint: "1f480" },
+      ];
+      setTimeout(() => {
+        const rand = botResponses[Math.floor(Math.random() * botResponses.length)];
+        handleIncomingEmote({
+          roomId: targetId,
+          emoteId: rand.id,
+          emoteCodepoint: rand.codepoint,
+          emoteLabel: rand.name,
+          teaseText: rand.teaseText,
+          senderUserId: "bot",
+          senderUsername: opponentName || "AlgoBot",
+          timestamp: Date.now(),
+        });
+      }, 1600);
+    }
+  };
 
   // Sync active battle session so user can roam and return
   useEffect(() => {
@@ -1526,6 +1650,10 @@ export default function LiveBattle() {
         setReentryStatus("pending");
       });
 
+      socket.on("battle_emote", (data) => {
+        handleIncomingEmote(data);
+      });
+
       socket.on("disconnect", () => {
         setSyncStatus("degraded");
       });
@@ -1565,10 +1693,12 @@ export default function LiveBattle() {
         socketRef.current.off("anticheat_reentry_approved");
         socketRef.current.off("anticheat_reentry_rejected");
         socketRef.current.off("anticheat_reentry_pending");
+        socketRef.current.off("battle_emote");
         socketRef.current.off("disconnect");
       }
       
       if (slowNotificationTimer.current) clearTimeout(slowNotificationTimer.current);
+      if (emoteCooldownTimerRef.current) clearInterval(emoteCooldownTimerRef.current);
     };
   }, [notify, user?.uid, username, roomId, initialMatch, initialRoomCode, paramRoomCode]);
 
@@ -1865,6 +1995,23 @@ export default function LiveBattle() {
           problem={problem}
         />
 
+        {/* Floating Arena Taunt Notification Banner */}
+        <ArenaTauntBroadcast broadcastEmote={latestBroadcastEmote} />
+
+        {/* Battle Emote Picker Modal Popover */}
+        <AnimatePresence>
+          {isEmotePickerOpen && (
+            <BattleEmotePicker
+              isOpen={isEmotePickerOpen}
+              onClose={() => setIsEmotePickerOpen(false)}
+              onSelectEmote={handleSendEmote}
+              cooldownRemaining={emoteCooldownRemaining}
+              soundEnabled={emoteSoundEnabled}
+              onToggleSound={() => setEmoteSoundEnabled((prev) => !prev)}
+            />
+          )}
+        </AnimatePresence>
+
         <motion.section initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="livebattle-header-card">
           <div className="livebattle-header-left">
             <button 
@@ -1939,6 +2086,20 @@ export default function LiveBattle() {
                     <React.Fragment key={p.userId || idx}>
                       {idx > 0 && <div className="matchup-vs-divider">VS</div>}
                       <div className={`player-score-card ${isMe ? 'is-me' : ''} ${hasLeft ? 'is-left' : ''} ${isWinner ? 'is-winner' : ''}`}>
+                        {/* Emote Speech Bubble */}
+                        <AnimatePresence>
+                          {(() => {
+                            const playerEmote =
+                              activeEmotes[p.userId] ||
+                              activeEmotes[p.username] ||
+                              (isMe ? activeEmotes["me"] : null) ||
+                              (!isMe ? (activeEmotes["opponent"] || activeEmotes["bot"]) : null);
+                            return playerEmote ? (
+                              <PlayerEmoteBubble key={playerEmote.timestamp} activeEmote={playerEmote} />
+                            ) : null;
+                          })()}
+                        </AnimatePresence>
+
                         <div className="player-avatar-badge-wrap">
                           <div className="player-avatar">
                             {(p.username || "P")[0].toUpperCase()}
@@ -2027,6 +2188,13 @@ export default function LiveBattle() {
           </div>
 
           <div className="livebattle-header-right">
+            {/* Quick Battle Taunts */}
+            <QuickTauntBar
+              onSelectEmote={handleSendEmote}
+              cooldownRemaining={emoteCooldownRemaining}
+              onOpenPicker={() => setIsEmotePickerOpen(true)}
+            />
+
             {/* Active Problem Headline in Header */}
             {problem && (
               <div className="livebattle-header-problem-info">

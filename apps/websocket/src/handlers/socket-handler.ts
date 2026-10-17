@@ -325,6 +325,7 @@ export class SocketHandler {
                     const institutionName = user?.institutionName || undefined;
                     const userMeta = (user?.studentIdentityMetadata as any) || {};
                     const photoURL = (user as any)?.photoURL || userMeta.photoURL || data.photoURL || undefined;
+                    const avatarFrame = (user as any)?.avatarFrame || userMeta.avatarFrame || data.avatarFrame || undefined;
 
                     this.connectionManager.registerUser(userId, socket, {
                         username: user?.username || username,
@@ -333,6 +334,7 @@ export class SocketHandler {
                         userType,
                         institutionName,
                         photoURL,
+                        avatarFrame,
                         status: "AVAILABLE",
                     });
 
@@ -2018,6 +2020,30 @@ export class SocketHandler {
                     break;
                 }
 
+                case "battle_emote": {
+                    const session = this.socketUsers.get(socket);
+                    const senderUserId = session?.userId || currentUserId.value || data?.userId;
+                    const senderUsername = session?.username || data?.username || data?.senderUsername || "Player";
+                    const targetRoom = data?.roomId || session?.roomId || data?.roomCode;
+                    const { emoteId, emoteCodepoint, emoteLabel, teaseText } = data;
+                    if (targetRoom && emoteId) {
+                        const payload = {
+                            roomId: targetRoom,
+                            emoteId,
+                            emoteCodepoint,
+                            emoteLabel,
+                            teaseText,
+                            senderUserId,
+                            senderUsername,
+                            timestamp: Date.now(),
+                        };
+                        this.connectionManager.broadcastToRoom(targetRoom, "battle_emote", payload);
+                        if (data?.roomCode && data.roomCode !== targetRoom) {
+                            this.connectionManager.broadcastToRoom(data.roomCode, "battle_emote", payload);
+                        }
+                    }
+                    break;
+                }
 
                 default:
                     logger.debug({ action }, "Received unhandled socket action");
