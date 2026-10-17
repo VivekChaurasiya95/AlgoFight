@@ -34,6 +34,7 @@ import BackgroundPaths from "../BackgroundPaths/BackgroundPaths";
 import "../BackgroundPaths/BackgroundPaths.css";
 import Footer from "../Common/Footer/Footer";
 import SmartCodeEditor from "../Common/editor/SmartCodeEditor.jsx";
+import ThemeSelector from "../Theme/ThemeSelector";
 import "../Battle/LiveBattle.css";
 
 export default function PracticeWorkspace() {
@@ -507,6 +508,7 @@ export default function PracticeWorkspace() {
           </div>
 
           <div className="livebattle-header-right">
+            <ThemeSelector />
             <button
               className="livebattle-fullscreen-btn"
               onClick={toggleFullScreen}
@@ -543,7 +545,7 @@ export default function PracticeWorkspace() {
           >
             <div className="livebattle-panel-head">
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <FontAwesomeIcon icon={faCode} style={{ color: "#00e5ff", fontSize: "0.9rem" }} />
+                <FontAwesomeIcon icon={faCode} style={{ color: "var(--cta-primary, #00e5ff)", fontSize: "0.9rem" }} />
                 <h3>Problem</h3>
               </div>
               <div className="livebattle-problem-meta">
@@ -572,7 +574,7 @@ export default function PracticeWorkspace() {
           >
             <div className="livebattle-panel-head">
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <FontAwesomeIcon icon={faCode} style={{ color: "#00e5ff", fontSize: "0.9rem" }} />
+                <FontAwesomeIcon icon={faCode} style={{ color: "var(--cta-primary, #00e5ff)", fontSize: "0.9rem" }} />
                 <h3>Solution</h3>
               </div>
               <div style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
@@ -731,7 +733,7 @@ export default function PracticeWorkspace() {
               >
                 <div className="livebattle-panel-head">
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <FontAwesomeIcon icon={faFlask} style={{ color: "#ff2a7a", fontSize: "0.9rem" }} />
+                    <FontAwesomeIcon icon={faFlask} style={{ color: "var(--cta-primary, #ff2a7a)", fontSize: "0.9rem" }} />
                     <h3>Submit Solution</h3>
                   </div>
                   <button
@@ -771,9 +773,9 @@ export default function PracticeWorkspace() {
                       className="livebattle-action-btn detail-btn"
                       style={{
                         width: "100%",
-                        background: lastResult ? "rgba(0, 229, 255, 0.12)" : "rgba(255, 255, 255, 0.04)",
-                        color: lastResult ? "#00e5ff" : "#64748b",
-                        border: lastResult ? "1px solid rgba(0, 229, 255, 0.4)" : "1px solid rgba(255, 255, 255, 0.08)",
+                        background: lastResult ? "var(--surface-highlight, rgba(0, 229, 255, 0.12))" : "var(--surface-primary, rgba(255, 255, 255, 0.04))",
+                        color: lastResult ? "var(--cta-primary, #00e5ff)" : "var(--text-muted, #64748b)",
+                        border: lastResult ? "1px solid var(--border-active, rgba(0, 229, 255, 0.4))" : "1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -835,7 +837,7 @@ export default function PracticeWorkspace() {
                           {runMode === "test" ? "Testing against sample cases..." : "Evaluating against balanced test suite..."}
                         </div>
                       ) : (
-                        <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", fontFamily: "'Fira Code', monospace", fontSize: "0.83rem", color: "#d1d5db" }}>
+                        <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", fontFamily: "'Fira Code', monospace", fontSize: "0.83rem", color: "var(--text-primary, #d1d5db)" }}>
                           {output || "Output will appear here."}
                         </pre>
                       )}

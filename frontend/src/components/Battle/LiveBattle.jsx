@@ -11,6 +11,7 @@ import { useAntiCheat } from "../../hooks/useAntiCheat";
 import { saveLocalDraft, getLocalDraft, getAllLocalDrafts, saveAllLocalDrafts, reconcileCheckpoints, markDraftAcked, clearDraft } from "../../services/storage/indexedDbRecovery.js";
 import ProblemStatement from "../Common/problem/ProblemStatement.jsx";
 import DetailedAnalysisModal from "../Common/modals/DetailedAnalysisModal.jsx";
+import ThemeSelector from "../Theme/ThemeSelector";
 import RankEmblem from "../Common/gamification/RankEmblem";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -2188,6 +2189,8 @@ export default function LiveBattle() {
           </div>
 
           <div className="livebattle-header-right">
+            <ThemeSelector />
+
             {/* Quick Battle Taunts */}
             <QuickTauntBar
               onSelectEmote={handleSendEmote}
@@ -2273,7 +2276,7 @@ export default function LiveBattle() {
         >
           <div className="livebattle-panel-head">
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <FontAwesomeIcon icon={faCode} style={{ color: "#00e5ff", fontSize: "0.9rem" }} />
+              <FontAwesomeIcon icon={faCode} style={{ color: "var(--cta-primary, #00e5ff)", fontSize: "0.9rem" }} />
               <h3>Solution</h3>
             </div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
