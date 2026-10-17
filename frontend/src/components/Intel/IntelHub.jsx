@@ -54,7 +54,10 @@ export default function IntelHub() {
     setError(null);
     try {
       const [feedRes, featRes, eventsRes] = await Promise.all([
-        fetchIntelFeed({ category: currentCategory, search: searchInput, page, limit: 9 }),
+        fetchIntelFeed({ category: currentCategory, search: searchInput, page, limit: 9 }).catch((err) => {
+          console.warn("Intel feed fetch fallback:", err);
+          return { success: true, posts: [], pagination: { totalPages: 1, total: 0 } };
+        }),
         fetchIntelFeatured().catch(() => ({ post: null })),
         fetchIntelEvents({ type: "ALL" }).catch(() => ({ events: [] })),
       ]);

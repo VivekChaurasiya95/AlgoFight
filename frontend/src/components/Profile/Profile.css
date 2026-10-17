@@ -224,6 +224,45 @@
   opacity: 1;
 }
 
+.profile-identity-badges {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.profile-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 6px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+}
+
+.profile-meta-pill.institute-pill {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+}
+
+.profile-meta-pill.dept-pill {
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #c084fc;
+}
+
+.profile-meta-pill.rank-tier-pill {
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  color: #facc15;
+}
+
 .profile-header-actions {
   margin-left: auto;
   display: flex;
@@ -1424,5 +1463,543 @@
 :root[data-theme="regular"] .student-info-item {
   background: rgba(17, 24, 39, 0.65);
   border-color: rgba(0, 229, 255, 0.15);
+}
+
+/* Competitive Elo Trajectory Graph Styling */
+.profile-trajectory-shell .proper-graph-svg {
+  width: 100%;
+  height: 120px;
+  overflow: visible;
+}
+
+.profile-trajectory-shell .graph-grid-line {
+  stroke: rgba(255, 255, 255, 0.08) !important;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+/* ================= PROFILE ANALYTICS GRID (SQUARE GRAPH + STREAK ENGINE) ================= */
+.profile-analytics-section {
+  margin: 0 0 24px;
+}
+
+.profile-analytics-grid {
+  display: grid;
+  grid-template-columns: minmax(400px, 475px) 1fr;
+  gap: 20px;
+}
+
+/* 1. Square Rating Trajectory Card */
+.profile-square-graph-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 380px;
+  padding: 22px 20px;
+}
+
+.profile-square-graph-card .dash-card-title {
+  font-size: 1.05rem;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.card-subtitle-caption {
+  margin: 2px 0 0;
+  font-size: 0.74rem;
+  color: #94a3b8;
+}
+
+.profile-graph-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.profile-square-graph-canvas {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px;
+  min-height: 190px;
+}
+
+.profile-square-graph-canvas svg {
+  width: 100%;
+  height: 100%;
+  max-height: 220px;
+}
+
+.profile-square-graph-canvas .graph-axis-text {
+  fill: #94a3b8 !important;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.profile-square-graph-canvas .graph-live-guide {
+  stroke: rgba(0, 229, 255, 0.3) !important;
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+
+.profile-square-graph-canvas .graph-node-dot {
+  fill: #00e5ff !important;
+  stroke: #0a0f1d !important;
+  stroke-width: 1.5;
+  transition: all 0.2s ease;
+}
+
+.profile-square-graph-canvas .graph-node-dot:hover {
+  fill: #ffffff !important;
+  r: 3.5;
+}
+
+.profile-square-graph-canvas .graph-live-dot {
+  fill: #00e5ff !important;
+  filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.7)) !important;
+}
+
+.profile-square-graph-canvas .graph-pulse-ring {
+  fill: none;
+  stroke: #00e5ff !important;
+  stroke-width: 1.5;
+  opacity: 0.7;
+  animation: graphPulse 2s infinite ease-out;
+}
+
+.profile-square-graph-canvas .graph-x-label {
+  fill: #94a3b8 !important;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7.5px;
+  font-weight: 600;
+}
+
+.profile-graph-footer-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.graph-metric-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.g-metric-label {
+  font-size: 0.64rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.g-metric-val {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+
+/* 2. Daily Problem Streak Hub Card */
+.profile-streak-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 380px;
+  padding: 22px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-icon-box.icon-orange-fire {
+  background: rgba(249, 115, 22, 0.16);
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  color: #f97316;
+}
+
+.streak-ist-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  color: #fb923c;
+  letter-spacing: 0.04em;
+}
+
+.pulse-ist-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f97316;
+  box-shadow: 0 0 6px #f97316;
+  animation: pulse-dot 1.8s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+
+.profile-streak-hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(239, 68, 68, 0.06) 100%);
+  border: 1px solid rgba(249, 115, 22, 0.22);
+  border-radius: 14px;
+}
+
+.streak-flame-wrapper {
+  width: 58px;
+  height: 58px;
+  min-width: 58px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.85rem;
+  transition: transform 0.3s ease;
+}
+
+.streak-flame-wrapper.is-active-flame {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.25) 0%, rgba(239, 68, 68, 0.3) 100%);
+  border: 1px solid rgba(249, 115, 22, 0.6);
+  color: #f97316;
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.4), inset 0 0 10px rgba(239, 68, 68, 0.3);
+  animation: flame-dance 2s infinite ease-in-out;
+}
+
+@keyframes flame-dance {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.08) rotate(-3deg); }
+}
+
+.streak-flame-wrapper.is-idle-flame {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #64748b;
+}
+
+.streak-hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.streak-count-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.streak-big-number {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.1rem;
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(135deg, #ffedd5 0%, #fb923c 60%, #ef4444 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.streak-unit-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #f97316;
+}
+
+.streak-hero-tagline {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+/* Today's Goal Status Strip */
+.streak-today-status-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.streak-today-status-strip.status-achieved {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #4ade80;
+}
+
+.streak-today-status-strip.status-pending {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+}
+
+.streak-status-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-indicator-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.streak-solve-action-btn {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  border: none;
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.streak-solve-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.45);
+}
+
+/* 7-Day Week Activity Capsules */
+.streak-week-capsules-track {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.week-track-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.week-track-caption {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.next-reset-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: #94a3b8;
+}
+
+.week-capsules-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.week-day-capsule {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 3px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s ease;
+}
+
+.week-day-capsule.is-today {
+  border-color: #f97316;
+  background: rgba(249, 115, 22, 0.08);
+}
+
+.week-day-capsule.is-solved {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.capsule-day-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.capsule-icon-box {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.capsule-check {
+  font-size: 0.72rem;
+  color: #22c55e;
+}
+
+.capsule-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Secondary Metrics Bar */
+.streak-footer-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.streak-foot-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.s-foot-label {
+  font-size: 0.64rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.s-foot-val {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.82rem;
+  color: #f1f5f9;
+}
+
+/* ================= LIGHT MODE OVERRIDES FOR PROFILE ANALYTICS & STREAK ================= */
+:root[data-theme="light"] .dash-card.profile-panel {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05) !important;
+}
+
+:root[data-theme="light"] .profile-square-graph-card .dash-card-title,
+:root[data-theme="light"] .profile-streak-card .dash-card-title {
+  color: #0f172a !important;
+  font-weight: 800;
+}
+
+:root[data-theme="light"] .card-subtitle-caption {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .profile-graph-footer-metrics,
+:root[data-theme="light"] .streak-footer-stats {
+  border-top-color: #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .graph-metric-pill {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .g-metric-val {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .profile-streak-hero {
+  background: #fff7ed !important;
+  border: 1px solid #ffedd5 !important;
+}
+
+:root[data-theme="light"] .streak-hero-tagline {
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .streak-big-number {
+  background: linear-gradient(135deg, #c2410c 0%, #ea580c 60%, #dc2626 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+:root[data-theme="light"] .streak-ist-badge {
+  background: #fff7ed !important;
+  border: 1px solid #fed7aa !important;
+  color: #c2410c !important;
+}
+
+:root[data-theme="light"] .streak-today-status-strip.status-achieved {
+  background: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+  color: #15803d !important;
+}
+
+:root[data-theme="light"] .streak-today-status-strip.status-pending {
+  background: #fefce8 !important;
+  border: 1px solid #fef08a !important;
+  color: #a16207 !important;
+}
+
+:root[data-theme="light"] .week-day-capsule {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .week-day-capsule.is-today {
+  border-color: #ea580c !important;
+  background: #fff7ed !important;
+}
+
+:root[data-theme="light"] .week-day-capsule.is-solved {
+  border-color: #86efac !important;
+  background: #f0fdf4 !important;
+}
+
+:root[data-theme="light"] .capsule-day-label {
+  color: #64748b !important;
+}
+
+:root[data-theme="light"] .capsule-dot {
+  background: #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .s-foot-val {
+  color: #0f172a !important;
+}
+
+@media (max-width: 900px) {
+  .profile-analytics-grid {
+    grid-template-columns: 1fr;
+  }
 }
 

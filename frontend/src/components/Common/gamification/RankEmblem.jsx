@@ -370,8 +370,14 @@ export default function RankEmblem({
   glow = true,
 }) {
   const tier = getRankTier(rank || rating || 0);
+  const [imgError, setImgError] = React.useState(false);
+  const iconSrc = `/ranks/${tier.key.toLowerCase()}.png`;
 
-  const renderIcon = () => {
+  React.useEffect(() => {
+    setImgError(false);
+  }, [tier.key]);
+
+  const renderSvgFallback = () => {
     switch (tier.key) {
       case "EXPERT":
         return <ExpertSvg size={size} />;
@@ -387,6 +393,23 @@ export default function RankEmblem({
       default:
         return <RookieSvg size={size} />;
     }
+  };
+
+  const renderIcon = () => {
+    if (imgError) {
+      return renderSvgFallback();
+    }
+    return (
+      <img
+        key={iconSrc}
+        src={iconSrc}
+        alt={`${tier.name} rank emblem`}
+        width={size}
+        height={size}
+        className="rank-emblem-image"
+        onError={() => setImgError(true)}
+      />
+    );
   };
 
   return (

@@ -50,6 +50,14 @@ export class IntelController {
                 ];
             }
 
+            if (!(prisma as any).intelPost) {
+                return reply.send({
+                    success: true,
+                    posts: [],
+                    pagination: { total: 0, page, limit, totalPages: 0 },
+                });
+            }
+
             const [total, posts] = await Promise.all([
                 prisma.intelPost.count({ where }),
                 prisma.intelPost.findMany({
@@ -88,6 +96,10 @@ export class IntelController {
 
     async getFeatured(request: FastifyRequest, reply: FastifyReply) {
         try {
+            if (!(prisma as any).intelPost) {
+                return reply.send({ success: true, post: null });
+            }
+
             let featured = await prisma.intelPost.findFirst({
                 where: {
                     status: "PUBLISHED",
@@ -163,6 +175,10 @@ export class IntelController {
                 where.eventDetails = {
                     isNot: null,
                 };
+            }
+
+            if (!(prisma as any).intelPost) {
+                return reply.send({ success: true, events: [] });
             }
 
             const postsWithEvents = await prisma.intelPost.findMany({

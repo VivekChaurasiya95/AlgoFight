@@ -8,8 +8,9 @@ export default function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", color: "#00e5ff" }}>
-        Loading...
+      <div className="app-page-loader full-screen">
+        <div className="app-loader-spinner" />
+        <span>Loading...</span>
       </div>
     );
   }

@@ -204,7 +204,7 @@ export class AuthController {
                     enrollmentNumber: finalEnrollment ? finalEnrollment.toUpperCase() : null,
                     platformCode,
                     studentIdentityMetadata: {
-                        ...(googleUser.picture ? { photoURL: googleUser.picture } : {}),
+                        ...(googleUser.picture ? { photoURL: googleUser.picture, originalPhotoURL: googleUser.picture } : {}),
                         ...(isFaculty ? { designation: "Faculty Educator" } : {}),
                     },
                 },
@@ -212,14 +212,16 @@ export class AuthController {
             logger.info({ userId: user.id, username: user.username, enrollmentNumber: user.enrollmentNumber, department: user.department, userType }, "Created new user via Google authentication");
         } else if (googleUser.picture) {
             const existingMeta = (user.studentIdentityMetadata as any) || {};
-            if (existingMeta.photoURL !== googleUser.picture) {
-                user = await prisma.user.update({
+            const nextMeta = {
+                ...existingMeta,
+                originalPhotoURL: existingMeta.originalPhotoURL || googleUser.picture,
+                photoURL: existingMeta.photoURL || googleUser.picture,
+            };
+            if (!existingMeta.originalPhotoURL || !existingMeta.photoURL) {
+                user = await (prisma.user as any).update({
                     where: { id: user.id },
                     data: {
-                        studentIdentityMetadata: {
-                            ...existingMeta,
-                            photoURL: googleUser.picture,
-                        },
+                        studentIdentityMetadata: nextMeta,
                     },
                 });
             }
@@ -257,7 +259,12 @@ export class AuthController {
                 rating: user.rating,
                 highestRank: user.highestRank,
                 arenaPoints: user.arenaPoints ?? 0,
-                photoURL: googleUser.picture,
+                photoURL: identityMeta.photoURL || googleUser.picture || null,
+                originalPhotoURL: identityMeta.originalPhotoURL || googleUser.picture || null,
+                avatarFrame: identityMeta.avatarFrame || null,
+                unlockedAvatars: Array.isArray(identityMeta.unlockedAvatars) ? identityMeta.unlockedAvatars : [],
+                unlockedFrames: Array.isArray(identityMeta.unlockedFrames) ? identityMeta.unlockedFrames : [],
+                unlockedThemes: Array.isArray(identityMeta.unlockedThemes) ? identityMeta.unlockedThemes : [],
             },
         };
     }
@@ -335,6 +342,12 @@ export class AuthController {
                 rating: user.rating,
                 highestRank: user.highestRank,
                 arenaPoints: user.arenaPoints ?? 0,
+                photoURL: manualMeta.photoURL || null,
+                originalPhotoURL: manualMeta.originalPhotoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.username || user.email)}`,
+                avatarFrame: manualMeta.avatarFrame || null,
+                unlockedAvatars: Array.isArray(manualMeta.unlockedAvatars) ? manualMeta.unlockedAvatars : [],
+                unlockedFrames: Array.isArray(manualMeta.unlockedFrames) ? manualMeta.unlockedFrames : [],
+                unlockedThemes: Array.isArray(manualMeta.unlockedThemes) ? manualMeta.unlockedThemes : [],
             },
         };
     }

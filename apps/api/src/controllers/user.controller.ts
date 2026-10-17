@@ -9,6 +9,7 @@ export interface SyncUserPayload {
     username?: string;
     displayName?: string;
     photoURL?: string;
+    originalPhotoURL?: string;
     avatarFrame?: string;
     githubUrl?: string;
     linkedinUrl?: string;
@@ -32,7 +33,7 @@ export class UserController {
     private async enrichUserMetrics(user: any) {
         if (!user || !user.id) return {};
         try {
-            const [practiceData, ratingHistories, submissions] = await Promise.all([
+            const [practiceData, ratingHistories, acceptedSubmissions] = await Promise.all([
                 this.userRepository.getPracticeProgress(user.id).catch(() => ({
                     practiceSubmissionCount: 0,
                     practiceSolvedProblemIds: [] as string[],
@@ -44,10 +45,13 @@ export class UserController {
                     take: 20,
                 }).catch(() => []),
                 prisma.submission.findMany({
-                    where: { userId: user.id },
-                    select: { createdAt: true },
+                    where: { 
+                        userId: user.id,
+                        verdict: "ACCEPTED",
+                    },
+                    select: { createdAt: true, problemId: true },
                     orderBy: { createdAt: "desc" },
-                    take: 60,
+                    take: 500,
                 }).catch(() => []),
             ]);
 
@@ -55,30 +59,94 @@ export class UserController {
             const practiceSubmissionCount = practiceData.practiceSubmissionCount;
             const totalSubmissions = Math.max(practiceSubmissionCount, user.totalSubmissions || 0);
 
-            // Compute active submission streak
+            // Timezone helper for Asia/Kolkata (IST = UTC+5:30)
+            const getISTDateString = (d: Date | string = new Date()): string => {
+                const dateObj = typeof d === "string" ? new Date(d) : d;
+                return new Intl.DateTimeFormat("en-CA", {
+                    timeZone: "Asia/Kolkata",
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                }).format(dateObj);
+            };
+
+            const getShiftedISTDate = (baseDateStr: string, dayDelta: number): string => {
+                const [y, m, d] = baseDateStr.split("-").map(Number);
+                const utcDate = new Date(Date.UTC(y, m - 1, d));
+                utcDate.setUTCDate(utcDate.getUTCDate() + dayDelta);
+                return utcDate.toISOString().split("T")[0];
+            };
+
+            const now = new Date();
+            const todayIST = getISTDateString(now);
+            const yesterdayIST = getShiftedISTDate(todayIST, -1);
+
+            // Collect unique solved dates in IST
+            const solvedDatesSet = new Set<string>();
+            let todaySolvedCount = 0;
+
+            for (const sub of acceptedSubmissions) {
+                const dateStr = getISTDateString(sub.createdAt);
+                solvedDatesSet.add(dateStr);
+                if (dateStr === todayIST) {
+                    todaySolvedCount++;
+                }
+            }
+
+            const solvedToday = solvedDatesSet.has(todayIST);
             let currentStreak = 0;
-            if (submissions.length > 0) {
-                const uniqueDates = Array.from(
-                    new Set(
-                        submissions.map((s) => new Date(s.createdAt).toISOString().split("T")[0])
-                    )
-                ).sort().reverse();
 
-                const todayStr = new Date().toISOString().split("T")[0];
-                const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+            if (solvedToday) {
+                currentStreak = 1;
+                let checkDate = yesterdayIST;
+                while (solvedDatesSet.has(checkDate)) {
+                    currentStreak++;
+                    checkDate = getShiftedISTDate(checkDate, -1);
+                }
+            } else if (solvedDatesSet.has(yesterdayIST)) {
+                // Streak is preserved from yesterday until 12:00 AM IST tonight
+                currentStreak = 1;
+                let checkDate = getShiftedISTDate(yesterdayIST, -1);
+                while (solvedDatesSet.has(checkDate)) {
+                    currentStreak++;
+                    checkDate = getShiftedISTDate(checkDate, -1);
+                }
+            } else {
+                currentStreak = 0;
+            }
 
-                if (uniqueDates.includes(todayStr) || uniqueDates.includes(yesterdayStr)) {
-                    let checkDate = new Date(uniqueDates[0]);
-                    for (const d of uniqueDates) {
-                        const expected = checkDate.toISOString().split("T")[0];
-                        if (d === expected) {
-                            currentStreak++;
-                            checkDate = new Date(checkDate.getTime() - 86400000);
-                        } else {
-                            break;
-                        }
+            // Calculate historical longest streak
+            let longestStreak = currentStreak;
+            const sortedDates = Array.from(solvedDatesSet).sort();
+            if (sortedDates.length > 0) {
+                let tempStreak = 1;
+                for (let i = 1; i < sortedDates.length; i++) {
+                    const expectedNext = getShiftedISTDate(sortedDates[i - 1], 1);
+                    if (sortedDates[i] === expectedNext) {
+                        tempStreak++;
+                    } else {
+                        tempStreak = 1;
+                    }
+                    if (tempStreak > longestStreak) {
+                        longestStreak = tempStreak;
                     }
                 }
+            }
+
+            // 7-day rolling window in IST (last 7 days ending with today)
+            const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const streakDates = [];
+            for (let offset = -6; offset <= 0; offset++) {
+                const dStr = getShiftedISTDate(todayIST, offset);
+                const [y, m, d] = dStr.split("-").map(Number);
+                const dt = new Date(Date.UTC(y, m - 1, d));
+                const dayLabel = DAY_NAMES[dt.getUTCDay()];
+                streakDates.push({
+                    date: dStr,
+                    dayLabel,
+                    isToday: dStr === todayIST,
+                    solved: solvedDatesSet.has(dStr),
+                });
             }
 
             const latestDelta = ratingHistories.length > 0 ? (ratingHistories[ratingHistories.length - 1] as any).ratingDelta : 0;
@@ -100,8 +168,11 @@ export class UserController {
                 totalSubmissions,
                 ratingHistory: formattedRatingHistories,
                 ratingDelta: latestDelta,
-                currentStreak: Math.max(currentStreak, (user.wins > 0 ? 1 : 0)),
-                longestStreak: Math.max(currentStreak, (user.wins > 0 ? 1 : 0)),
+                currentStreak,
+                longestStreak,
+                solvedToday,
+                todaySolvedCount,
+                streakDates,
             };
         } catch {
             return {
@@ -113,6 +184,9 @@ export class UserController {
                 ratingDelta: 0,
                 currentStreak: 0,
                 longestStreak: 0,
+                solvedToday: false,
+                todaySolvedCount: 0,
+                streakDates: [],
             };
         }
     }
@@ -122,6 +196,10 @@ export class UserController {
         const email = payload.email || `${userId}@algofight.local`;
         const cleanEmail = email.trim().toLowerCase();
         const parsedName = parseInstitutionalName(payload.displayName || payload.username, cleanEmail);
+
+        // Fetch existing user to preserve reward unlocks and original photo
+        const existingUser = userId ? await this.userRepository.getUserById(userId) : null;
+        const existingMeta = (existingUser?.studentIdentityMetadata as any) || {};
 
         let username = payload.username;
         if (!username || parseInstitutionalName(username).hasEnrollmentPrefix) {
@@ -171,15 +249,29 @@ export class UserController {
             }
         }
 
-        if (payload.school || payload.designation || payload.photoURL || payload.avatarFrame !== undefined) {
-            studentIdentityMetadata = {
-                ...(typeof studentIdentityMetadata === 'object' && studentIdentityMetadata !== null ? studentIdentityMetadata : {}),
-                ...(payload.school ? { school: payload.school.trim() } : {}),
-                ...(payload.designation ? { designation: payload.designation.trim() } : {}),
-                ...(department ? { department: department.trim() } : {}),
-                ...(payload.photoURL !== undefined ? { photoURL: payload.photoURL } : {}),
-                ...(payload.avatarFrame !== undefined ? { avatarFrame: payload.avatarFrame } : {}),
-            };
+        const incomingMeta = (payload.studentIdentityMetadata && typeof payload.studentIdentityMetadata === 'object')
+            ? payload.studentIdentityMetadata
+            : {};
+
+        studentIdentityMetadata = {
+            ...existingMeta,
+            ...incomingMeta,
+            ...(typeof studentIdentityMetadata === 'object' && studentIdentityMetadata !== null ? studentIdentityMetadata : {}),
+            ...(payload.school ? { school: payload.school.trim() } : {}),
+            ...(payload.designation ? { designation: payload.designation.trim() } : {}),
+            ...(department ? { department: department.trim() } : {}),
+            ...(payload.photoURL !== undefined ? { photoURL: payload.photoURL } : {}),
+            ...(payload.avatarFrame !== undefined ? { avatarFrame: payload.avatarFrame } : {}),
+        };
+
+        if (payload.originalPhotoURL && payload.originalPhotoURL.startsWith('http')) {
+            studentIdentityMetadata.originalPhotoURL = payload.originalPhotoURL;
+        } else if (!studentIdentityMetadata.originalPhotoURL) {
+            if (existingMeta.originalPhotoURL) {
+                studentIdentityMetadata.originalPhotoURL = existingMeta.originalPhotoURL;
+            } else if (payload.photoURL && payload.photoURL.startsWith('http') && !payload.photoURL.includes('/avatars/')) {
+                studentIdentityMetadata.originalPhotoURL = payload.photoURL;
+            }
         }
 
         const user = await this.userRepository.upsertUser({
@@ -219,6 +311,10 @@ export class UserController {
             designation: user.designation || syncMeta.designation || (user.userType === "FACULTY" ? "Faculty Educator" : null),
             photoURL: (user as any).photoURL || syncMeta.photoURL || payload.photoURL || null,
             avatarFrame: (user as any).avatarFrame || syncMeta.avatarFrame || payload.avatarFrame || null,
+            originalPhotoURL: syncMeta.originalPhotoURL || payload.originalPhotoURL || null,
+            unlockedAvatars: Array.isArray(syncMeta.unlockedAvatars) ? syncMeta.unlockedAvatars : [],
+            unlockedFrames: Array.isArray(syncMeta.unlockedFrames) ? syncMeta.unlockedFrames : [],
+            unlockedThemes: Array.isArray(syncMeta.unlockedThemes) ? syncMeta.unlockedThemes : [],
             academicProfile,
             matchesWon: user.wins,
             matchesPlayed: user.wins + user.losses,
@@ -317,6 +413,10 @@ export class UserController {
             designation: user.designation || userMeta.designation || (user.userType === "FACULTY" ? "Faculty Educator" : null),
             photoURL: (user as any).photoURL || userMeta.photoURL || null,
             avatarFrame: (user as any).avatarFrame || userMeta.avatarFrame || null,
+            originalPhotoURL: userMeta.originalPhotoURL || (userMeta.photoURL && userMeta.photoURL.startsWith('http') && !userMeta.photoURL.includes('/avatars/') ? userMeta.photoURL : null) || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.username || user.email)}`,
+            unlockedAvatars: Array.isArray(userMeta.unlockedAvatars) ? userMeta.unlockedAvatars : [],
+            unlockedFrames: Array.isArray(userMeta.unlockedFrames) ? userMeta.unlockedFrames : [],
+            unlockedThemes: Array.isArray(userMeta.unlockedThemes) ? userMeta.unlockedThemes : [],
             academicProfile,
             matchesWon: user.wins,
             matchesPlayed: user.wins + user.losses,

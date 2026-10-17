@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useMemo 
 import ThemeSwitchLoader from '../components/Common/ThemeSwitchLoader';
 import { THEMES, THEME_ORDER, THEME_LIST, DEFAULT_THEME_ID, getThemeConfig } from '../config/themes';
 
-export const DEFAULT_UNLOCKED_THEMES = ['regular', 'original', 'light', 'emerald'];
+export const DEFAULT_UNLOCKED_THEMES = ['regular', 'light'];
 
 const ThemeContext = createContext({
   theme: DEFAULT_THEME_ID,
@@ -47,6 +47,16 @@ export const ThemeProvider = ({ children }) => {
   });
 
   const isThemeUnlocked = (themeId) => {
+    if (DEFAULT_UNLOCKED_THEMES.includes(themeId)) return true;
+    try {
+      const stored = localStorage.getItem('algofight_user_profile');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u?.role === 'ADMIN' || u?.userType === 'ADMIN') {
+          return true;
+        }
+      }
+    } catch {}
     return unlockedThemes.includes(themeId);
   };
 

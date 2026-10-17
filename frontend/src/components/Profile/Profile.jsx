@@ -28,8 +28,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { fetchUserProfile } from '../../services/api';
 import { connectSocket, getSocket } from '../../services/socket';
-import { getSessionToken } from '../../services/authStorage';
-import { calculateArenaPointBreakdown, normalizeUserStats, getRankProgressByRating } from '../../utils/playerMetrics';
+import { 
+    calculateArenaPointBreakdown, 
+    normalizeUserStats, 
+    getRankProgressByRating,
+    getISTDateString,
+    getShiftedISTDate,
+    getTimeUntilNextISTMidnight,
+} from '../../utils/playerMetrics';
 import BackgroundPaths from '../BackgroundPaths/BackgroundPaths';
 import '../BackgroundPaths/BackgroundPaths.css';
 import Footer from '../Common/Footer/Footer';
@@ -37,6 +43,7 @@ import RankEmblem from '../Common/gamification/RankEmblem';
 import FacultyDetailsModal from '../Faculty/FacultyDetailsModal';
 import UserAvatar from '../Common/UserAvatar/UserAvatar';
 import AvatarCustomizerModal from './AvatarCustomizerModal';
+import EloRatingGraph from '../Common/gamification/EloRatingGraph';
 
 function Profile() {
     const { userId } = useParams();
@@ -303,6 +310,20 @@ function Profile() {
     const targetFrame = profile?.avatarFrame || profile?.frame || null;
     const avatarFrame = isOwnProfile ? (user?.avatarFrame || targetFrame || '') : (targetFrame || '');
 
+    const resolvedOriginalPhoto = useMemo(() => {
+        return (
+            profile?.originalPhotoURL ||
+            profile?.studentIdentityMetadata?.originalPhotoURL ||
+            user?.originalPhotoURL ||
+            user?.studentIdentityMetadata?.originalPhotoURL ||
+            user?.googlePhotoURL ||
+            (typeof localStorage !== 'undefined' ? localStorage.getItem('algofight_original_photo_url') : null) ||
+            (profile?.photoURL?.startsWith('http') && !profile.photoURL.includes('/avatars/') ? profile.photoURL : null) ||
+            (user?.photoURL?.startsWith('http') && !user.photoURL.includes('/avatars/') ? user.photoURL : null) ||
+            (displayName || email ? `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(displayName || email)}` : null)
+        );
+    }, [profile, user, displayName, email]);
+
     // Dynamic institutional academic fallback calculation if email is institutional
     const academicFallback = useMemo(() => {
         const studentEmail = (email || (isOwnProfile ? user?.email : profile?.email) || "").toLowerCase().trim();
@@ -407,7 +428,36 @@ function Profile() {
         practiceAccuracy,
         lossCount,
         rank,
+        currentStreak,
+        longestStreak,
+        solvedToday,
+        todaySolvedCount,
+        streakDates,
+        highestRating,
     } = normalizeUserStats(profile || {});
+
+    const displayStreakDates = useMemo(() => {
+        if (Array.isArray(streakDates) && streakDates.length > 0) return streakDates;
+        const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const todayStr = getISTDateString();
+        const dates = [];
+        for (let offset = -6; offset <= 0; offset++) {
+            const dStr = getShiftedISTDate(todayStr, offset);
+            const [y, m, d] = dStr.split("-").map(Number);
+            const dt = new Date(Date.UTC(y, m - 1, d));
+            dates.push({
+                date: dStr,
+                dayLabel: DAY_NAMES[dt.getUTCDay()],
+                isToday: dStr === todayStr,
+                solved: dStr === todayStr ? (solvedToday || todaySolvedCount > 0) : false,
+            });
+        }
+        return dates;
+    }, [streakDates, solvedToday, todaySolvedCount]);
+
+    const timeUntilMidnightIST = useMemo(() => {
+        return getTimeUntilNextISTMidnight();
+    }, []);
 
     const pointBreakdown = calculateArenaPointBreakdown({
         rating,
@@ -641,29 +691,56 @@ function Profile() {
 
                             <div className="profile-identity-copy">
                                 <h1 className="profile-display-name">{displayName}</h1>
-                            <p className="profile-email-label">{email || (isFacultyProfile ? 'Faculty Member' : 'Competitor')}</p>
-                            {(profile?.platformCode || (isOwnProfile ? user?.platformCode : null)) && (
-                                <div
-                                    className="profile-code-badge"
-                                    onClick={() => {
-                                        const codeToCopy = profile?.platformCode || (isOwnProfile ? user?.platformCode : null);
-                                        if (codeToCopy) {
-                                            navigator.clipboard.writeText(codeToCopy);
-                                            notify({
-                                                type: "success",
-                                                title: "Code Copied!",
-                                                message: `Platform Code ${codeToCopy} copied to clipboard.`,
-                                                duration: 2500,
-                                            });
-                                        }
-                                    }}
-                                    title="Click to copy Platform Code"
-                                >
-                                    <span>{profile?.platformCode || (isOwnProfile ? user?.platformCode : null)}</span>
-                                    <FontAwesomeIcon icon={faCopy} className="profile-code-copy-icon" />
+                                <p className="profile-email-label">{email || (isFacultyProfile ? 'Faculty Member' : 'Competitor')}</p>
+                                
+                                <div className="profile-identity-badges">
+                                    {(profile?.platformCode || (isOwnProfile ? user?.platformCode : null)) && (
+                                        <div
+                                            className="profile-code-badge"
+                                            onClick={() => {
+                                                const codeToCopy = profile?.platformCode || (isOwnProfile ? user?.platformCode : null);
+                                                if (codeToCopy) {
+                                                    navigator.clipboard.writeText(codeToCopy);
+                                                    notify({
+                                                        type: "success",
+                                                        title: "Code Copied!",
+                                                        message: `Platform Code ${codeToCopy} copied to clipboard.`,
+                                                        duration: 2500,
+                                                    });
+                                                }
+                                            }}
+                                            title="Click to copy Platform Code"
+                                        >
+                                            <span>{profile?.platformCode || (isOwnProfile ? user?.platformCode : null)}</span>
+                                            <FontAwesomeIcon icon={faCopy} className="profile-code-copy-icon" />
+                                        </div>
+                                    )}
+
+                                    {/* Institution Pill */}
+                                    {(profile?.institutionName || academicFallback?.institutionName) && (
+                                        <span className="profile-meta-pill institute-pill" title="Institution">
+                                            <FontAwesomeIcon icon={faBuildingColumns} />
+                                            <span>{profile?.institutionName || academicFallback?.institutionName}</span>
+                                        </span>
+                                    )}
+
+                                    {/* Department / Branch Pill */}
+                                    {(profile?.department || profile?.branch || academicFallback?.department || academicFallback?.branch) && (
+                                        <span className="profile-meta-pill dept-pill" title="Department / Branch">
+                                            <FontAwesomeIcon icon={faGraduationCap} />
+                                            <span>{profile?.department || profile?.branch || academicFallback?.department || academicFallback?.branch}</span>
+                                        </span>
+                                    )}
+
+                                    {/* Arena Rank Tier Pill */}
+                                    {!isFacultyProfile && (
+                                        <span className="profile-meta-pill rank-tier-pill" title="Current Arena Rank Tier">
+                                            <FontAwesomeIcon icon={faTrophy} />
+                                            <span>{rank} · {rating} PTS</span>
+                                        </span>
+                                    )}
                                 </div>
-                            )}
-                        </div>
+                            </div>
 
                         <div className="profile-header-actions">
                             {!isFacultyProfile && !isOwnProfile && (
@@ -836,6 +913,159 @@ function Profile() {
                         </article>
                     ))}
                 </section>
+
+            {!isFacultyProfile && (
+                <section className="profile-analytics-section" style={{ margin: '0 24px 20px' }}>
+                    <div className="profile-analytics-grid">
+                        {/* 1. Square Competitive Rating Trajectory Card */}
+                        <article className="profile-panel dash-card profile-square-graph-card">
+                            <div className="profile-panel-head">
+                                <div className="dash-card-title-group">
+                                    <div className="dash-icon-box icon-cyan">
+                                        <FontAwesomeIcon icon={faChartLine} />
+                                    </div>
+                                    <div>
+                                        <h2 className="dash-card-title">Rating Trajectory</h2>
+                                        <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>
+                                            Elo progression from duel battles
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="profile-graph-badge-group">
+                                    <span className="dash-pill-tag tag-cyan">ELO {rating}</span>
+                                    <span className="dash-pill-tag tag-purple">{rank}</span>
+                                </div>
+                            </div>
+
+                            <div className="profile-square-graph-canvas">
+                                <EloRatingGraph
+                                    rating={rating}
+                                    ratingHistory={profile?.ratingHistory || user?.ratingHistory || []}
+                                    viewBoxHeight={140}
+                                />
+                            </div>
+
+                            <div className="profile-graph-footer-metrics">
+                                <div className="graph-metric-pill">
+                                    <span className="g-metric-label">Peak Elo</span>
+                                    <span className="g-metric-val">{highestRating}</span>
+                                </div>
+                                <div className="graph-metric-pill">
+                                    <span className="g-metric-label">Total Duels</span>
+                                    <span className="g-metric-val">{matchesPlayed}</span>
+                                </div>
+                                <div className="graph-metric-pill">
+                                    <span className="g-metric-label">Win Rate</span>
+                                    <span className="g-metric-val">{winRate}%</span>
+                                </div>
+                            </div>
+                        </article>
+
+                        {/* 2. Daily Problem Streak & Consistency Hub */}
+                        <article className="profile-panel dash-card profile-streak-card">
+                            <div className="profile-panel-head">
+                                <div className="dash-card-title-group">
+                                    <div className="dash-icon-box icon-orange-fire">
+                                        <FontAwesomeIcon icon={faFire} />
+                                    </div>
+                                    <div>
+                                        <h2 className="dash-card-title">Daily Problem Streak</h2>
+                                        <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>
+                                            Solve ≥ 1 question daily · Resets 12:00 AM IST
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="streak-ist-badge">
+                                    <span className="pulse-ist-dot" />
+                                    <span>12:00 AM IST</span>
+                                </div>
+                            </div>
+
+                            {/* Main Hero Streak Banner */}
+                            <div className="profile-streak-hero">
+                                <div className={`streak-flame-wrapper ${currentStreak > 0 ? 'is-active-flame' : 'is-idle-flame'}`}>
+                                    <FontAwesomeIcon icon={faFire} className="streak-flame-icon" />
+                                </div>
+                                <div className="streak-hero-content">
+                                    <div className="streak-count-row">
+                                        <span className="streak-big-number">{currentStreak}</span>
+                                        <span className="streak-unit-label">DAY{currentStreak === 1 ? '' : 'S'} STREAK</span>
+                                    </div>
+                                    <p className="streak-hero-tagline">
+                                        {solvedToday
+                                            ? `✓ Problem solved today in IST! Your streak is safely locked.`
+                                            : `Solve at least 1 question before 12:00 AM IST to maintain your streak.`}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Today's Goal Status */}
+                            <div className={`streak-today-status-strip ${solvedToday ? 'status-achieved' : 'status-pending'}`}>
+                                <div className="streak-status-info">
+                                    <span className="status-indicator-dot" />
+                                    <span>
+                                        {solvedToday
+                                            ? `Today's Question Solved (${todaySolvedCount} accepted)`
+                                            : `0 Questions Solved Today`}
+                                    </span>
+                                </div>
+                                {!solvedToday && (
+                                    <button
+                                        type="button"
+                                        className="streak-solve-action-btn"
+                                        onClick={() => navigate('/practice')}
+                                    >
+                                        <FontAwesomeIcon icon={faBolt} /> Solve Now
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* 7-Day Rolling Consistency Tracker (IST Week) */}
+                            <div className="streak-week-capsules-track">
+                                <div className="week-track-header">
+                                    <span className="week-track-caption">Last 7 Days (IST Activity):</span>
+                                    <span className="next-reset-hint">Next Reset: 12:00 AM IST ({timeUntilMidnightIST})</span>
+                                </div>
+                                <div className="week-capsules-row">
+                                    {displayStreakDates.map((dItem) => (
+                                        <div
+                                            key={dItem.date}
+                                            className={`week-day-capsule ${dItem.isToday ? 'is-today' : ''} ${dItem.solved ? 'is-solved' : 'is-unsolved'}`}
+                                            title={`${dItem.date} (${dItem.dayLabel}): ${dItem.solved ? 'Problem Solved' : 'No Problem Solved'}`}
+                                        >
+                                            <span className="capsule-day-label">{dItem.dayLabel}</span>
+                                            <div className="capsule-icon-box">
+                                                {dItem.solved ? (
+                                                    <FontAwesomeIcon icon={faCheck} className="capsule-check" />
+                                                ) : (
+                                                    <span className="capsule-dot" />
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Secondary Metrics Bar */}
+                            <div className="streak-footer-stats">
+                                <div className="streak-foot-stat">
+                                    <span className="s-foot-label">Best Streak</span>
+                                    <strong className="s-foot-val">🔥 {longestStreak} Days</strong>
+                                </div>
+                                <div className="streak-foot-stat">
+                                    <span className="s-foot-label">Practice Solved</span>
+                                    <strong className="s-foot-val">🎯 {practiceSolved} Problems</strong>
+                                </div>
+                                <div className="streak-foot-stat">
+                                    <span className="s-foot-label">Submissions</span>
+                                    <strong className="s-foot-val">⚡ {practiceSubmissions} Total</strong>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+            )}
+
             {!isFacultyProfile ? (
                 <section className="profile-content-grid">
                     <article className="profile-panel dash-card">
@@ -1123,7 +1353,10 @@ function Profile() {
                     onClose={() => setIsAvatarModalOpen(false)}
                     currentPhotoURL={photoURL}
                     currentFrame={avatarFrame}
-                    originalPhotoURL={user?.googlePhotoURL || (user?.email ? null : null)}
+                    originalPhotoURL={resolvedOriginalPhoto}
+                    unlockedAvatars={profile?.unlockedAvatars || user?.unlockedAvatars || []}
+                    unlockedFrames={profile?.unlockedFrames || user?.unlockedFrames || []}
+                    isAdmin={user?.role === 'ADMIN' || user?.userType === 'ADMIN' || profile?.role === 'ADMIN'}
                     displayName={displayName}
                     onSave={async ({ photoURL: newPhoto, avatarFrame: newFrame }) => {
                         await updateAvatarAndFrame({ photoURL: newPhoto, avatarFrame: newFrame });
