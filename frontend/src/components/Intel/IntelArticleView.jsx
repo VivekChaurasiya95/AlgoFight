@@ -7,7 +7,6 @@ import {
   faEye,
   faUser,
   faShareNodes,
-  faCopy,
   faCheck,
   faRotate,
   faRocket,
@@ -20,28 +19,39 @@ import LaunchCountdownBadge from "./components/LaunchCountdownBadge";
 import IntelCard from "./IntelCard";
 import BackgroundPaths from "../BackgroundPaths/BackgroundPaths";
 import Footer from "../Common/Footer/Footer";
+import { formatCardTitle, parseInlineMarkdown } from "./intelUtils";
 import "./IntelArticleView.css";
+
+const CATEGORY_TAG_CLASSES = {
+  ANNOUNCEMENT: "tag-cyan",
+  PRODUCT_UPDATE: "tag-cyan",
+  EVENT: "tag-gold",
+  COMMUNITY: "tag-green",
+  ENGINEERING: "tag-purple",
+};
 
 function renderArticleContent(content) {
   if (!content) return null;
-  const blocks = content.split("\n\n");
+  const normalized = content.replace(/\r\n/g, "\n").trim();
+  const blocks = normalized.split(/\n\s*\n/);
 
   return blocks.map((block, idx) => {
     const trimmed = block.trim();
+    if (!trimmed) return null;
 
-    // Code Block
+    // Code Block: ```lang\ncode\n```
     if (trimmed.startsWith("```")) {
       const lines = trimmed.split("\n");
       const lang = lines[0].replace("```", "").trim();
-      const code = lines.slice(1, -1).join("\n");
+      const code = lines.slice(1, lines[lines.length - 1].startsWith("```") ? -1 : undefined).join("\n");
       return (
         <div key={idx} className="article-code-block glass-panel">
           <div className="code-header">
             <span className="code-lang-tag">{lang || "CODE"}</span>
             <span className="code-dots">
-              <span className="dot" />
-              <span className="dot" />
-              <span className="dot" />
+              <span className="dot dot-red" />
+              <span className="dot dot-yellow" />
+              <span className="dot dot-green" />
             </span>
           </div>
           <pre className="code-pre">
@@ -51,44 +61,127 @@ function renderArticleContent(content) {
       );
     }
 
-    // Heading 3
-    if (trimmed.startsWith("### ")) {
-      return <h3 key={idx} className="article-h3">{trimmed.slice(4)}</h3>;
-    }
-
-    // Heading 2
-    if (trimmed.startsWith("## ")) {
-      return <h2 key={idx} className="article-h2">{trimmed.slice(3)}</h2>;
-    }
-
-    // Blockquote
+    // Blockquote: > quote
     if (trimmed.startsWith("> ")) {
       return (
         <blockquote key={idx} className="article-blockquote">
-          {trimmed.slice(2)}
+          {parseInlineMarkdown(trimmed.slice(2))}
         </blockquote>
       );
     }
 
-    // Unordered List
-    if (trimmed.split("\n").every((line) => line.trim().startsWith("- ") || line.trim().startsWith("* "))) {
-      const items = trimmed.split("\n").map((line) => line.replace(/^[-*]\s+/, ""));
+    const lines = trimmed.split("\n").map((l) => l.trim()).filter(Boolean);
+
+    // Case 1: Heading followed by list items (e.g. "### Highlights\n- Item 1\n- Item 2")
+    if (
+      (lines[0].startsWith("### ") || lines[0].startsWith("## ")) &&
+      lines.length > 1 &&
+      lines.slice(1).every((l) => l.startsWith("- ") || l.startsWith("* "))
+    ) {
+      const headingRaw = lines[0].replace(/^#{2,3}\s+/, "");
+      const items = lines.slice(1).map((l) => l.replace(/^[-*]\s+/, ""));
       return (
-        <ul key={idx} className="article-ul">
-          {items.map((item, i) => (
-            <li key={i}>{item}</li>
-          ))}
-        </ul>
+        <div key={idx} className="article-feature-breakdown-card">
+          <h3 className="article-feature-breakdown-title">{formatCardTitle(headingRaw)}</h3>
+          <div className="article-feature-items-list">
+            {items.map((it, i) => (
+              <div key={i} className="article-feature-row">
+                <span className="feature-row-bullet" />
+                <div className="feature-row-text">{parseInlineMarkdown(it)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       );
     }
 
-    // Paragraph
+    // Case 2: Unordered List alone (all lines start with "- " or "* ")
+    if (lines.length > 0 && lines.every((l) => l.startsWith("- ") || l.startsWith("* "))) {
+      const items = lines.map((l) => l.replace(/^[-*]\s+/, ""));
+      return (
+        <div key={idx} className="article-feature-breakdown-card standalone-list">
+          <div className="article-feature-items-list">
+            {items.map((it, i) => (
+              <div key={i} className="article-feature-row">
+                <span className="feature-row-bullet" />
+                <div className="feature-row-text">{parseInlineMarkdown(it)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Case 3: Heading 3 alone
+    if (lines.length === 1 && trimmed.startsWith("### ")) {
+      return <h3 key={idx} className="article-h3">{formatCardTitle(trimmed.slice(4))}</h3>;
+    }
+
+    // Case 4: Heading 2 alone
+    if (lines.length === 1 && trimmed.startsWith("## ")) {
+      return <h2 key={idx} className="article-h2">{formatCardTitle(trimmed.slice(3))}</h2>;
+    }
+
+    // Case 5: Single line with bullet hyphens (e.g. "Intro - **Term 1**: Desc - **Term 2**: Desc")
+    if (trimmed.includes(" - ") && (trimmed.includes("**") || trimmed.includes(": "))) {
+      const parts = trimmed.split(" - ");
+      const intro = parts[0].trim();
+      const items = parts.slice(1);
+      return (
+        <div key={idx} className="article-feature-breakdown-card">
+          {intro && <h3 className="article-feature-breakdown-title">{formatCardTitle(intro)}</h3>}
+          <div className="article-feature-items-list">
+            {items.map((it, i) => (
+              <div key={i} className="article-feature-row">
+                <span className="feature-row-bullet" />
+                <div className="feature-row-text">{parseInlineMarkdown(it.trim())}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Case 6: Standard Paragraph
     return (
       <p key={idx} className="article-p">
-        {trimmed}
+        {parseInlineMarkdown(trimmed)}
       </p>
     );
   });
+}
+
+function renderArticleSummary(summary) {
+  if (!summary) return null;
+
+  // If summary contains hyphen-delimited bullet points like "Intro - **Feature 1**: ... - **Feature 2**: ..."
+  if (summary.includes(" - ")) {
+    const parts = summary.split(" - ");
+    const intro = parts[0].trim();
+    const items = parts.slice(1);
+
+    return (
+      <div className="article-reader-feature-overview">
+        {intro && <p className="article-reader-lead">{parseInlineMarkdown(intro)}</p>}
+        <div className="article-features-grid">
+          {items.map((it, idx) => (
+            <div key={idx} className="article-feature-pill-card">
+              <span className="feature-pill-bullet" />
+              <div className="feature-pill-content">
+                {parseInlineMarkdown(it.trim())}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <p className="article-reader-lead">
+      {parseInlineMarkdown(summary)}
+    </p>
+  );
 }
 
 export default function IntelArticleView() {
@@ -110,7 +203,7 @@ export default function IntelArticleView() {
           setPost(res.post);
           setRelatedPosts(res.relatedPosts || []);
         } else {
-          setError("Failed to load article.");
+          setError("Failed to load transmission.");
         }
       } catch (err) {
         setError(err.message || "Failed to load transmission.");
@@ -129,29 +222,34 @@ export default function IntelArticleView() {
     notify({
       type: "success",
       title: "LINK COPIED",
-      message: "Article link copied to clipboard.",
+      message: "Article transmission link copied to clipboard.",
     });
     setTimeout(() => setCopied(false), 2500);
   };
+
+  const tagClass = CATEGORY_TAG_CLASSES[post?.category] || "tag-cyan";
+  const formattedTitle = formatCardTitle(post?.title);
 
   return (
     <BackgroundPaths>
       <div className="intel-dashboard-wrapper intel-article-wrapper">
         <div className="intel-inner-container">
-          {/* Navigation Breadcrumb */}
+          {/* Navigation Breadcrumb Bar */}
           <nav className="intel-breadcrumb-bar">
             <Link to="/intel" className="breadcrumb-back-btn">
               <FontAwesomeIcon icon={faArrowLeft} />
               <span>Back to Intel Hub</span>
             </Link>
             <span className="breadcrumb-separator">/</span>
-            <span className="breadcrumb-current">{post?.category?.replace("_", " ") || "Transmission"}</span>
+            <span className="breadcrumb-current">
+              {post?.category?.replace("_", " ") || "Dispatch"}
+            </span>
           </nav>
 
           {loading && (
             <div className="intel-status-box glass-panel">
               <FontAwesomeIcon icon={faRotate} spin className="intel-spinner" />
-              <span>Decrypting Intelligence Transmission...</span>
+              <span>Scanning Intelligence Transmission...</span>
             </div>
           )}
 
@@ -169,23 +267,23 @@ export default function IntelArticleView() {
             <article className="dash-card intel-article-reader-card">
               {/* Header Area */}
               <header className="article-reader-header">
-                <div className="dash-card-header" style={{ marginBottom: 14 }}>
-                  <div className="dash-card-title-group">
-                    <span className="dash-pill-tag tag-cyan">
-                      {post.category?.replace("_", " ")}
-                    </span>
-                  </div>
-                  <div className="article-action-buttons">
-                    <button type="button" onClick={handleCopyLink} className="btn-outline" style={{ fontSize: "0.78rem", padding: "5px 12px" }}>
-                      <FontAwesomeIcon icon={copied ? faCheck : faCopy} style={{ marginRight: 6 }} />
-                      <span>{copied ? "Copied" : "Share"}</span>
-                    </button>
-                  </div>
+                <div className="article-header-top-row">
+                  <span className={`intel-pill-badge ${tagClass}`}>
+                    {post.category?.replace("_", " ")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className="article-share-btn"
+                  >
+                    <FontAwesomeIcon icon={copied ? faCheck : faShareNodes} style={{ marginRight: 6 }} />
+                    <span>{copied ? "Link Copied" : "Share"}</span>
+                  </button>
                 </div>
 
-                <h1 className="article-reader-title">{post.title}</h1>
+                <h1 className="article-reader-title">{formattedTitle}</h1>
 
-                <p className="article-reader-lead dash-card-subtext">{post.summary}</p>
+                {renderArticleSummary(post.summary)}
 
                 <div className="article-reader-meta-row">
                   <div className="intel-card-author-row">
@@ -207,11 +305,13 @@ export default function IntelArticleView() {
                   <div className="article-reader-pills">
                     {post.readingTimeMin && (
                       <span className="reader-pill">
-                        <FontAwesomeIcon icon={faClock} /> {post.readingTimeMin} min read
+                        <FontAwesomeIcon icon={faClock} style={{ marginRight: 5 }} />
+                        {post.readingTimeMin} min read
                       </span>
                     )}
                     <span className="reader-pill">
-                      <FontAwesomeIcon icon={faEye} /> {post.views || 1} views
+                      <FontAwesomeIcon icon={faEye} style={{ marginRight: 5 }} />
+                      {post.views || 1} views
                     </span>
                   </div>
                 </div>
@@ -224,7 +324,7 @@ export default function IntelArticleView() {
                 </div>
               )}
 
-              {/* Attached Feature Launch or Event Widget */}
+              {/* Attached Milestone Widget */}
               {post.eventDetails && (
                 <div className="article-event-widget glass-panel">
                   <div className="widget-header">
@@ -238,13 +338,14 @@ export default function IntelArticleView() {
                       targetDate={post.eventDetails.startsAt}
                       launchStatus={post.eventDetails.launchStatus}
                       versionTag={post.eventDetails.versionTag}
+                      compact={true}
                     />
                   </div>
 
                   <div className="widget-info-row">
                     <div className="widget-info-item">
                       <FontAwesomeIcon icon={faCalendarAlt} className="widget-icon" />
-                      <span>{new Date(post.eventDetails.startsAt).toUTCString()}</span>
+                      <span>{new Date(post.eventDetails.startsAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
                     </div>
                     <div className="widget-info-item">
                       <FontAwesomeIcon icon={faGlobe} className="widget-icon" />
@@ -274,7 +375,7 @@ export default function IntelArticleView() {
             <section className="intel-related-section">
               <div className="intel-section-header">
                 <div className="section-title-wrap">
-                  <h2>Related Transmissions</h2>
+                  <h2 className="related-transmissions-title">Related Transmissions</h2>
                 </div>
               </div>
               <div className="intel-posts-grid">

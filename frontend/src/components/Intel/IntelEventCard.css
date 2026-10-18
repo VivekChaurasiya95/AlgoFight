@@ -8,9 +8,23 @@
   justify-content: space-between;
   width: 100%;
   max-width: 440px;
-  min-height: 400px;
+  min-height: 380px;
   box-sizing: border-box;
-  padding: 22px;
+  padding: 24px !important;
+  border-radius: 20px !important;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+:root[data-theme="light"] .intel-event-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02) !important;
+}
+
+:root[data-theme="light"] .intel-event-card:hover {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08) !important;
+  transform: translateY(-3px);
 }
 
 .intel-pill-badge {
@@ -31,27 +45,44 @@
   line-height: 1.2 !important;
 }
 
+:root[data-theme="light"] .intel-pill-badge {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #2563eb !important;
+  box-shadow: none !important;
+}
+
 .intel-event-countdown-box {
   margin: 10px 0 14px;
 }
 
 .intel-event-title {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 1.12rem;
   font-weight: 800;
-  line-height: 1.35;
+  line-height: 1.38;
   letter-spacing: -0.01em;
+  text-transform: none !important;
 }
 
 .intel-event-title a {
   color: var(--text-primary, #ffffff);
   text-decoration: none;
   transition: color 0.18s ease;
+  text-transform: none !important;
 }
 
 .intel-event-title a:hover {
   color: var(--cta-primary, #00e5ff);
+}
+
+:root[data-theme="light"] .intel-event-title a {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .intel-event-title a:hover {
+  color: #2563eb !important;
 }
 
 .intel-event-summary {
@@ -63,6 +94,10 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+:root[data-theme="light"] .intel-event-summary {
+  color: #475569 !important;
 }
 
 .intel-event-card-bottom {
@@ -82,6 +117,11 @@
   margin-bottom: 16px;
 }
 
+:root[data-theme="light"] .intel-event-meta-list {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
 .intel-event-meta-item {
   display: flex;
   align-items: center;
@@ -90,10 +130,18 @@
   color: var(--text-secondary, #94a3b8);
 }
 
+:root[data-theme="light"] .intel-event-meta-item {
+  color: #334155 !important;
+}
+
 .intel-event-meta-item .meta-icon {
   color: var(--cta-primary, #00e5ff);
   font-size: 0.85rem;
   width: 16px;
+}
+
+:root[data-theme="light"] .intel-event-meta-item .meta-icon {
+  color: #2563eb !important;
 }
 
 .intel-event-footer-action {

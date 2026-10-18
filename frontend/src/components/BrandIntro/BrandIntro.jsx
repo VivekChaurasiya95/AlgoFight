@@ -2,8 +2,43 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '../../assets/algofight-logo.png';
 import './BrandIntro.css';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function BrandIntro({ onComplete }) {
+  const { theme, activeThemeConfig } = useTheme();
+
+  // Theme-aware styles dynamically synchronized with chosen theme
+  const introThemeStyle = useMemo(() => {
+    const accent = activeThemeConfig?.accentColor || '#00e5ff';
+    const shadow = activeThemeConfig?.tokens?.['--cta-shadow'] || 'rgba(0, 229, 255, 0.45)';
+    const bgPrimary = activeThemeConfig?.tokens?.['--bg-primary'] || '#050811';
+    const bgSecondary = activeThemeConfig?.tokens?.['--bg-secondary'] || '#0a0f1d';
+    const bgDeep = activeThemeConfig?.tokens?.['--bg-deep'] || '#020408';
+    const bgCard = activeThemeConfig?.tokens?.['--bg-card'] || '#0a0f1d';
+    const surfacePrimary = activeThemeConfig?.tokens?.['--surface-primary'] || '#111827';
+    const borderPrimary = activeThemeConfig?.tokens?.['--border-primary'] || 'rgba(0, 229, 255, 0.35)';
+    const borderSubtle = activeThemeConfig?.tokens?.['--border-subtle'] || 'rgba(255, 255, 255, 0.08)';
+    const textPrimary = activeThemeConfig?.tokens?.['--text-primary'] || '#f8fafc';
+    const textSecondary = activeThemeConfig?.tokens?.['--text-secondary'] || '#cbd5e1';
+    const textMuted = activeThemeConfig?.tokens?.['--text-muted'] || '#94a3b8';
+
+    return {
+      backgroundColor: bgPrimary,
+      '--intro-accent': accent,
+      '--intro-shadow': shadow,
+      '--intro-bg-primary': bgPrimary,
+      '--intro-bg-secondary': bgSecondary,
+      '--intro-bg-deep': bgDeep,
+      '--intro-bg-card': bgCard,
+      '--intro-surface': surfacePrimary,
+      '--intro-border': borderPrimary,
+      '--intro-border-subtle': borderSubtle,
+      '--intro-text-primary': textPrimary,
+      '--intro-text-secondary': textSecondary,
+      '--intro-text-muted': textMuted,
+    };
+  }, [activeThemeConfig]);
+
   // Stages: 'typing' | 'executed' | 'zooming' | 'wordmark' | 'logoReveal' | 'hold' | 'complete'
   const [stage, setStage] = useState('typing');
   const [typedText, setTypedText] = useState('');
@@ -98,6 +133,8 @@ export default function BrandIntro({ onComplete }) {
     <AnimatePresence>
       <motion.div
         className="brand-intro-overlay"
+        style={introThemeStyle}
+        data-intro-theme={theme}
         initial={{ opacity: 1 }}
         animate={{ opacity: stage === 'hold' ? 0 : 1 }}
         exit={{ opacity: 0 }}
@@ -106,9 +143,8 @@ export default function BrandIntro({ onComplete }) {
         role="dialog"
         aria-label="AlgoFight Brand Introduction"
       >
-        {/* Deep Cyber Background Grid & Ambient Glow */}
+        {/* Deep Cyber Background Grid */}
         <div className="brand-intro-bg-grid" />
-        <div className="brand-intro-ambient-glow" />
 
         {/* ================= SCENE 1 & 2: CODE EDITOR CAMERA RIG ================= */}
         <motion.div

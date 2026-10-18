@@ -12,6 +12,7 @@ import { fetchIntelEvents } from "../../services/api";
 import IntelEventCard from "./IntelEventCard";
 import BackgroundPaths from "../BackgroundPaths/BackgroundPaths";
 import Footer from "../Common/Footer/Footer";
+import "./IntelHub.css";
 import "./IntelEventsDirectory.css";
 
 const EVENT_FILTERS = [
@@ -76,7 +77,7 @@ export default function IntelEventsDirectory() {
             </div>
 
             <h1 className="intel-hero-title">
-              PLATFORM <span className="word-glow-cyan">ROADMAP & EVENTS</span>
+              Platform <span className="word-glow-cyan">Roadmap & Milestones</span>
             </h1>
 
             <p className="intel-hero-desc">

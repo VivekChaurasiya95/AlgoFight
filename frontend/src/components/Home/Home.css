@@ -88,9 +88,15 @@
 }
 
 .testimonials-card,
-.players-card,
-.offers-card {
+.players-card {
   height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.offers-card {
+  height: 265px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1146,10 +1152,28 @@ body {
   font-weight: 700;
 }
 
-/* ================= CARD 3: OFFERS & CODER PERKS ================= */
+/* ================= CARD 3: OFFERS & REWARDS VAULT ================= */
 .offers-card {
   display: flex;
   flex-direction: column;
+  height: 265px;
+}
+
+.offers-card .dash-card-header {
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.offers-card .dash-card-title {
+  white-space: nowrap;
+  font-size: 0.94rem;
+}
+
+.offers-card .live-offers-tag {
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  padding: 3px 8px;
 }
 
 .offers-content-box {
@@ -1214,11 +1238,11 @@ body {
 
 .offer-title {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.84rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--text-primary, #E3E5ED) !important;
   line-height: 1.25;
-  margin: 0 0 4px 0;
+  margin: 0 0 6px 0;
   letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
@@ -1226,20 +1250,20 @@ body {
 }
 
 .offer-snippet {
-  font-size: 0.71rem;
+  font-size: 0.74rem;
   color: var(--text-secondary, #AEB2C0) !important;
-  line-height: 1.34;
-  margin: 0 0 6px 0;
+  line-height: 1.45;
+  margin: 0 0 8px 0;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .offer-progress-container {
   margin-top: auto;
-  margin-bottom: 4px;
-  padding: 5px 8px;
+  margin-bottom: 6px;
+  padding: 6px 10px;
   border-radius: 8px;
   background: var(--surface-primary, #1A1D25) !important;
   border: 1px solid var(--border-subtle, #20232B) !important;

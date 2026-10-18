@@ -142,7 +142,7 @@ export async function requestJson(path, options = {}) {
 /**
  * Sync Firebase user to backend after login/signup
  */
-export async function syncUserToBackend({ uid, email, displayName, photoURL, originalPhotoURL, avatarFrame, authToken, githubUrl, linkedinUrl }) {
+export async function syncUserToBackend({ uid, email, displayName, photoURL, originalPhotoURL, avatarFrame, themePreference, authToken, githubUrl, linkedinUrl }) {
   invalidateApiCache("/api/users");
   return requestJson("/api/users", {
     method: "POST",
@@ -150,9 +150,22 @@ export async function syncUserToBackend({ uid, email, displayName, photoURL, ori
       "Content-Type": "application/json",
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     },
-    body: JSON.stringify({ uid, email, displayName, photoURL, originalPhotoURL, avatarFrame, githubUrl, linkedinUrl }),
+    body: JSON.stringify({ uid, email, displayName, photoURL, originalPhotoURL, avatarFrame, themePreference, githubUrl, linkedinUrl }),
     includeAuth: true,
   });
+}
+
+/**
+ * Persist active theme preference to user's profile
+ */
+export async function updateUserThemePreference(themeId) {
+  invalidateApiCache("/api/users");
+  return requestJson("/api/users/theme", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ themeId }),
+    includeAuth: true,
+  }).catch(() => null);
 }
 
 /**

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react';
 import ThemeSwitchLoader from '../components/Common/ThemeSwitchLoader';
 import { THEMES, THEME_ORDER, THEME_LIST, DEFAULT_THEME_ID, getThemeConfig } from '../config/themes';
+import { updateUserThemePreference } from '../services/api';
 
 export const DEFAULT_UNLOCKED_THEMES = ['regular', 'light'];
 
@@ -118,6 +119,23 @@ export const ThemeProvider = ({ children }) => {
     };
   }, []);
 
+  // Synchronize existing user's saved profile preference if available
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('algofight_user_profile');
+      if (stored) {
+        const u = JSON.parse(stored);
+        const pref = u?.themePreference || u?.studentIdentityMetadata?.themePreference;
+        if (pref && THEMES[pref]) {
+          const userExplicitlySet = localStorage.getItem('algofight_theme_user_set');
+          if (!userExplicitlySet && pref !== theme) {
+            initiateThemeSwitch(pref, false);
+          }
+        }
+      }
+    } catch {}
+  }, []);
+
   const previewTheme = (themeId) => {
     if (THEMES[themeId]) {
       setPreviewThemeId(themeId);
@@ -132,6 +150,19 @@ export const ThemeProvider = ({ children }) => {
     const validated = THEMES[nextTheme] ? nextTheme : DEFAULT_THEME_ID;
     setPreviewThemeId(null);
     if (validated === theme && !isSwitching) return;
+
+    try {
+      localStorage.setItem('algofight_theme', validated);
+      localStorage.setItem('algofight_theme_user_set', 'true');
+    } catch {}
+
+    // Persist to backend profile if logged in
+    try {
+      const token = localStorage.getItem('algofight_session_token');
+      if (token) {
+        updateUserThemePreference(validated);
+      }
+    } catch {}
 
     if (switchTimerRef.current) clearTimeout(switchTimerRef.current);
     if (finishTimerRef.current) clearTimeout(finishTimerRef.current);

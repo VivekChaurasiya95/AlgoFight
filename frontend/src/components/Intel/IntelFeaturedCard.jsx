@@ -1,223 +1,181 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
   faArrowRight,
   faStar,
-  faChevronLeft,
-  faChevronRight,
+  faClock,
   faCalendarAlt,
-  faGlobe,
+  faCode,
+  faPalette,
+  faCheck,
 } from "@fortawesome/free-solid-svg-icons";
-import LaunchCountdownBadge from "./components/LaunchCountdownBadge";
+import { formatCardTitle, parseInlineMarkdown } from "./intelUtils";
 import "./IntelFeaturedCard.css";
 
-export default function IntelFeaturedCard({ post, events = [] }) {
-  const [activeSlide, setActiveSlide] = useState(0);
+const PREVIEW_THEMES = [
+  { id: "horizon", label: "Horizon", color: "#2563eb", bg: "#f8fafc", codeKw: "#2563eb", codeStr: "#059669" },
+  { id: "midnight", label: "Midnight", color: "#00e5ff", bg: "#090d16", codeKw: "#00e5ff", codeStr: "#38bdf8" },
+  { id: "emerald", label: "Emerald", color: "#10b981", bg: "#061510", codeKw: "#10b981", codeStr: "#6ee7b7" },
+  { id: "amethyst", label: "Amethyst", color: "#a855f7", bg: "#12081f", codeKw: "#c084fc", codeStr: "#f472b6" },
+  { id: "crimson", label: "Crimson", color: "#ef4444", bg: "#18090b", codeKw: "#f87171", codeStr: "#fbbf24" },
+];
 
-  // Combine available spotlight slides (events taking priority as drops, or falling back to post)
-  const slides = useMemo(() => {
-    if (events && events.length > 0) {
-      return events;
-    }
-    if (post) {
-      return [post];
-    }
-    return [];
-  }, [events, post]);
+function formatPublishDate(dateStr) {
+  if (!dateStr) return "Recently Published";
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
-  // Keep activeSlide in bounds
-  const totalSlides = slides.length;
-  const safeSlideIndex = totalSlides > 0 ? activeSlide % totalSlides : 0;
-  const currentSlide = slides[safeSlideIndex] || post;
+export default function IntelFeaturedCard({ post }) {
+  const isLightInitial = typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "light";
+  const [activeTheme, setActiveTheme] = useState(() => (isLightInitial ? PREVIEW_THEMES[0] : PREVIEW_THEMES[1]));
 
-  // Auto-advance upcoming drop slide every 6 seconds if multiple slides exist
   useEffect(() => {
-    if (totalSlides <= 1) return;
-    const timer = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % totalSlides);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, [totalSlides]);
+    const isLight = document.documentElement.getAttribute("data-theme") === "light";
+    setActiveTheme(isLight ? PREVIEW_THEMES[0] : PREVIEW_THEMES[1]);
+  }, []);
 
-  if (!currentSlide) return null;
-
-  const eventDetails = currentSlide.eventDetails;
-
-  const handlePrev = () => {
-    setActiveSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
-  };
-
-  const handleNext = () => {
-    setActiveSlide((prev) => (prev + 1) % totalSlides);
-  };
+  if (!post) return null;
+  const formattedTitle = formatCardTitle(post.title);
 
   return (
-    <article className="dash-card intel-featured-hero-card">
-      <div className="intel-featured-inner-grid">
-        {/* Left Column: Synchronized Featured Story Dispatch */}
-        <div className="intel-featured-left-col">
-          <div className="dash-card-header" style={{ marginBottom: 12 }}>
-            <div className="dash-card-title-group">
-              <div className="dash-icon-box icon-trophy">
-                <FontAwesomeIcon icon={faStar} />
-              </div>
-              <span className="dash-card-title">FEATURED STORY</span>
-            </div>
-            <span className="intel-pill-badge tag-cyan">
-              {currentSlide.category?.replace("_", " ") || "SPOTLIGHT"}
-            </span>
+    <article className="dash-card intel-hero-lead-card">
+      <div className="intel-hero-lead-kicker-row">
+        <div className="lead-kicker-group">
+          <div className="dash-icon-box icon-trophy lead-star-icon">
+            <FontAwesomeIcon icon={faStar} />
           </div>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`hero-left-${currentSlide.id || safeSlideIndex}`}
-              initial={{ opacity: 0, x: -14 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 14 }}
-              transition={{ duration: 0.28, ease: "easeOut" }}
-              className="intel-featured-left-content"
-            >
-              <h2 className="intel-featured-hero-title">
-                <Link to={`/intel/${currentSlide.slug}`}>{currentSlide.title}</Link>
-              </h2>
-
-              <p className="intel-featured-hero-summary dash-card-subtext">
-                {currentSlide.summary}
-              </p>
-
-              <div className="intel-featured-footer">
-                <div className="intel-card-author-row">
-                  <div className="intel-author-avatar-chip">
-                    <FontAwesomeIcon icon={faUser} />
-                  </div>
-                  <div className="intel-author-details">
-                    <span className="intel-author-name">
-                      {currentSlide.authorName || "AlgoFight Core Team"}
-                    </span>
-                    <span className="intel-publish-date">
-                      {new Date(currentSlide.publishedAt || currentSlide.createdAt).toLocaleDateString(
-                        "en-US",
-                        {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        }
-                      )}
-                      {currentSlide.readingTimeMin
-                        ? ` • ${currentSlide.readingTimeMin} min read`
-                        : ""}
-                    </span>
-                  </div>
-                </div>
-
-                <Link
-                  to={`/intel/${currentSlide.slug}`}
-                  className="btn-primary intel-featured-read-btn"
-                >
-                  <span>Read Transmission</span>
-                  <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} />
-                </Link>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+          <span className="lead-kicker-label">FEATURED DISPATCH</span>
         </div>
 
-        {/* Right Column: Synchronized Upcoming Drops Spotlight */}
-        <div className="intel-featured-right-col">
-          <div className="intel-featured-slide-card glass-panel">
-            <div className="intel-slide-header">
-              <div className="intel-slide-badge-wrap">
-                <span className="live-status-pill">
-                  <span className="live-pulse-node" />
-                  <span>{eventDetails ? "UPCOMING DROP" : "PLATFORM DISPATCH"}</span>
-                </span>
-                {eventDetails?.versionTag && (
-                  <span className="intel-pill-badge tag-cyan">
-                    {eventDetails.versionTag}
-                  </span>
-                )}
-              </div>
+        <div className="lead-badges-group">
+          <span className="intel-pill-badge tag-cyan">
+            {post.category?.replace("_", " ") || "SPOTLIGHT"}
+          </span>
+          {post.readingTimeMin && (
+            <span className="lead-reading-time">
+              <FontAwesomeIcon icon={faClock} style={{ marginRight: 5 }} />
+              {post.readingTimeMin} min read
+            </span>
+          )}
+        </div>
+      </div>
 
-              {totalSlides > 1 && (
-                <div className="intel-slide-nav">
-                  <button
-                    type="button"
-                    className="slide-nav-btn"
-                    onClick={handlePrev}
-                    title="Previous transmission"
-                  >
-                    <FontAwesomeIcon icon={faChevronLeft} />
-                  </button>
-                  <span className="slide-nav-count">
-                    {safeSlideIndex + 1} / {totalSlides}
-                  </span>
-                  <button
-                    type="button"
-                    className="slide-nav-btn"
-                    onClick={handleNext}
-                    title="Next transmission"
-                  >
-                    <FontAwesomeIcon icon={faChevronRight} />
-                  </button>
-                </div>
-              )}
+      <div className="intel-hero-lead-body-split">
+        {/* Left Column: Editorial Headline & Meta */}
+        <div className="intel-hero-lead-text-col">
+          <h2 className="intel-hero-lead-title">
+            <Link to={`/intel/${post.slug}`}>{formattedTitle}</Link>
+          </h2>
+
+          <p className="intel-hero-lead-summary">
+            {parseInlineMarkdown(post.summary)}
+          </p>
+
+          <div className="intel-hero-lead-footer">
+            <div className="intel-card-author-row">
+              <div className="intel-author-avatar-chip">
+                <FontAwesomeIcon icon={faUser} />
+              </div>
+              <div className="intel-author-details">
+                <span className="intel-author-name">{post.authorName || "AlgoFight Core Team"}</span>
+                <span className="intel-publish-date">
+                  <FontAwesomeIcon icon={faCalendarAlt} style={{ marginRight: 4, opacity: 0.7 }} />
+                  {formatPublishDate(post.publishedAt || post.createdAt)}
+                </span>
+              </div>
             </div>
 
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`hero-right-${currentSlide.id || safeSlideIndex}`}
-                initial={{ opacity: 0, x: 14 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -14 }}
-                transition={{ duration: 0.28, ease: "easeOut" }}
-                className="intel-slide-body"
-              >
-                {eventDetails && (
-                  <div className="intel-slide-countdown-row">
-                    <LaunchCountdownBadge
-                      targetDate={eventDetails.startsAt}
-                      launchStatus={eventDetails.launchStatus}
-                      versionTag={null}
-                    />
-                  </div>
-                )}
-
-                <h3 className="intel-slide-title">
-                  <Link to={`/intel/${currentSlide.slug}`}>{currentSlide.title}</Link>
-                </h3>
-
-                <p className="intel-slide-summary dash-card-subtext">
-                  {currentSlide.summary}
-                </p>
-
-                {eventDetails && (
-                  <div className="intel-slide-meta-row">
-                    <div className="slide-meta-item">
-                      <FontAwesomeIcon icon={faCalendarAlt} className="slide-meta-icon" />
-                      <span>{new Date(eventDetails.startsAt).toLocaleDateString()}</span>
-                    </div>
-                    <div className="slide-meta-item">
-                      <FontAwesomeIcon icon={faGlobe} className="slide-meta-icon" />
-                      <span>{eventDetails.location || "Online Platform"}</span>
-                    </div>
-                  </div>
-                )}
-
-                <div className="intel-slide-footer">
-                  <Link
-                    to={eventDetails?.actionUrl || `/intel/${currentSlide.slug}`}
-                    className="btn-outline intel-slide-cta"
-                  >
-                    <span>{eventDetails?.actionLabel || "Explore Transmission"}</span>
-                    <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} />
-                  </Link>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+            <Link
+              to={`/intel/${post.slug}`}
+              className="btn-primary intel-hero-read-btn"
+            >
+              <span>Read Full Transmission</span>
+              <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 8 }} />
+            </Link>
           </div>
+        </div>
+
+        {/* Right Column: Visual Showcase Widget (Compact & Adaptive) */}
+        <div className="intel-hero-lead-visual-col">
+          {post.coverImageUrl ? (
+            <Link to={`/intel/${post.slug}`} className="hero-visual-image-wrap">
+              <img src={post.coverImageUrl} alt={post.title} className="hero-visual-img" />
+            </Link>
+          ) : (
+            <div
+              className="cockpit-theme-preview-card"
+              style={{
+                "--preview-accent": activeTheme.color,
+                "--preview-bg": activeTheme.bg,
+                "--preview-kw": activeTheme.codeKw,
+                "--preview-str": activeTheme.codeStr,
+              }}
+            >
+              <div className="cockpit-preview-head">
+                <div className="cockpit-dots">
+                  <span className="dot dot-red" />
+                  <span className="dot dot-yellow" />
+                  <span className="dot dot-green" />
+                </div>
+                <div className="cockpit-filename">
+                  <FontAwesomeIcon icon={faCode} style={{ marginRight: 5, opacity: 0.6 }} />
+                  arena_cockpit.rs
+                </div>
+                <div className="cockpit-live-tag">
+                  <span className="dot-pulse" />
+                  THEME ENGINE
+                </div>
+              </div>
+
+              {/* Code Snippet Preview */}
+              <div className="cockpit-code-pane">
+                <div className="code-line">
+                  <span className="kw">pub struct</span> <span className="type">CombatCockpit</span> &#123;
+                </div>
+                <div className="code-line indent">
+                  <span className="field">theme</span>: <span className="type">ThemeId</span>::<span className="val">{activeTheme.label}</span>,
+                </div>
+                <div className="code-line indent">
+                  <span className="field">refresh_rate</span>: <span className="str">"120fps_telemetry"</span>,
+                </div>
+                <div className="code-line indent">
+                  <span className="field">glow_accent</span>: <span className="str" style={{ color: activeTheme.color }}>"{activeTheme.color}"</span>,
+                </div>
+                <div className="code-line">&#125;</div>
+              </div>
+
+              {/* Interactive Theme Palette Selector */}
+              <div className="cockpit-swatch-bar">
+                <span className="swatch-title">
+                  <FontAwesomeIcon icon={faPalette} style={{ marginRight: 5 }} />
+                  PREVIEW PALETTE:
+                </span>
+                <div className="swatch-pills-list">
+                  {PREVIEW_THEMES.map((th) => (
+                    <button
+                      key={th.id}
+                      type="button"
+                      className={`swatch-pill ${activeTheme.id === th.id ? "active" : ""}`}
+                      onClick={() => setActiveTheme(th)}
+                      title={`Preview ${th.label} theme`}
+                    >
+                      <span className="swatch-color-dot" style={{ background: th.color }} />
+                      <span className="swatch-pill-label">{th.label}</span>
+                      {activeTheme.id === th.id && (
+                        <FontAwesomeIcon icon={faCheck} className="swatch-check" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </article>

@@ -265,6 +265,7 @@ export class AuthController {
                 unlockedAvatars: Array.isArray(identityMeta.unlockedAvatars) ? identityMeta.unlockedAvatars : [],
                 unlockedFrames: Array.isArray(identityMeta.unlockedFrames) ? identityMeta.unlockedFrames : [],
                 unlockedThemes: Array.isArray(identityMeta.unlockedThemes) ? identityMeta.unlockedThemes : [],
+                themePreference: identityMeta.themePreference || null,
             },
         };
     }
@@ -348,6 +349,7 @@ export class AuthController {
                 unlockedAvatars: Array.isArray(manualMeta.unlockedAvatars) ? manualMeta.unlockedAvatars : [],
                 unlockedFrames: Array.isArray(manualMeta.unlockedFrames) ? manualMeta.unlockedFrames : [],
                 unlockedThemes: Array.isArray(manualMeta.unlockedThemes) ? manualMeta.unlockedThemes : [],
+                themePreference: manualMeta.themePreference || null,
             },
         };
     }

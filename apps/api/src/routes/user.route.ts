@@ -26,8 +26,23 @@ export async function userRoutes(app: FastifyInstance) {
             school: body.school,
             designation: body.designation,
             batchYear: body.batchYear,
+            themePreference: body.themePreference,
             studentIdentityMetadata: body.studentIdentityMetadata,
         });
+    });
+
+    // 1c. Update Theme Preference
+    app.put("/users/theme", { preHandler: [requireAuth] }, async (req, reply) => {
+        const body = req.body as any;
+        const authenticatedId = req.user!.id;
+        const themeId = body?.themeId;
+        if (!themeId || typeof themeId !== "string") {
+            return reply.status(400).send({
+                error: "BAD_REQUEST",
+                message: "Valid themeId is required.",
+            });
+        }
+        return userController.updateThemePreference(authenticatedId, themeId);
     });
 
     // 1b. Update Faculty Profile (School/Centre, Department, Designation)

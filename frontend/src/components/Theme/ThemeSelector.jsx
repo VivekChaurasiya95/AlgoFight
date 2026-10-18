@@ -191,6 +191,17 @@ export default function ThemeSelector() {
 
             <div className="theme-selector-footer">
               <span className="theme-footer-note">// PERSISTED ACROSS SESSIONS //</span>
+              <button
+                type="button"
+                className="theme-replay-intro-btn"
+                onClick={() => {
+                  setIsOpen(false);
+                  window.dispatchEvent(new CustomEvent('af_replay_intro'));
+                }}
+                title="Watch brand intro animation in this theme"
+              >
+                ▶ Replay Intro
+              </button>
             </div>
           </motion.div>
         )}

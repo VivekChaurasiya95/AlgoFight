@@ -1,8 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="regular">
 
 <head>
   <meta charset="UTF-8" />
+  <script>
+    (function () {
+      try {
+        var validThemes = ['regular', 'emerald', 'amethyst', 'crimson', 'sunset', 'original', 'light', 'custom'];
+        var saved = localStorage.getItem('algofight_theme');
+        var theme = (saved && validThemes.indexOf(saved) !== -1) ? saved : 'regular';
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'regular');
+      }
+    })();
+  </script>
   <link rel="icon" type="image/svg+xml" href="/Algo Fight.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AlgoFight | Next-Gen Real-Time Competitive Coding</title>

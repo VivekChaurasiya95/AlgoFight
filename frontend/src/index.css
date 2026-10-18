@@ -1,5 +1,4 @@
-/* ===== CUSTOM (STEALTH CYBER COCKPIT) THEME (DEFAULT) ===== */
-:root,
+/* ===== CUSTOM (STEALTH CYBER COCKPIT) THEME ===== */
 :root[data-theme="custom"] {
   /* BACKGROUND */
   --bg-primary: #070809;
@@ -111,7 +110,8 @@
   --text-dim: #7DD3FC;
 }
 
-/* ===== REGULAR (ICONIC MULTI-ACCENT ARENA) THEME ===== */
+/* ===== REGULAR (ICONIC MULTI-ACCENT ARENA) THEME (DEFAULT) ===== */
+:root,
 :root[data-theme="regular"] {
   /* BACKGROUND */
   --bg-primary: #050811;
@@ -968,7 +968,7 @@ p {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justifyContent: center;
+  justify-content: center;
   gap: 16px;
   min-height: 60vh;
   width: 100%;

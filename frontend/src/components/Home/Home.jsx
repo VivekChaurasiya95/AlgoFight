@@ -21,7 +21,10 @@ import {
   faBriefcase,
   faRocket,
   faCheckCircle,
-  faClock
+  faClock,
+  faUserCircle,
+  faShieldHalved,
+  faPalette,
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from 'react-router-dom';
 import BackgroundPaths from '../BackgroundPaths/BackgroundPaths';
@@ -83,96 +86,52 @@ const coderTestimonialsData = [
 
 const coderOffersData = [
   {
-    id: "off_amazon",
-    title: "Amazon $50 E-Gift Card",
-    category: "Marketplace",
-    categoryTag: "MARKETPLACE",
-    cost: 1000,
-    statusText: "Active Perk",
+    id: "vault_avatars",
+    title: "Cyber Avatars Vault",
+    category: "Avatars Vault",
+    categoryTag: "AVATARS VAULT",
+    cost: 200,
+    costLabel: "From 200 Pts",
+    statusText: "40 Collectibles",
     isUpcoming: false,
-    desc: "Redeem credits from $10 to $500 for dev books, hardware gear, or pro software.",
-    perkHighlight: "$50 Instant Voucher",
+    desc: "Unlock 40 battle avatars across Recruit Protocol (200 PTS), Vanguard Syndicate (500 PTS) & Apex Mythic (1,000 PTS).",
+    perkHighlight: "40 Unique Avatars",
     link: "/rewards",
-    actionText: "Claim Perk",
-    tone: "pink",
-    icon: faGift,
-  },
-  {
-    id: "off_hackathon",
-    title: "Hackathon Entry Pass",
-    category: "Competition",
-    categoryTag: "SPONSORED PASS",
-    cost: 1500,
-    statusText: "Sponsored Seat",
-    isUpcoming: false,
-    desc: "Full entry sponsorship to tier-1 developer hackathons and algorithm championships.",
-    perkHighlight: "100% Entry Covered",
-    link: "/rewards",
-    actionText: "Redeem Pass",
+    actionText: "Explore Avatars",
     tone: "cyan",
-    icon: faTicket,
+    icon: faUserCircle,
   },
   {
-    id: "off_tools",
-    title: "Premium Dev Toolkits",
-    category: "Productivity",
-    categoryTag: "DEV TOOLS",
-    cost: 2500,
-    statusText: "Dev License",
+    id: "vault_frames",
+    title: "Prestige Frames Vault",
+    category: "Frames Vault",
+    categoryTag: "FRAMES VAULT",
+    cost: 500,
+    costLabel: "From 500 Pts",
+    statusText: "20 Dynamic Halos",
     isUpcoming: false,
-    desc: "Unlock annual pro IDE subscriptions, AI copilots, and sandbox acceleration tools.",
-    perkHighlight: "Annual Pro Access",
+    desc: "Equip glowing halo borders across Neon Edge (500 PTS), Quantum Surge (1,000 PTS) & Cosmic Singularity (2,000 PTS).",
+    perkHighlight: "20 Glowing Halos",
     link: "/rewards",
-    actionText: "Unlock License",
-    tone: "blue",
-    icon: faLaptopCode,
-  },
-  {
-    id: "off_internship",
-    title: "Tech Internship Track",
-    category: "Career",
-    categoryTag: "CAREER FAST-TRACK",
-    cost: 5000,
-    statusText: "Direct Referral",
-    isUpcoming: false,
-    desc: "Priority screening & direct interview referrals with top partner tech companies.",
-    perkHighlight: "Priority Shortlist",
-    link: "/rewards",
-    actionText: "View Track",
-    tone: "gold",
-    icon: faBriefcase,
-  },
-  {
-    id: "off_vault",
-    title: "Course Subscription Vault",
-    category: "Learning",
-    categoryTag: "COMING SOON",
-    cost: 3000,
-    statusText: "Upcoming Drop",
-    isUpcoming: true,
-    dropDate: "Drops Next Month",
-    desc: "Curated masterclasses in Advanced DSA, System Design, and Competitive Programming.",
-    perkHighlight: "Lifetime Access",
-    link: "/rewards",
-    actionText: "Preview Drop",
+    actionText: "Explore Frames",
     tone: "purple",
-    icon: faCode,
+    icon: faShieldHalved,
   },
   {
-    id: "off_hardware",
-    title: "Hardware Rewards Drop",
-    category: "Hardware",
-    categoryTag: "SEASON 4 LOOT",
-    cost: 7500,
-    statusText: "Hardware Loot",
-    isUpcoming: true,
-    dropDate: "Season 4 Finals",
-    desc: "Mechanical tactile keyboards, high-refresh esports monitors, and creator gear.",
-    perkHighlight: "Custom Rig Drop",
+    id: "vault_themes",
+    title: "Cyber HUD Themes",
+    category: "Themes Vault",
+    categoryTag: "HUD THEMES",
+    cost: 5000,
+    costLabel: "From 5,000 Pts",
+    statusText: "2 Free + 6 Skins",
+    isUpcoming: false,
+    desc: "2 Free Forever HUDs (Regular & Horizon Studio) + 6 Paid High-Spec Battle Cockpits (5,000 to 10,000 PTS). Live combat cockpit preview.",
+    perkHighlight: "8 Combat Cockpits",
     link: "/rewards",
-    actionText: "View Hardware",
-    tone: "teal",
-    icon: faRocket,
+    actionText: "Explore Themes",
+    tone: "pink",
+    icon: faPalette,
   },
 ];
 
@@ -204,6 +163,12 @@ function Home() {
     }
     return false;
   });
+
+  useEffect(() => {
+    const handleReplay = () => setShowIntro(true);
+    window.addEventListener('af_replay_intro', handleReplay);
+    return () => window.removeEventListener('af_replay_intro', handleReplay);
+  }, []);
 
   const [wordIndex, setWordIndex] = useState(0);
 
@@ -923,13 +888,13 @@ function Home() {
               <div className="dash-card-header">
                 <div className="dash-card-title-group">
                   <div className={`dash-icon-box icon-${currentOffer.tone || 'gold'}`}>
-                    <FontAwesomeIcon icon={faGift} />
+                    <FontAwesomeIcon icon={currentOffer.icon || faGift} />
                   </div>
-                  <span className="dash-card-title">Coder Perks</span>
+                  <span className="dash-card-title">Rewards Vault</span>
                 </div>
-                <span className={`dash-pill-tag ${currentOffer.isUpcoming ? 'tag-purple' : 'tag-gold'} live-offers-tag`}>
+                <span className={`dash-pill-tag tag-${currentOffer.tone || 'gold'} live-offers-tag`}>
                   <span className="live-offers-pulse" />
-                  {currentOffer.isUpcoming ? "UPCOMING" : "ACTIVE PERK"}
+                  {currentOffer.statusText || "ACTIVE VAULT"}
                 </span>
               </div>
 
@@ -950,7 +915,7 @@ function Home() {
                       </span>
                       <span className="offer-cost-badge">
                         <FontAwesomeIcon icon={faCoins} className="offer-coin-icon" />
-                        <span>{currentOffer.cost.toLocaleString()} Pts</span>
+                        <span>{currentOffer.costLabel || `${currentOffer.cost.toLocaleString()} Pts`}</span>
                       </span>
                     </div>
 
@@ -972,7 +937,7 @@ function Home() {
                             </span>
                           ) : isOfferClaimable ? (
                             <span className="text-ready">
-                              <FontAwesomeIcon icon={faCheckCircle} /> Ready to Claim!
+                              <FontAwesomeIcon icon={faCheckCircle} /> Ready to Unlock!
                             </span>
                           ) : (
                             <span>Your Progress ({offerProgressPct}%)</span>
@@ -999,7 +964,7 @@ function Home() {
                             type="button"
                             className={`offer-dot-btn ${idx === offerIndex ? 'active' : ''}`}
                             onClick={() => setOfferIndex(idx)}
-                            aria-label={`Show offer ${idx + 1}`}
+                            aria-label={`Show ${item.title}`}
                           />
                         ))}
                       </div>
@@ -1009,7 +974,7 @@ function Home() {
                         className={`offer-action-btn ${isOfferClaimable ? 'btn-claim-ready' : ''}`}
                         onClick={() => navigate(currentOffer.link)}
                       >
-                        <span>{isOfferClaimable ? 'Claim Now' : currentOffer.actionText}</span>
+                        <span>{isOfferClaimable ? 'Unlock in Vault' : currentOffer.actionText}</span>
                         <FontAwesomeIcon icon={faArrowRight} className="offer-btn-icon" />
                       </button>
                     </div>

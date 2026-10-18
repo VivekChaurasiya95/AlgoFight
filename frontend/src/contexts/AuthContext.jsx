@@ -52,6 +52,7 @@ export const formatUser = (userData, token) => {
     unlockedAvatars: Array.isArray(userData.unlockedAvatars) ? userData.unlockedAvatars : (Array.isArray(identityMeta.unlockedAvatars) ? identityMeta.unlockedAvatars : []),
     unlockedFrames: Array.isArray(userData.unlockedFrames) ? userData.unlockedFrames : (Array.isArray(identityMeta.unlockedFrames) ? identityMeta.unlockedFrames : []),
     unlockedThemes: Array.isArray(userData.unlockedThemes) ? userData.unlockedThemes : (Array.isArray(identityMeta.unlockedThemes) ? identityMeta.unlockedThemes : []),
+    themePreference: userData.themePreference || identityMeta.themePreference || null,
     role: computedRole,
     userType: computedUserType,
     platformCode: userData.platformCode,
@@ -114,6 +115,15 @@ export function AuthProvider({ children }) {
         avatarFrame: formatted.avatarFrame,
         accessToken: token || getSessionToken(),
       });
+      if (formatted.themePreference) {
+        try {
+          const userExplicitlySet = localStorage.getItem('algofight_theme_user_set');
+          if (!userExplicitlySet) {
+            localStorage.setItem('algofight_theme', formatted.themePreference);
+            document.documentElement.setAttribute('data-theme', formatted.themePreference);
+          }
+        } catch {}
+      }
       unifiedAnalytics.setUserId(formatted.uid);
     },
     [setGlobalUser, setGlobalProfileData]

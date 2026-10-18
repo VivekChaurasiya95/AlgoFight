@@ -160,6 +160,43 @@ export default function HeroScene() {
             </video>
           )}
         </div>
+
+        {/* ================= LAYER 5: DECORATIVE OVERLAYS & CYBER PARTICLES ================= */}
+        <div className="hero-scene-layer hero-scene-layer-decorations">
+          <div className="hero-scene-grid-horizon" />
+          {particles.map((p) => (
+            <motion.div
+              key={p.id}
+              className="hero-scene-particle"
+              style={{
+                left: p.x,
+                top: p.y,
+                width: p.size,
+                height: p.size,
+                backgroundColor: particleColor,
+                boxShadow: `0 0 8px ${particleColor}`,
+              }}
+              animate={{
+                y: [0, -18, 0],
+                opacity: [0.2, 0.8, 0.2],
+              }}
+              transition={{
+                duration: p.duration,
+                delay: p.delay,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+          ))}
+        </div>
+
+        {/* ================= LAYER 6: VIGNETTE & FINISHING TREATMENT ================= */}
+        <div
+          className="hero-scene-layer hero-scene-layer-vignette"
+          style={{
+            background: `radial-gradient(ellipse 90% 80% at 50% 50%, transparent 45%, ${scene.vignetteMid || 'rgba(5, 8, 17, 0.35)'} 75%, ${scene.vignetteEdge || 'rgba(5, 8, 17, 0.94)'} 100%)`,
+          }}
+        />
       </div>
     </motion.div>
   );

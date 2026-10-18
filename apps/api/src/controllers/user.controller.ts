@@ -25,6 +25,7 @@ export interface SyncUserPayload {
     studentIdentityMetadata?: any;
     school?: string;
     designation?: string;
+    themePreference?: string;
 }
 
 export class UserController {
@@ -262,6 +263,7 @@ export class UserController {
             ...(department ? { department: department.trim() } : {}),
             ...(payload.photoURL !== undefined ? { photoURL: payload.photoURL } : {}),
             ...(payload.avatarFrame !== undefined ? { avatarFrame: payload.avatarFrame } : {}),
+            ...(payload.themePreference !== undefined ? { themePreference: payload.themePreference } : {}),
         };
 
         if (payload.originalPhotoURL && payload.originalPhotoURL.startsWith('http')) {
@@ -315,6 +317,7 @@ export class UserController {
             unlockedAvatars: Array.isArray(syncMeta.unlockedAvatars) ? syncMeta.unlockedAvatars : [],
             unlockedFrames: Array.isArray(syncMeta.unlockedFrames) ? syncMeta.unlockedFrames : [],
             unlockedThemes: Array.isArray(syncMeta.unlockedThemes) ? syncMeta.unlockedThemes : [],
+            themePreference: syncMeta.themePreference || payload.themePreference || null,
             academicProfile,
             matchesWon: user.wins,
             matchesPlayed: user.wins + user.losses,
@@ -417,12 +420,29 @@ export class UserController {
             unlockedAvatars: Array.isArray(userMeta.unlockedAvatars) ? userMeta.unlockedAvatars : [],
             unlockedFrames: Array.isArray(userMeta.unlockedFrames) ? userMeta.unlockedFrames : [],
             unlockedThemes: Array.isArray(userMeta.unlockedThemes) ? userMeta.unlockedThemes : [],
+            themePreference: userMeta.themePreference || null,
             academicProfile,
             matchesWon: user.wins,
             matchesPlayed: user.wins + user.losses,
             lossCount: user.losses,
             ...metrics,
         };
+    }
+
+    async updateThemePreference(userId: string, themeId: string) {
+        const user = await this.userRepository.getUserById(userId);
+        if (!user) {
+            throw { statusCode: 404, message: "User not found." };
+        }
+        const existingMeta = (user.studentIdentityMetadata as any) || {};
+        const updatedMeta = { ...existingMeta, themePreference: themeId };
+        await this.userRepository.upsertUser({
+            id: userId,
+            email: user.email,
+            username: user.username,
+            studentIdentityMetadata: updatedMeta,
+        });
+        return { success: true, themePreference: themeId };
     }
 
     async getAvailablePlayers(excludeUserId?: string, limit?: number, search?: string) {

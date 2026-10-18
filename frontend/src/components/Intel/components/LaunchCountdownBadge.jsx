@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClock, faRocket, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 import "./LaunchCountdownBadge.css";
 
-export default function LaunchCountdownBadge({ targetDate, launchStatus = "UPCOMING", versionTag = null }) {
+export default function LaunchCountdownBadge({ targetDate, launchStatus = "UPCOMING", versionTag = null, compact = true }) {
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(targetDate));
 
   function calculateTimeLeft(target) {
@@ -43,18 +43,22 @@ export default function LaunchCountdownBadge({ targetDate, launchStatus = "UPCOM
       <div className="intel-launch-badge live">
         <span className="live-dot" />
         <FontAwesomeIcon icon={faCheckCircle} className="badge-icon" />
-        <span className="badge-text">LIVE NOW</span>
+        <span className="badge-text">LIVE</span>
         {versionTag && <span className="version-tag">{versionTag}</span>}
       </div>
     );
   }
 
+  const timeLabel = compact
+    ? timeLeft.days > 0
+      ? `${timeLeft.days}d ${timeLeft.hours}h`
+      : `${timeLeft.hours}h ${timeLeft.minutes}m`
+    : `T-${timeLeft.days > 0 ? `${timeLeft.days}d ` : ""}${timeLeft.hours}h ${timeLeft.minutes}m`;
+
   return (
     <div className="intel-launch-badge upcoming">
       <FontAwesomeIcon icon={faRocket} className="badge-icon rocket-pulse" />
-      <span className="badge-text">
-        T-MINUS {timeLeft.days > 0 ? `${timeLeft.days}d ` : ""}{String(timeLeft.hours).padStart(2, "0")}h : {String(timeLeft.minutes).padStart(2, "0")}m : {String(timeLeft.seconds).padStart(2, "0")}s
-      </span>
+      <span className="badge-text">{timeLabel}</span>
       {versionTag && <span className="version-tag">{versionTag}</span>}
     </div>
   );

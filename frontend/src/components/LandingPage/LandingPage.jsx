@@ -77,6 +77,12 @@ export default function LandingPage() {
     return false;
   });
 
+  useEffect(() => {
+    const handleReplay = () => setShowIntro(true);
+    window.addEventListener('af_replay_intro', handleReplay);
+    return () => window.removeEventListener('af_replay_intro', handleReplay);
+  }, []);
+
   const handleOpenModal = (tabKey) => {
     setActiveModalTab(tabKey);
     setIsModalOpen(true);

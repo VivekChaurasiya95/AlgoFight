@@ -11,6 +11,7 @@ import {
   faCodeBranch,
 } from "@fortawesome/free-solid-svg-icons";
 import LaunchCountdownBadge from "./components/LaunchCountdownBadge";
+import { formatCardTitle, parseInlineMarkdown } from "./intelUtils";
 import "./IntelEventCard.css";
 
 const EVENT_TYPE_LABELS = {
@@ -39,6 +40,7 @@ export default function IntelEventCard({ post }) {
   const event = post.eventDetails;
   const typeMeta = EVENT_TYPE_LABELS[event.eventType] || EVENT_TYPE_LABELS.FEATURE_LAUNCH;
   const isExternal = event.actionUrl && (event.actionUrl.startsWith("http://") || event.actionUrl.startsWith("https://"));
+  const formattedTitle = formatCardTitle(post.title);
 
   return (
     <article className="dash-card intel-event-card">
@@ -62,15 +64,16 @@ export default function IntelEventCard({ post }) {
             targetDate={event.startsAt}
             launchStatus={event.launchStatus}
             versionTag={null}
+            compact={true}
           />
         </div>
 
         <h3 className="intel-event-title">
-          <Link to={`/intel/${post.slug}`}>{post.title}</Link>
+          <Link to={`/intel/${post.slug}`}>{formattedTitle}</Link>
         </h3>
 
         <p className="dash-card-subtext intel-event-summary">
-          {post.summary}
+          {parseInlineMarkdown(post.summary)}
         </p>
       </div>
 
