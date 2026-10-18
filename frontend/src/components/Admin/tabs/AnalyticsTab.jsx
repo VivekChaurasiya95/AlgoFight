@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChartColumn,
@@ -20,8 +20,16 @@ import {
   faCircleCheck,
   faBolt,
   faTerminal,
+  faCoins,
+  faGift,
+  faFilter,
+  faCalendarDays,
+  faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import RankEmblem from "../../Common/gamification/RankEmblem";
+import { fetchRewardsAnalytics } from "../../../services/api";
+
+const numberFormatter = new Intl.NumberFormat("en-US");
 
 const DEFAULT_TIER_DISTRIBUTION = [
   { key: "ROOKIE", tier: "Rookie", range: "0 - 399", count: 0, percentage: 0, color: "#94a3b8" },
@@ -33,6 +41,7 @@ const DEFAULT_TIER_DISTRIBUTION = [
 ];
 
 export default function AnalyticsTab({
+  adminKey,
   analyticsData,
   isAnalyticsLoading,
   fetchAnalytics,
@@ -40,8 +49,43 @@ export default function AnalyticsTab({
   handleFilterByIp,
   copiedIp,
 }) {
+  const [rewardsTimeframe, setRewardsTimeframe] = useState("30d");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [rewardsData, setRewardsData] = useState(null);
+  const [isRewardsLoading, setIsRewardsLoading] = useState(false);
+  const [rewardsSearchTerm, setRewardsSearchTerm] = useState("");
+
+  const loadRewardsData = useCallback(
+    async (tf = rewardsTimeframe, sDate = customStartDate, eDate = customEndDate) => {
+      const activeAdminKey = adminKey || sessionStorage.getItem("af_admin_key") || "";
+      if (!activeAdminKey) return;
+      try {
+        setIsRewardsLoading(true);
+        const res = await fetchRewardsAnalytics(activeAdminKey, {
+          timeframe: tf,
+          startDate: sDate,
+          endDate: eDate,
+        });
+        if (res && res.summary) {
+          setRewardsData(res);
+        }
+      } catch (err) {
+        console.error("Failed to fetch rewards analytics:", err);
+      } finally {
+        setIsRewardsLoading(false);
+      }
+    },
+    [adminKey, rewardsTimeframe, customStartDate, customEndDate]
+  );
+
+  useEffect(() => {
+    loadRewardsData(rewardsTimeframe);
+  }, [loadRewardsData, rewardsTimeframe]);
+
   const handleRefreshAll = () => {
     if (fetchAnalytics) fetchAnalytics();
+    loadRewardsData(rewardsTimeframe);
   };
 
   const subMetrics = analyticsData?.submissionMetrics || {
@@ -522,7 +566,423 @@ export default function AnalyticsTab({
       </div>
 
       {/* =========================================================
-          SECTION 4: INGRESS TRAFFIC, DEVICES & BROWSERS
+          SECTION 4: REWARDS VAULT TELEMETRY & RANK CONSUMPTION DEMOGRAPHICS
+          ========================================================= */}
+      <div className="analytics-section-title" style={{ marginTop: "24px" }}>
+        <h4>
+          <FontAwesomeIcon icon={faCoins} style={{ color: "#fbbf24" }} /> Rewards Vault Redemptions & Rank Demographics
+        </h4>
+        <span className="telemetry-subtext">Statistical telemetry tracking claimed avatars, frames, themes & rank preferences</span>
+      </div>
+
+      <div className="rewards-telemetry-container">
+        {/* Timeframe Filter Bar */}
+        <div className="rewards-timeframe-bar glass-panel">
+          <div className="timeframe-group-title">
+            <FontAwesomeIcon icon={faCalendarDays} style={{ color: "#00e5ff" }} />
+            <span>Time Window: {rewardsData?.timeframeLabel || "Past 30 Days (Month)"}</span>
+          </div>
+
+          <div className="timeframe-pills-row">
+            {[
+              { key: "7d", label: "7 Days (Week)" },
+              { key: "30d", label: "30 Days (Month)" },
+              { key: "90d", label: "90 Days (Quarter)" },
+              { key: "all", label: "All Time" },
+              { key: "custom", label: "Custom Range" },
+            ].map((tf) => (
+              <button
+                key={tf.key}
+                type="button"
+                className={`timeframe-pill-btn ${rewardsTimeframe === tf.key ? "is-active" : ""}`}
+                onClick={() => {
+                  setRewardsTimeframe(tf.key);
+                  if (tf.key !== "custom") {
+                    loadRewardsData(tf.key);
+                  }
+                }}
+              >
+                {tf.label}
+              </button>
+            ))}
+
+            {rewardsTimeframe === "custom" && (
+              <div className="custom-range-inputs">
+                <input
+                  type="date"
+                  className="custom-date-field"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  title="Start Date"
+                />
+                <span className="custom-date-sep">to</span>
+                <input
+                  type="date"
+                  className="custom-date-field"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  title="End Date"
+                />
+                <button
+                  type="button"
+                  className="apply-date-btn"
+                  onClick={() => loadRewardsData("custom", customStartDate, customEndDate)}
+                  disabled={isRewardsLoading}
+                >
+                  <FontAwesomeIcon icon={faFilter} /> Apply
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 4 Scorecard KPI Deck */}
+        <div className="rewards-kpi-deck">
+          <div className="reward-kpi-card glass-panel">
+            <span className="reward-kpi-label">
+              <FontAwesomeIcon icon={faGift} style={{ color: "#00e5ff" }} /> TOTAL REWARDS CLAIMED
+            </span>
+            <div className="reward-kpi-val cyan">
+              {numberFormatter.format(rewardsData?.summary?.totalClaims ?? 0)}
+            </div>
+            <span className="reward-kpi-sub">
+              {rewardsData?.categoryBreakdown?.avatar?.count ?? 0} Avatars · {rewardsData?.categoryBreakdown?.frame?.count ?? 0} Frames · {rewardsData?.categoryBreakdown?.theme?.count ?? 0} Themes
+            </span>
+          </div>
+
+          <div className="reward-kpi-card glass-panel">
+            <span className="reward-kpi-label">
+              <FontAwesomeIcon icon={faCoins} style={{ color: "#fbbf24" }} /> ARENA POINTS SUNK
+            </span>
+            <div className="reward-kpi-val gold">
+              {numberFormatter.format(rewardsData?.summary?.totalPointsSunk ?? 0)} <span style={{ fontSize: "0.95rem" }}>PTS</span>
+            </div>
+            <span className="reward-kpi-sub">
+              Avg {numberFormatter.format(rewardsData?.summary?.avgPointsPerClaim ?? 0)} PTS per claim
+            </span>
+          </div>
+
+          <div className="reward-kpi-card glass-panel">
+            <span className="reward-kpi-label">
+              <FontAwesomeIcon icon={faUsers} style={{ color: "#c084fc" }} /> COMBATANT REDEEMERS
+            </span>
+            <div className="reward-kpi-val purple">
+              {numberFormatter.format(rewardsData?.summary?.uniqueRedeemers ?? 0)}
+            </div>
+            <span className="reward-kpi-sub">
+              Unique users claiming rewards in window
+            </span>
+          </div>
+
+          <div className="reward-kpi-card glass-panel">
+            <span className="reward-kpi-label">
+              <FontAwesomeIcon icon={faCrown} style={{ color: "#f472b6" }} /> TOP CLAIMED ITEM
+            </span>
+            <div
+              className="reward-kpi-val pink"
+              style={{ fontSize: "1.25rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+              title={rewardsData?.summary?.topClaimedItem?.title || "Awaiting claims"}
+            >
+              {rewardsData?.summary?.topClaimedItem ? rewardsData.summary.topClaimedItem.title : "None in Window"}
+            </div>
+            <span className="reward-kpi-sub">
+              {rewardsData?.summary?.topClaimedItem
+                ? `${rewardsData.summary.topClaimedItem.count} claims (${numberFormatter.format(rewardsData.summary.topClaimedItem.points)} PTS)`
+                : "Awaiting first claim in timeframe"}
+            </span>
+          </div>
+        </div>
+
+        {/* Category Share Distribution Card */}
+        <div className="telemetry-card glass-panel">
+          <div className="card-header">
+            <div>
+              <h3>
+                <FontAwesomeIcon icon={faLayerGroup} style={{ color: "#00e5ff" }} /> Reward Category Consumption Breakdown
+              </h3>
+              <span className="telemetry-subtext">
+                Proportion of Arena Points spent on Avatars, Prestige Frames, vs Cyber HUD Themes
+              </span>
+            </div>
+            <span className="telemetry-tag tag-cyan">CATEGORY SHARE</span>
+          </div>
+
+          <div style={{ margin: "4px 0 10px" }}>
+            <div className="analytics-segmented-bar" style={{ height: "14px" }}>
+              <div
+                className="bar-seg"
+                style={{
+                  width: `${Math.max(rewardsData?.categoryBreakdown?.avatar?.count ? 2 : 0, rewardsData?.categoryBreakdown?.avatar?.percentage ?? 0)}%`,
+                  backgroundColor: "#00e5ff",
+                }}
+                title={`Avatars: ${rewardsData?.categoryBreakdown?.avatar?.count ?? 0} (${rewardsData?.categoryBreakdown?.avatar?.percentage ?? 0}%)`}
+              />
+              <div
+                className="bar-seg"
+                style={{
+                  width: `${Math.max(rewardsData?.categoryBreakdown?.frame?.count ? 2 : 0, rewardsData?.categoryBreakdown?.frame?.percentage ?? 0)}%`,
+                  backgroundColor: "#fbbf24",
+                }}
+                title={`Prestige Frames: ${rewardsData?.categoryBreakdown?.frame?.count ?? 0} (${rewardsData?.categoryBreakdown?.frame?.percentage ?? 0}%)`}
+              />
+              <div
+                className="bar-seg"
+                style={{
+                  width: `${Math.max(rewardsData?.categoryBreakdown?.theme?.count ? 2 : 0, rewardsData?.categoryBreakdown?.theme?.percentage ?? 0)}%`,
+                  backgroundColor: "#a855f7",
+                }}
+                title={`Cyber Themes: ${rewardsData?.categoryBreakdown?.theme?.count ?? 0} (${rewardsData?.categoryBreakdown?.theme?.percentage ?? 0}%)`}
+              />
+            </div>
+
+            <div className="ratio-chips-deck" style={{ marginTop: "12px" }}>
+              <div className="ratio-chip-box">
+                <span className="rc-label" style={{ color: "#00e5ff" }}>
+                  🎭 AVATARS ({rewardsData?.categoryBreakdown?.avatar?.percentage ?? 0}%)
+                </span>
+                <div className="rc-num">
+                  {numberFormatter.format(rewardsData?.categoryBreakdown?.avatar?.count ?? 0)}
+                  <small style={{ fontSize: "0.72rem", color: "#64748b", marginLeft: "6px" }}>
+                    ({numberFormatter.format(rewardsData?.categoryBreakdown?.avatar?.points ?? 0)} PTS)
+                  </small>
+                </div>
+              </div>
+
+              <div className="ratio-chip-box">
+                <span className="rc-label" style={{ color: "#fbbf24" }}>
+                  🛡️ PRESTIGE FRAMES ({rewardsData?.categoryBreakdown?.frame?.percentage ?? 0}%)
+                </span>
+                <div className="rc-num">
+                  {numberFormatter.format(rewardsData?.categoryBreakdown?.frame?.count ?? 0)}
+                  <small style={{ fontSize: "0.72rem", color: "#64748b", marginLeft: "6px" }}>
+                    ({numberFormatter.format(rewardsData?.categoryBreakdown?.frame?.points ?? 0)} PTS)
+                  </small>
+                </div>
+              </div>
+
+              <div className="ratio-chip-box">
+                <span className="rc-label" style={{ color: "#c084fc" }}>
+                  🎨 HUD THEMES ({rewardsData?.categoryBreakdown?.theme?.percentage ?? 0}%)
+                </span>
+                <div className="rc-num">
+                  {numberFormatter.format(rewardsData?.categoryBreakdown?.theme?.count ?? 0)}
+                  <small style={{ fontSize: "0.72rem", color: "#64748b", marginLeft: "6px" }}>
+                    ({numberFormatter.format(rewardsData?.categoryBreakdown?.theme?.points ?? 0)} PTS)
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* The Core Rank-to-Reward Cross-Tabulation Matrix */}
+        <div className="telemetry-card glass-panel rank-matrix-card">
+          <div className="card-header">
+            <div>
+              <h3>
+                <FontAwesomeIcon icon={faTrophy} style={{ color: "#c084fc" }} /> Rank Tier Claim Preference Matrix
+              </h3>
+              <span className="telemetry-subtext">
+                How different types of rank holders claim mostly which type of reward from their Arena Points
+              </span>
+            </div>
+            <span className="telemetry-tag tag-purple">RANK PREFERENCE TELEMETRY</span>
+          </div>
+
+          <div className="rewards-table-wrapper">
+            <table className="rewards-table">
+              <thead>
+                <tr>
+                  <th>Rank Tier</th>
+                  <th>Elo Bracket</th>
+                  <th>Total Claims</th>
+                  <th>Points Sunk</th>
+                  <th>Avatars Claimed</th>
+                  <th>Frames Claimed</th>
+                  <th>Themes Claimed</th>
+                  <th>Primary Consumption Preference</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(!rewardsData?.rankDemographics || rewardsData.rankDemographics.length === 0) ? (
+                  <tr>
+                    <td colSpan={8} style={{ textAlign: "center", padding: "32px", color: "#8494ad" }}>
+                      No rank redemption records available for this timeframe.
+                    </td>
+                  </tr>
+                ) : (
+                  rewardsData.rankDemographics.map((tier) => (
+                    <tr key={tier.tierKey}>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          <RankEmblem rank={tier.tierName} rating={tier.tierKey === "SUPREME" ? 2100 : tier.tierKey === "LEGEND" ? 1700 : tier.tierKey === "GRANDMASTER" ? 1300 : tier.tierKey === "MASTER" ? 900 : tier.tierKey === "EXPERT" ? 500 : 200} size={28} showBadge={false} />
+                          <strong style={{ color: tier.color, fontFamily: "'Space Grotesk', sans-serif" }}>
+                            {tier.tierName}
+                          </strong>
+                        </div>
+                      </td>
+                      <td>
+                        <code style={{ color: "#cbd5e1" }}>{tier.ratingRange}</code>
+                      </td>
+                      <td>
+                        <strong>{numberFormatter.format(tier.totalClaims)}</strong>
+                      </td>
+                      <td>
+                        <strong className="cyan-text">{numberFormatter.format(tier.totalPointsSpent)} PTS</strong>
+                      </td>
+                      <td style={{ minWidth: "130px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem" }}>
+                          <span style={{ color: "#00e5ff" }}>{tier.avatarCount}</span>
+                          <span style={{ color: "#64748b" }}>{tier.avatarPct}%</span>
+                        </div>
+                        <div className="matrix-progress-track">
+                          <div className="matrix-progress-fill" style={{ width: `${tier.avatarPct}%`, backgroundColor: "#00e5ff" }} />
+                        </div>
+                      </td>
+                      <td style={{ minWidth: "130px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem" }}>
+                          <span style={{ color: "#fbbf24" }}>{tier.frameCount}</span>
+                          <span style={{ color: "#64748b" }}>{tier.framePct}%</span>
+                        </div>
+                        <div className="matrix-progress-track">
+                          <div className="matrix-progress-fill" style={{ width: `${tier.framePct}%`, backgroundColor: "#fbbf24" }} />
+                        </div>
+                      </td>
+                      <td style={{ minWidth: "130px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem" }}>
+                          <span style={{ color: "#c084fc" }}>{tier.themeCount}</span>
+                          <span style={{ color: "#64748b" }}>{tier.themePct}%</span>
+                        </div>
+                        <div className="matrix-progress-track">
+                          <div className="matrix-progress-fill" style={{ width: `${tier.themePct}%`, backgroundColor: "#c084fc" }} />
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`dominant-pill ${tier.dominantType}`}>
+                          {tier.dominantType === "theme" && "🎨 "}
+                          {tier.dominantType === "avatar" && "🎭 "}
+                          {tier.dominantType === "frame" && "🛡️ "}
+                          {tier.dominantLabel}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Recent Redemptions Live Ledger */}
+        <div className="telemetry-card glass-panel">
+          <div className="card-header" style={{ flexWrap: "wrap", gap: "10px" }}>
+            <div>
+              <h3>
+                <FontAwesomeIcon icon={faRotate} style={{ color: "#00e5ff" }} /> Recent Redemptions Ledger
+              </h3>
+              <span className="telemetry-subtext">
+                Live stream of combatants acquiring items with Arena Points
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <input
+                type="text"
+                placeholder="Search combatant or item..."
+                value={rewardsSearchTerm}
+                onChange={(e) => setRewardsSearchTerm(e.target.value)}
+                style={{
+                  background: "rgba(5, 8, 17, 0.6)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  borderRadius: "8px",
+                  padding: "6px 12px",
+                  fontSize: "0.78rem",
+                  color: "#f8fafc",
+                  outline: "none",
+                }}
+              />
+              <span className="telemetry-tag tag-cyan">
+                {rewardsData?.recentRedemptions?.length ?? 0} LOGGED
+              </span>
+            </div>
+          </div>
+
+          <div className="rewards-table-wrapper" style={{ maxHeight: "320px" }}>
+            <table className="rewards-table">
+              <thead>
+                <tr>
+                  <th>Combatant</th>
+                  <th>Rating & Tier</th>
+                  <th>Item Unlocked</th>
+                  <th>Type</th>
+                  <th>Arena Points Spent</th>
+                  <th>Claim Timestamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(!rewardsData?.recentRedemptions || rewardsData.recentRedemptions.length === 0) ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: "center", padding: "28px", color: "#8494ad" }}>
+                      No redemptions logged in this timeframe window.
+                    </td>
+                  </tr>
+                ) : (
+                  rewardsData.recentRedemptions
+                    .filter((r) => {
+                      if (!rewardsSearchTerm) return true;
+                      const term = rewardsSearchTerm.toLowerCase();
+                      return (
+                        r.username?.toLowerCase().includes(term) ||
+                        r.rewardTitle?.toLowerCase().includes(term) ||
+                        r.itemType?.toLowerCase().includes(term)
+                      );
+                    })
+                    .map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          <strong className="green-text">
+                            <FontAwesomeIcon icon={faUser} /> {item.username}
+                          </strong>
+                        </td>
+                        <td>
+                          <span style={{ color: item.rankColor, fontWeight: 700 }}>
+                            {item.rankTier}
+                          </span>{" "}
+                          <small style={{ color: "#64748b" }}>({item.userRating} PTS)</small>
+                        </td>
+                        <td>
+                          <strong>{item.rewardTitle}</strong>
+                        </td>
+                        <td>
+                          <span className={`reward-type-chip ${item.itemType}`}>
+                            {item.itemType}
+                          </span>
+                        </td>
+                        <td>
+                          <strong className="gold-text">
+                            {item.cost === 0 ? "FREE / ADMIN" : `${numberFormatter.format(item.cost)} PTS`}
+                          </strong>
+                        </td>
+                        <td>
+                          <span style={{ color: "#94a3b8", fontSize: "0.76rem" }}>
+                            {new Date(item.claimedAt).toLocaleString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* =========================================================
+          SECTION 5: INGRESS TRAFFIC, DEVICES & BROWSERS
           ========================================================= */}
       <div className="analytics-section-title">
         <h4>
@@ -726,7 +1186,7 @@ export default function AnalyticsTab({
         <span className="telemetry-subtext">Origin Node Records</span>
       </div>
 
-      <div className="analytics-grid-row-2">
+      <div className="analytics-grid-row-2 telemetry-routes-grid">
         {/* Card 5A: Top Platform Routes Visited */}
         <div className="telemetry-card glass-panel top-routes-card">
           <div className="card-header">
@@ -781,7 +1241,7 @@ export default function AnalyticsTab({
             <span className="telemetry-tag tag-cyan">ORIGIN TELEMETRY</span>
           </div>
 
-          <div className="ip-origins-table-wrap" style={{ maxHeight: "280px", overflowY: "auto" }}>
+          <div className="ip-origins-table-wrap">
             <table className="ip-origins-table">
               <thead>
                 <tr>

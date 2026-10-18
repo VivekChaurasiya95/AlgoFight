@@ -794,6 +794,308 @@ export class AnalyticsService {
     private seedBaselineTelemetry(): void {
         // Seeding removed as per user request to only show authenticated/real content.
     }
+
+    /**
+     * Aggregates reward redemptions and rank-to-reward consumption telemetry for Control Hub.
+     */
+    public async getRewardsAnalytics(filter: {
+        timeframe?: "7d" | "30d" | "90d" | "all" | "custom";
+        startDate?: string;
+        endDate?: string;
+    } = {}): Promise<any> {
+        const timeframe = filter.timeframe || "30d";
+        const now = new Date();
+        let dateGte: Date | null = null;
+        let dateLte: Date | null = null;
+        let timeframeLabel = "Past 30 Days (Month)";
+
+        if (timeframe === "7d") {
+            dateGte = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            timeframeLabel = "Past 7 Days (Week)";
+        } else if (timeframe === "30d") {
+            dateGte = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            timeframeLabel = "Past 30 Days (Month)";
+        } else if (timeframe === "90d") {
+            dateGte = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            timeframeLabel = "Past 90 Days (Quarter)";
+        } else if (timeframe === "custom") {
+            if (filter.startDate) dateGte = new Date(filter.startDate);
+            if (filter.endDate) {
+                dateLte = new Date(filter.endDate);
+                dateLte.setHours(23, 59, 59, 999);
+            }
+            timeframeLabel = `Custom Range (${filter.startDate || 'Beginning'} → ${filter.endDate || 'Now'})`;
+        } else if (timeframe === "all") {
+            timeframeLabel = "All Time Platform Redemptions";
+        }
+
+        // 1. Fetch transactions within timeframe
+        const whereClause: any = {
+            type: "REWARD_REDEMPTION",
+        };
+
+        if (dateGte || dateLte) {
+            whereClause.createdAt = {};
+            if (dateGte) whereClause.createdAt.gte = dateGte;
+            if (dateLte) whereClause.createdAt.lte = dateLte;
+        }
+
+        const transactions = await prisma.arenaPointTransaction.findMany({
+            where: whereClause,
+            orderBy: { createdAt: "desc" },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        username: true,
+                        email: true,
+                        rating: true,
+                        highestRank: true,
+                        arenaPoints: true,
+                        studentIdentityMetadata: true,
+                    }
+                }
+            }
+        });
+
+        // 2. Fallback scan: Check studentIdentityMetadata for users with claimedRewards
+        const knownTxIds = new Set(transactions.map(t => t.id));
+        const allUsersWithMeta = await prisma.user.findMany({
+            where: {
+                studentIdentityMetadata: { not: null as any }
+            },
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                rating: true,
+                highestRank: true,
+                arenaPoints: true,
+                studentIdentityMetadata: true,
+            }
+        });
+
+        const unifiedClaims: Array<{
+            id: string;
+            userId: string;
+            username: string;
+            userRating: number;
+            highestRank: string;
+            itemType: "avatar" | "frame" | "theme";
+            itemId: string;
+            rewardTitle: string;
+            cost: number;
+            claimedAt: Date;
+        }> = [];
+
+        // Ingest transactions
+        for (const tx of transactions) {
+            const meta = (tx.metadata as any) || {};
+            const cost = Math.abs(tx.amount) || Number(meta.cost) || 0;
+            let rawType = (meta.itemType || "").toLowerCase();
+            if (!rawType) {
+                if (tx.sourceId?.includes("theme") || meta.itemId?.includes("theme")) rawType = "theme";
+                else if (tx.sourceId?.includes("frame") || meta.itemId?.includes("frame")) rawType = "frame";
+                else rawType = "avatar";
+            }
+            const itemType: "avatar" | "frame" | "theme" = rawType === "theme" ? "theme" : rawType === "frame" ? "frame" : "avatar";
+
+            unifiedClaims.push({
+                id: tx.id,
+                userId: tx.userId,
+                username: tx.user?.username || tx.user?.email?.split("@")[0] || "Combatant",
+                userRating: Number(meta.userRating ?? tx.user?.rating ?? 0),
+                highestRank: meta.highestRank || tx.user?.highestRank || "ROOKIE",
+                itemType,
+                itemId: meta.itemId || tx.sourceId || tx.id,
+                rewardTitle: meta.rewardTitle || tx.sourceId || "Reward Item",
+                cost,
+                claimedAt: tx.createdAt,
+            });
+        }
+
+        // Ingest from studentIdentityMetadata if date falls within window
+        for (const u of allUsersWithMeta) {
+            const uMeta = (u.studentIdentityMetadata as any) || {};
+            const metaClaims: any[] = Array.isArray(uMeta.claimedRewards) ? uMeta.claimedRewards : [];
+            for (const mc of metaClaims) {
+                if (mc.id && knownTxIds.has(mc.id)) continue;
+                const claimDate = mc.claimedAt ? new Date(mc.claimedAt) : new Date();
+                if (dateGte && claimDate < dateGte) continue;
+                if (dateLte && claimDate > dateLte) continue;
+
+                let rawType = (mc.itemType || "").toLowerCase();
+                const itemType: "avatar" | "frame" | "theme" = rawType === "theme" ? "theme" : rawType === "frame" ? "frame" : "avatar";
+
+                unifiedClaims.push({
+                    id: mc.id || `meta_${u.id}_${mc.itemId || Math.random()}`,
+                    userId: u.id,
+                    username: u.username || u.email?.split("@")[0] || "Combatant",
+                    userRating: Number(mc.userRating ?? u.rating ?? 0),
+                    highestRank: mc.userRank || u.highestRank || "ROOKIE",
+                    itemType,
+                    itemId: mc.itemId || mc.rewardTitle || "item",
+                    rewardTitle: mc.rewardTitle || "Reward Item",
+                    cost: Number(mc.cost) || 0,
+                    claimedAt: claimDate,
+                });
+            }
+        }
+
+        // Sort unified claims descending by date
+        unifiedClaims.sort((a, b) => b.claimedAt.getTime() - a.claimedAt.getTime());
+
+        // 3. Summary metrics
+        const totalClaims = unifiedClaims.length;
+        const totalPointsSunk = unifiedClaims.reduce((acc, c) => acc + c.cost, 0);
+        const uniqueRedeemers = new Set(unifiedClaims.map(c => c.userId)).size;
+        const avgPointsPerClaim = totalClaims > 0 ? Math.round(totalPointsSunk / totalClaims) : 0;
+
+        // Category breakdown
+        let avatarCount = 0;
+        let avatarPoints = 0;
+        let frameCount = 0;
+        let framePoints = 0;
+        let themeCount = 0;
+        let themePoints = 0;
+
+        const itemCounter = new Map<string, { itemId: string; title: string; type: string; count: number; points: number }>();
+
+        for (const c of unifiedClaims) {
+            if (c.itemType === "avatar") {
+                avatarCount++;
+                avatarPoints += c.cost;
+            } else if (c.itemType === "frame") {
+                frameCount++;
+                framePoints += c.cost;
+            } else if (c.itemType === "theme") {
+                themeCount++;
+                themePoints += c.cost;
+            }
+
+            const existingItem = itemCounter.get(c.itemId) || {
+                itemId: c.itemId,
+                title: c.rewardTitle,
+                type: c.itemType,
+                count: 0,
+                points: 0,
+            };
+            existingItem.count++;
+            existingItem.points += c.cost;
+            itemCounter.set(c.itemId, existingItem);
+        }
+
+        const categoryBreakdown = {
+            avatar: {
+                count: avatarCount,
+                points: avatarPoints,
+                percentage: totalClaims > 0 ? Number(((avatarCount / totalClaims) * 100).toFixed(1)) : 0,
+            },
+            frame: {
+                count: frameCount,
+                points: framePoints,
+                percentage: totalClaims > 0 ? Number(((frameCount / totalClaims) * 100).toFixed(1)) : 0,
+            },
+            theme: {
+                count: themeCount,
+                points: themePoints,
+                percentage: totalClaims > 0 ? Number(((themeCount / totalClaims) * 100).toFixed(1)) : 0,
+            },
+        };
+
+        const sortedItems = Array.from(itemCounter.values()).sort((a, b) => b.count - a.count || b.points - a.points);
+        const topClaimedItem = sortedItems[0] || null;
+
+        // 4. Rank Demographics Cross-Tabulation
+        const RANK_TIERS = [
+            { key: "ROOKIE", name: "Rookie", min: 0, max: 399, color: "#94a3b8", range: "0 - 399" },
+            { key: "EXPERT", name: "Expert", min: 400, max: 799, color: "#06b6d4", range: "400 - 799" },
+            { key: "MASTER", name: "Master", min: 800, max: 1199, color: "#a855f7", range: "800 - 1199" },
+            { key: "GRANDMASTER", name: "Grandmaster", min: 1200, max: 1599, color: "#ef4444", range: "1200 - 1599" },
+            { key: "LEGEND", name: "Legend", min: 1600, max: 1999, color: "#f59e0b", range: "1600 - 1999" },
+            { key: "SUPREME", name: "Supreme", min: 2000, max: Infinity, color: "#ec4899", range: "2000+" },
+        ];
+
+        const rankMatrix = RANK_TIERS.map((tier) => ({
+            tierKey: tier.key,
+            tierName: tier.name,
+            ratingRange: tier.range,
+            color: tier.color,
+            min: tier.min,
+            max: tier.max,
+            totalClaims: 0,
+            totalPointsSpent: 0,
+            avatarCount: 0,
+            avatarPct: 0,
+            frameCount: 0,
+            framePct: 0,
+            themeCount: 0,
+            themePct: 0,
+            dominantType: "none" as "avatar" | "frame" | "theme" | "none",
+            dominantLabel: "No claims recorded",
+        }));
+
+        for (const c of unifiedClaims) {
+            const tierRow = rankMatrix.find((r) => c.userRating >= r.min && c.userRating <= r.max) || rankMatrix[0];
+            tierRow.totalClaims++;
+            tierRow.totalPointsSpent += c.cost;
+            if (c.itemType === "avatar") tierRow.avatarCount++;
+            else if (c.itemType === "frame") tierRow.frameCount++;
+            else if (c.itemType === "theme") tierRow.themeCount++;
+        }
+
+        for (const row of rankMatrix) {
+            if (row.totalClaims > 0) {
+                row.avatarPct = Math.round((row.avatarCount / row.totalClaims) * 100);
+                row.framePct = Math.round((row.frameCount / row.totalClaims) * 100);
+                row.themePct = Math.round((row.themeCount / row.totalClaims) * 100);
+
+                if (row.themeCount >= row.avatarCount && row.themeCount >= row.frameCount) {
+                    row.dominantType = "theme";
+                    row.dominantLabel = `Prefers HUD Themes (${row.themePct}%)`;
+                } else if (row.frameCount >= row.avatarCount && row.frameCount >= row.themeCount) {
+                    row.dominantType = "frame";
+                    row.dominantLabel = `Prefers Prestige Frames (${row.framePct}%)`;
+                } else {
+                    row.dominantType = "avatar";
+                    row.dominantLabel = `Prefers Avatars (${row.avatarPct}%)`;
+                }
+            }
+        }
+
+        const recentRedemptions = unifiedClaims.slice(0, 50).map((c) => {
+            const tier = RANK_TIERS.find((r) => c.userRating >= r.min && c.userRating <= r.max) || RANK_TIERS[0];
+            return {
+                id: c.id,
+                username: c.username,
+                userRating: c.userRating,
+                rankTier: tier.name,
+                rankColor: tier.color,
+                rewardTitle: c.rewardTitle,
+                itemType: c.itemType,
+                cost: c.cost,
+                claimedAt: c.claimedAt.toISOString(),
+            };
+        });
+
+        return {
+            timeframe,
+            timeframeLabel,
+            startDate: dateGte ? dateGte.toISOString() : null,
+            endDate: dateLte ? dateLte.toISOString() : null,
+            summary: {
+                totalClaims,
+                totalPointsSunk,
+                uniqueRedeemers,
+                avgPointsPerClaim,
+                topClaimedItem,
+            },
+            categoryBreakdown,
+            rankDemographics: rankMatrix.map(({ min, max, ...rest }) => rest),
+            itemPopularity: sortedItems.slice(0, 15),
+            recentRedemptions,
+        };
+    }
 }
 
 export const analyticsService = AnalyticsService.getInstance();

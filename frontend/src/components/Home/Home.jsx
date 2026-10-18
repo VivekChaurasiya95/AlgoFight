@@ -126,7 +126,7 @@ const coderOffersData = [
     costLabel: "From 5,000 Pts",
     statusText: "2 Free + 6 Skins",
     isUpcoming: false,
-    desc: "2 Free Forever HUDs (Regular & Horizon Studio) + 6 Paid High-Spec Battle Cockpits (5,000 to 10,000 PTS). Live combat cockpit preview.",
+    desc: "2 Free Forever HUDs (Regular & Horizon Studio) + 6 Paid High-Spec Battle Cockpits (5,000 to 10,000 PTS).",
     perkHighlight: "8 Combat Cockpits",
     link: "/rewards",
     actionText: "Explore Themes",
@@ -923,7 +923,7 @@ function Home() {
                       {currentOffer.title}
                     </h4>
 
-                    <p className="offer-snippet">
+                    <p className="offer-snippet" title={currentOffer.desc}>
                       {currentOffer.desc}
                     </p>
 

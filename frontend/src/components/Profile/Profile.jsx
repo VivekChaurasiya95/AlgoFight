@@ -23,10 +23,18 @@ import {
     faGraduationCap,
     faPen,
     faBuildingColumns,
+    faGift,
+    faPalette,
+    faCrown,
+    faLock,
+    faArrowUpRightFromSquare,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
-import { fetchUserProfile } from '../../services/api';
+import { useTheme } from '../../contexts/ThemeContext';
+import { fetchUserProfile, fetchMyClaimedRewards } from '../../services/api';
+import { getAvatarById, getFrameById } from '../../data/avatarConfig';
+import { THEMES } from '../../config/themes';
 import { connectSocket, getSocket } from '../../services/socket';
 import { 
     calculateArenaPointBreakdown, 
@@ -45,11 +53,45 @@ import UserAvatar from '../Common/UserAvatar/UserAvatar';
 import AvatarCustomizerModal from './AvatarCustomizerModal';
 import EloRatingGraph from '../Common/gamification/EloRatingGraph';
 
+function hexToRgb(hex) {
+    if (!hex) return "0, 229, 255";
+    let c = hex.replace('#', '');
+    if (c.length === 3) {
+        c = c.split('').map((x) => x + x).join('');
+    }
+    const num = parseInt(c, 16);
+    if (isNaN(num)) return "0, 229, 255";
+    return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+}
+
 function Profile() {
     const { userId } = useParams();
     const navigate = useNavigate();
     const { user, loading: authLoading, updateFacultyDetails, updateAvatarAndFrame } = useAuth();
     const { notify } = useNotification();
+    const { theme: currentTheme, setTheme, activeThemeConfig } = useTheme();
+
+    const vaultThemeStyles = useMemo(() => {
+        const accent = activeThemeConfig?.accentColor || '#00e5ff';
+        const secondary = activeThemeConfig?.secondaryAccent || '#8b5cf6';
+        const gradient = activeThemeConfig?.tokens?.['--cta-gradient'] || `linear-gradient(135deg, ${accent} 0%, ${secondary} 100%)`;
+        const ctaText = activeThemeConfig?.tokens?.['--cta-text'] || '#020617';
+        const rgb = hexToRgb(accent);
+        const shadow = activeThemeConfig?.tokens?.['--cta-shadow'] || `rgba(${rgb}, 0.45)`;
+
+        return {
+            '--vault-accent': accent,
+            '--vault-secondary': secondary,
+            '--vault-gradient': gradient,
+            '--vault-cta-text': ctaText,
+            '--vault-shadow': shadow,
+            '--vault-border': `rgba(${rgb}, 0.22)`,
+            '--vault-border-strong': `rgba(${rgb}, 0.45)`,
+            '--vault-accent-glow': `rgba(${rgb}, 0.35)`,
+            '--vault-accent-dim': `rgba(${rgb}, 0.12)`,
+            '--vault-accent-subtle': `rgba(${rgb}, 0.05)`,
+        };
+    }, [activeThemeConfig]);
 
     const [profile, setProfile] = useState(null);
     const [isLoadingProfile, setIsLoadingProfile] = useState(false);
@@ -57,6 +99,12 @@ function Profile() {
     const [avatarError, setAvatarError] = useState(false);
     const [isFacultyModalOpen, setIsFacultyModalOpen] = useState(false);
     const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+
+    // Claimed rewards & vault ledger states
+    const [claimedRewards, setClaimedRewards] = useState([]);
+    const [claimedStats, setClaimedStats] = useState({ totalClaimed: 0, totalSpent: 0 });
+    const [isRewardsLoading, setIsRewardsLoading] = useState(false);
+    const [rewardsFilter, setRewardsFilter] = useState('all');
 
     // Duel challenge states
     const [outgoingChallenge, setOutgoingChallenge] = useState(null);
@@ -146,6 +194,104 @@ function Profile() {
             active = false;
         };
     }, [targetUserId]);
+
+    // Claimed Rewards & Vault Inventory Ledger
+    useEffect(() => {
+        let active = true;
+
+        const loadClaims = async () => {
+            setIsRewardsLoading(true);
+            try {
+                const effectiveTarget = profile?.id || targetUserId;
+                const res = await fetchMyClaimedRewards(effectiveTarget);
+                if (!active) return;
+                if (res && res.success && Array.isArray(res.claims)) {
+                    setClaimedRewards(res.claims);
+                    setClaimedStats({
+                        totalClaimed: res.totalClaimed ?? res.claims.length,
+                        totalSpent: res.totalSpent ?? res.claims.reduce((acc, c) => acc + (Number(c.cost) || 0), 0)
+                    });
+                } else {
+                    fallbackClaims();
+                }
+            } catch {
+                if (!active) return;
+                fallbackClaims();
+            } finally {
+                if (active) setIsRewardsLoading(false);
+            }
+        };
+
+        const fallbackClaims = () => {
+            const sourceMeta = profile?.studentIdentityMetadata || user?.studentIdentityMetadata || {};
+            const metaClaims = Array.isArray(sourceMeta.claimedRewards) ? sourceMeta.claimedRewards : [];
+            const unlockedAvs = Array.isArray(profile?.unlockedAvatars || user?.unlockedAvatars) 
+                ? (profile?.unlockedAvatars || user?.unlockedAvatars) : [];
+            const unlockedFrs = Array.isArray(profile?.unlockedFrames || user?.unlockedFrames) 
+                ? (profile?.unlockedFrames || user?.unlockedFrames) : [];
+            const unlockedThs = Array.isArray(profile?.unlockedThemes || user?.unlockedThemes) 
+                ? (profile?.unlockedThemes || user?.unlockedThemes) : [];
+
+            const map = new Map();
+            for (const mc of metaClaims) {
+                const key = mc.itemId || mc.rewardTitle || mc.id;
+                map.set(key, mc);
+            }
+            for (const av of unlockedAvs) {
+                if (!map.has(av)) {
+                    const conf = getAvatarById(av);
+                    map.set(av, {
+                        id: `av_${av}`,
+                        itemId: av,
+                        rewardTitle: conf?.name || av.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+                        itemType: "avatar",
+                        cost: conf?.cost || 200,
+                        claimedAt: new Date().toISOString(),
+                    });
+                }
+            }
+            for (const fr of unlockedFrs) {
+                if (!map.has(fr)) {
+                    const conf = getFrameById(fr);
+                    map.set(fr, {
+                        id: `fr_${fr}`,
+                        itemId: fr,
+                        rewardTitle: conf?.name || fr.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+                        itemType: "frame",
+                        cost: conf?.cost || 500,
+                        claimedAt: new Date().toISOString(),
+                    });
+                }
+            }
+            for (const th of unlockedThs) {
+                if (th !== "regular" && th !== "light" && !map.has(th)) {
+                    const conf = THEMES[th];
+                    map.set(th, {
+                        id: `th_${th}`,
+                        itemId: th,
+                        rewardTitle: conf?.name ? `${conf.name} HUD` : `${th.charAt(0).toUpperCase() + th.slice(1)} HUD Theme`,
+                        itemType: "theme",
+                        cost: 5000,
+                        claimedAt: new Date().toISOString(),
+                    });
+                }
+            }
+            const items = Array.from(map.values()).sort(
+                (a, b) => new Date(b.claimedAt || 0).getTime() - new Date(a.claimedAt || 0).getTime()
+            );
+            setClaimedRewards(items);
+            setClaimedStats({
+                totalClaimed: items.length,
+                totalSpent: items.reduce((acc, c) => acc + (Number(c.cost) || 0), 0)
+            });
+        };
+
+        loadClaims();
+
+        return () => {
+            active = false;
+        };
+    }, [targetUserId, profile?.id, profile?.studentIdentityMetadata, user?.studentIdentityMetadata, user?.unlockedAvatars, user?.unlockedFrames, user?.unlockedThemes]);
 
     // WebSocket listeners for 1v1 Battle Challenges
     useEffect(() => {
@@ -527,6 +673,101 @@ function Profile() {
         });
         setOfflineChallengeTarget(null);
     };
+
+    const isItemEquipped = (item) => {
+        if (!item) return false;
+        if (item.itemType === 'avatar') {
+            const conf = getAvatarById(item.itemId);
+            const target = conf?.url || (item.itemId?.startsWith('/') ? item.itemId : `/avatars/${item.itemId}.png`);
+            return photoURL === target || photoURL === item.itemId;
+        }
+        if (item.itemType === 'frame') {
+            const conf = getFrameById(item.itemId);
+            return avatarFrame === item.itemId || avatarFrame === conf?.id || avatarFrame === conf?.url;
+        }
+        if (item.itemType === 'theme') {
+            const rawId = (item.itemId || "").replace(/^theme-/, "");
+            return currentTheme === rawId || currentTheme === item.itemId;
+        }
+        return false;
+    };
+
+    const handleEquipReward = async (item) => {
+        if (!isOwnProfile || !item) return;
+
+        if (item.itemType === 'avatar') {
+            const conf = getAvatarById(item.itemId);
+            const newPhoto = conf?.url || (item.itemId?.startsWith('/') ? item.itemId : `/avatars/${item.itemId}.png`);
+            try {
+                await updateAvatarAndFrame({ photoURL: newPhoto, avatarFrame });
+                setProfile((prev) => ({ ...(prev || {}), photoURL: newPhoto }));
+                notify({
+                    type: 'success',
+                    title: 'Avatar Equipped!',
+                    message: `Equipped ${item.rewardTitle} as active combat avatar.`,
+                    duration: 3000,
+                });
+            } catch (err) {
+                notify({
+                    type: 'error',
+                    title: 'Equip Failed',
+                    message: err?.message || 'Could not equip avatar.',
+                });
+            }
+        } else if (item.itemType === 'frame') {
+            const conf = getFrameById(item.itemId);
+            const newFrame = conf?.id || item.itemId;
+            try {
+                await updateAvatarAndFrame({ photoURL, avatarFrame: newFrame });
+                setProfile((prev) => ({ ...(prev || {}), avatarFrame: newFrame }));
+                notify({
+                    type: 'success',
+                    title: 'Frame Equipped!',
+                    message: `Equipped ${item.rewardTitle} as active combat frame.`,
+                    duration: 3000,
+                });
+            } catch (err) {
+                notify({
+                    type: 'error',
+                    title: 'Equip Failed',
+                    message: err?.message || 'Could not equip frame.',
+                });
+            }
+        } else if (item.itemType === 'theme') {
+            const rawId = (item.itemId || "").replace(/^theme-/, "");
+            try {
+                setTheme(rawId);
+                notify({
+                    type: 'success',
+                    title: 'HUD Theme Activated!',
+                    message: `Switched cockpit environment to ${item.rewardTitle}.`,
+                    duration: 3000,
+                });
+            } catch (err) {
+                notify({
+                    type: 'error',
+                    title: 'Theme Failed',
+                    message: err?.message || 'Could not switch theme.',
+                });
+            }
+        }
+    };
+
+    const filteredClaims = useMemo(() => {
+        if (!Array.isArray(claimedRewards)) return [];
+        if (rewardsFilter === 'all') return claimedRewards;
+        return claimedRewards.filter((c) => c.itemType === rewardsFilter);
+    }, [claimedRewards, rewardsFilter]);
+
+    const claimCounts = useMemo(() => {
+        if (!Array.isArray(claimedRewards)) return { all: 0, avatar: 0, frame: 0, theme: 0 };
+        return {
+            all: claimedRewards.length,
+            avatar: claimedRewards.filter((c) => c.itemType === 'avatar').length,
+            frame: claimedRewards.filter((c) => c.itemType === 'frame').length,
+            theme: claimedRewards.filter((c) => c.itemType === 'theme').length,
+        };
+    }, [claimedRewards]);
 
     const profileStats = useMemo(() => {
         if (isFacultyProfile) {
@@ -1203,6 +1444,238 @@ function Profile() {
                     </article>
                 </section>
             )}
+
+            {/* 4. Vault Collection & Claimed Rewards Ledger */}
+            <section className="profile-vault-section" style={vaultThemeStyles}>
+                <div className="profile-vault-header">
+                    <div className="vault-header-title-group">
+                        <div className="vault-header-icon-box">
+                            <FontAwesomeIcon icon={faCoins} />
+                        </div>
+                        <div>
+                            <div className="vault-title-row">
+                                <h2 className="vault-title">Vault Collection & Claimed Rewards</h2>
+                                <span className="vault-live-badge">LEDGER SYNCED</span>
+                            </div>
+                            <p className="vault-subtitle">
+                                Track cosmetic artifacts redeemed using Arena Points · One-click instant equip to profile
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="vault-header-actions">
+                        <div className="vault-stat-capsule">
+                            <span className="vault-stat-label">Points Sunk</span>
+                            <strong className="vault-stat-val">🪙 {Number(claimedStats.totalSpent || 0).toLocaleString()} PTS</strong>
+                        </div>
+                        <div className="vault-stat-capsule">
+                            <span className="vault-stat-label">Items Unlocked</span>
+                            <strong className="vault-stat-val">🎁 {claimedStats.totalClaimed || 0}</strong>
+                        </div>
+                        <button
+                            type="button"
+                            className="btn-visit-vault"
+                            onClick={() => navigate('/rewards')}
+                            title="Browse all available avatars, frames, and themes in the Arena Vault"
+                        >
+                            <FontAwesomeIcon icon={faGift} />
+                            <span>Rewards Vault</span>
+                            <FontAwesomeIcon icon={faArrowUpRightFromSquare} style={{ fontSize: '0.75rem', opacity: 0.8 }} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Filter Pills */}
+                <div className="vault-filter-pills-row">
+                    <button
+                        type="button"
+                        className={`vault-filter-pill ${rewardsFilter === 'all' ? 'is-active' : ''}`}
+                        onClick={() => setRewardsFilter('all')}
+                    >
+                        All Collectibles ({claimCounts.all})
+                    </button>
+                    <button
+                        type="button"
+                        className={`vault-filter-pill ${rewardsFilter === 'avatar' ? 'is-active' : ''}`}
+                        onClick={() => setRewardsFilter('avatar')}
+                    >
+                        <FontAwesomeIcon icon={faUser} /> Avatars ({claimCounts.avatar})
+                    </button>
+                    <button
+                        type="button"
+                        className={`vault-filter-pill ${rewardsFilter === 'frame' ? 'is-active' : ''}`}
+                        onClick={() => setRewardsFilter('frame')}
+                    >
+                        <FontAwesomeIcon icon={faCrown} /> Prestige Frames ({claimCounts.frame})
+                    </button>
+                    <button
+                        type="button"
+                        className={`vault-filter-pill ${rewardsFilter === 'theme' ? 'is-active' : ''}`}
+                        onClick={() => setRewardsFilter('theme')}
+                    >
+                        <FontAwesomeIcon icon={faPalette} /> Cyber Themes ({claimCounts.theme})
+                    </button>
+                </div>
+
+                {/* Grid Container with Internal Scrolling */}
+                <div className="vault-grid-scroll-wrapper">
+                    {isRewardsLoading ? (
+                        <div className="vault-loading-box">
+                            <FontAwesomeIcon icon={faBolt} spin />
+                            <span>Syncing claimed inventory from ledger...</span>
+                        </div>
+                    ) : claimedRewards.length === 0 ? (
+                        <div className="vault-empty-state">
+                            <div className="vault-empty-icon-halo">
+                                <FontAwesomeIcon icon={faLock} />
+                            </div>
+                            <h3 className="vault-empty-title">No Vault Rewards Claimed Yet</h3>
+                            <p className="vault-empty-desc">
+                                Accumulate Arena Points through daily practice problem solves, rated 1v1 duels, and consistency streaks to claim exclusive avatars, frames, and HUD themes.
+                            </p>
+                            <button
+                                type="button"
+                                className="btn-vault-explore"
+                                onClick={() => navigate('/rewards')}
+                            >
+                                <FontAwesomeIcon icon={faCoins} /> Explore Rewards Vault
+                            </button>
+                        </div>
+                    ) : filteredClaims.length === 0 ? (
+                        <div className="vault-empty-category">
+                            <span>No claimed rewards in this category yet.</span>
+                        </div>
+                    ) : (
+                        <div className="claimed-rewards-grid">
+                            {filteredClaims.map((item) => {
+                                const equipped = isItemEquipped(item);
+                                const formattedDate = item.claimedAt
+                                    ? new Date(item.claimedAt).toLocaleDateString("en-US", {
+                                          month: "short",
+                                          day: "numeric",
+                                          year: "numeric",
+                                      })
+                                    : "Unlocked";
+
+                                const avatarConf = item.itemType === 'avatar' ? getAvatarById(item.itemId) : null;
+                                const frameConf = item.itemType === 'frame' ? getFrameById(item.itemId) : null;
+                                const themeConf = item.itemType === 'theme' ? (THEMES[item.itemId?.replace(/^theme-/, '')] || THEMES.regular) : null;
+
+                                return (
+                                    <article
+                                        key={item.id || item.itemId}
+                                        className={`claimed-reward-card ${equipped ? 'is-equipped' : ''}`}
+                                    >
+                                        {/* Visual Box */}
+                                        <div className="reward-card-visual-box">
+                                            {item.itemType === 'avatar' && (
+                                                <div className="vault-avatar-frame-wrap">
+                                                    <img
+                                                        src={avatarConf?.url || (item.itemId?.startsWith('/') ? item.itemId : `/avatars/${item.itemId}.png`)}
+                                                        alt={item.rewardTitle}
+                                                        className="vault-preview-avatar-img"
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = '/avatars/avatar_1.png';
+                                                        }}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {item.itemType === 'frame' && (
+                                                <div className="vault-frame-showcase-box">
+                                                    <img
+                                                        src={frameConf?.url || (item.itemId?.startsWith('/') ? item.itemId : `/frames/${item.itemId}.png`)}
+                                                        alt={item.rewardTitle}
+                                                        className="vault-preview-frame-img"
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = '/frames/frame_1.png';
+                                                        }}
+                                                    />
+                                                    <div className="vault-frame-dummy-avatar">
+                                                        <FontAwesomeIcon icon={faUser} />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {item.itemType === 'theme' && (
+                                                <div
+                                                    className="vault-theme-showcase-box"
+                                                    style={{
+                                                        background: themeConf?.tokens?.['--bg-primary'] || '#050811',
+                                                        borderColor: themeConf?.accentColor || '#00e5ff',
+                                                    }}
+                                                >
+                                                    <div className="vault-theme-swatches-strip">
+                                                        {(themeConf?.swatches || ['#050811', '#00e5ff', '#8b5cf6']).map((sw, idx) => (
+                                                            <span
+                                                                key={idx}
+                                                                className="vault-swatch-bubble"
+                                                                style={{ background: sw }}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                    <span
+                                                        className="vault-theme-chip"
+                                                        style={{
+                                                            borderColor: themeConf?.accentColor || '#00e5ff',
+                                                            color: themeConf?.accentColor || '#00e5ff',
+                                                        }}
+                                                    >
+                                                        <FontAwesomeIcon icon={faPalette} /> {themeConf?.name || 'Theme'}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            <span className={`vault-category-tag tag-${item.itemType}`}>
+                                                {item.itemType === 'theme' ? 'HUD THEME' : item.itemType === 'frame' ? 'PRESTIGE FRAME' : 'CYBER AVATAR'}
+                                            </span>
+                                        </div>
+
+                                        {/* Info Block */}
+                                        <div className="reward-card-info-box">
+                                            <h4 className="reward-item-title" title={item.rewardTitle}>
+                                                {item.rewardTitle}
+                                            </h4>
+                                            <div className="reward-item-meta-row">
+                                                <span className="reward-cost-tag">
+                                                    🪙 {Number(item.cost || 0).toLocaleString()} PTS
+                                                </span>
+                                                <span className="reward-claim-date">
+                                                    📅 {formattedDate}
+                                                </span>
+                                            </div>
+
+                                            {/* Equip Action Footer */}
+                                            <div className="reward-action-footer">
+                                                {equipped ? (
+                                                    <span className="equipped-badge">
+                                                        <FontAwesomeIcon icon={faCheckCircle} /> ACTIVE
+                                                    </span>
+                                                ) : isOwnProfile ? (
+                                                    <button
+                                                        type="button"
+                                                        className="btn-equip-reward"
+                                                        onClick={() => handleEquipReward(item)}
+                                                        title={`Equip ${item.rewardTitle}`}
+                                                    >
+                                                        <FontAwesomeIcon icon={faBolt} /> Equip
+                                                    </button>
+                                                ) : (
+                                                    <span className="unlocked-badge">
+                                                        UNLOCKED
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </section>
             </section>
 
             {/* Outgoing Challenge Dialog */}

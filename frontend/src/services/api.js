@@ -785,3 +785,34 @@ export async function deleteAdminIntelPost(adminKey, id) {
   });
 }
 
+export async function fetchRewardsAnalytics(adminKey, options = {}) {
+  const params = new URLSearchParams();
+  if (options.timeframe) params.set("timeframe", options.timeframe);
+  if (options.startDate) params.set("startDate", options.startDate);
+  if (options.endDate) params.set("endDate", options.endDate);
+
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return requestJson(`/api/admin/analytics/rewards${query}`, {
+    headers: { "x-admin-key": adminKey },
+    skipCache: true,
+    cache: "no-store",
+  });
+}
+
+export async function fetchMyClaimedRewards(targetUserId = null) {
+  const query = targetUserId ? `?targetUserId=${encodeURIComponent(targetUserId)}` : "";
+  return requestJson(`/api/rewards/my-claims${query}`, {
+    includeAuth: true,
+    skipCache: true,
+    cache: "no-store",
+  });
+}
+
+export async function syncArenaPointBalance() {
+  return requestJson("/api/rewards/sync-balance", {
+    method: "POST",
+    includeAuth: true,
+  });
+}
+
+

@@ -173,7 +173,7 @@ const themeRewards = [
 const numberFormatter = new Intl.NumberFormat('en-US');
 
 export default function Rewards() {
-    const { user, loading: authLoading, updateAvatarAndFrame } = useAuth();
+    const { user, loading: authLoading, updateAvatarAndFrame, refreshUser } = useAuth();
     const { notify } = useNotification();
     const {
         theme: currentTheme,
@@ -431,6 +431,7 @@ export default function Rewards() {
 
             // Auto reload history and profile in background
             loadWeeklyAndHistory();
+            if (refreshUser) refreshUser();
         } catch (err) {
             notify({
                 type: 'error',
@@ -527,6 +528,7 @@ export default function Rewards() {
             });
 
             loadWeeklyAndHistory();
+            if (refreshUser) refreshUser();
         } catch (err) {
             notify({
                 type: 'error',
@@ -650,6 +652,7 @@ export default function Rewards() {
             });
 
             loadWeeklyAndHistory();
+            if (refreshUser) refreshUser();
         } catch (err) {
             notify({
                 type: 'error',

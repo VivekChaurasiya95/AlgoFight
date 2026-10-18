@@ -1,0 +1,31 @@
+# Robots.txt for AlgoFight
+# Allow Google, Bing, DuckDuckGo, and other web crawlers to index all public platform pages
+User-agent: *
+Allow: /
+Allow: /home
+Allow: /practice
+Allow: /practice/*
+Allow: /battle
+Allow: /leaderboard
+Allow: /rewards
+Allow: /intel
+Allow: /intel/*
+Allow: /about
+Allow: /blog
+Allow: /careers
+Allow: /help
+Allow: /contact
+Allow: /developer
+Allow: /terms
+Allow: /privacy
+Allow: /cookies
+
+# Disallow private / administrative routes
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /api/admin/*
+Disallow: /faculty/*
+
+# Host & Sitemap Location
+Host: https://algofight.com
+Sitemap: https://algofight.com/sitemap.xml

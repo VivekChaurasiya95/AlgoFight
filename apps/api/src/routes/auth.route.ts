@@ -128,6 +128,7 @@ export async function authRoutes(app: FastifyInstance) {
                     unlockedAvatars: Array.isArray(userMeta.unlockedAvatars) ? userMeta.unlockedAvatars : [],
                     unlockedFrames: Array.isArray(userMeta.unlockedFrames) ? userMeta.unlockedFrames : [],
                     unlockedThemes: Array.isArray(userMeta.unlockedThemes) ? userMeta.unlockedThemes : [],
+                    claimedRewards: Array.isArray(userMeta.claimedRewards) ? userMeta.claimedRewards : [],
                     themePreference: userMeta.themePreference || null,
                 },
                 trustContext: req.trustContext,

@@ -172,4 +172,22 @@ export async function analyticsRoutes(app: FastifyInstance) {
             return reply.send(snapshot);
         }
     );
+
+    /**
+     * 3. Protected Rewards Analytics: GET /admin/analytics/rewards
+     * Returns time-filtered redemption stats and rank-to-reward consumption telemetry for SuperAdmin.
+     */
+    app.get(
+        "/admin/analytics/rewards",
+        { preHandler: [verifyAdminAccess] },
+        async (request: FastifyRequest, reply: FastifyReply) => {
+            const query = (request.query as any) || {};
+            const rewardsAnalytics = await analyticsService.getRewardsAnalytics({
+                timeframe: query.timeframe,
+                startDate: query.startDate,
+                endDate: query.endDate,
+            });
+            return reply.send(rewardsAnalytics);
+        }
+    );
 }

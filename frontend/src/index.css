@@ -4499,6 +4499,11 @@ p {
 .btn-hud-primary,
 .btn-hero-compete,
 .btn-action-cyan {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
   background: var(--cta-gradient, var(--cta-primary)) !important;
   color: var(--cta-text, #ffffff) !important;
   border-color: var(--cta-primary) !important;
