@@ -1113,6 +1113,7 @@ export default function ControlHub() {
 
               {activeTab === "analytics" && (
                 <AnalyticsTab
+                  adminKey={adminKey}
                   analyticsData={analyticsData}
                   isAnalyticsLoading={isAnalyticsLoading}
                   fetchAnalytics={fetchAnalytics}

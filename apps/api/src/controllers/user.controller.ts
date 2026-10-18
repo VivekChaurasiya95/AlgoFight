@@ -420,6 +420,8 @@ export class UserController {
             unlockedAvatars: Array.isArray(userMeta.unlockedAvatars) ? userMeta.unlockedAvatars : [],
             unlockedFrames: Array.isArray(userMeta.unlockedFrames) ? userMeta.unlockedFrames : [],
             unlockedThemes: Array.isArray(userMeta.unlockedThemes) ? userMeta.unlockedThemes : [],
+            claimedRewards: Array.isArray(userMeta.claimedRewards) ? userMeta.claimedRewards : [],
+            arenaPoints: (user as any).arenaPoints ?? 0,
             themePreference: userMeta.themePreference || null,
             academicProfile,
             matchesWon: user.wins,

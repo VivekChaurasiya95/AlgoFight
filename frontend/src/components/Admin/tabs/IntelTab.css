@@ -3,8 +3,54 @@
    Inherits ControlHub and system tokens: glass-panel, registry-table, btn-primary
    ========================================================================== */
 
+.registry-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.registry-actions .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid var(--cta-primary, #00e5ff) !important;
+  background: var(--cta-gradient, linear-gradient(90deg, #00e5ff 0%, #3b82f6 100%)) !important;
+  color: var(--cta-text, #020617) !important;
+  box-shadow: 0 2px 14px var(--cta-shadow, rgba(0, 229, 255, 0.35)) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-sizing: border-box;
+}
+
+.registry-actions .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--cta-shadow, rgba(0, 229, 255, 0.55)) !important;
+  background: var(--cta-hover, #00e5ff) !important;
+}
+
+.registry-actions .btn-primary:active {
+  transform: translateY(0);
+}
+
+.registry-actions .btn-primary svg {
+  font-size: 0.82rem;
+}
+
 .intel-status-select {
-  padding: 8px 14px;
+  height: 38px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
   background: var(--surface-primary, rgba(10, 14, 23, 0.78));
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
   border-radius: 10px;
@@ -14,6 +60,7 @@
   outline: none;
   cursor: pointer;
   transition: border-color 0.2s ease;
+  box-sizing: border-box;
 }
 
 .intel-status-select:focus {

@@ -13,6 +13,7 @@ import FeedbackNotificationPrompt from './components/Feedback/FeedbackNotificati
 import ActiveEventDock from './components/Common/ActiveEventDock.jsx';
 import ActiveEventCountdownModal from './components/Common/ActiveEventCountdownModal.jsx';
 import RejoinSessionModal from './components/Common/RejoinSessionModal.jsx';
+import SEOManager from './components/Common/SEO/SEOManager.jsx';
 
 // 🚀 Code-split secondary route components with React.lazy
 const LandingPage = lazy(() => import('./components/LandingPage/LandingPage.jsx'));
@@ -99,6 +100,7 @@ function App() {
 
   return (
     <>
+      <SEOManager />
       <SystemBroadcastBanner />
       <FeedbackNotificationPrompt />
       <ActiveEventDock />

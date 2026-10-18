@@ -1,0 +1,23 @@
+{
+  "short_name": "AlgoFight",
+  "name": "AlgoFight - 1v1 Real-Time Competitive Programming Arena",
+  "description": "Compete in live 1v1 algorithmic duels, solve data structures and algorithms problems, climb global leaderboards, and redeem arena points for cyber rewards.",
+  "icons": [
+    {
+      "src": "/Algo Fight.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#050811",
+  "theme_color": "#00e5ff",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": [
+    "education",
+    "games",
+    "productivity"
+  ]
+}
